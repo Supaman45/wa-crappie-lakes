@@ -243,7 +243,7 @@
     <div class="controls">
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input id="search" type="text" placeholder="Search a lake..." autocomplete="off">
+        <input id="search" type="text" placeholder="Search lake, city, or ZIP..." autocomplete="off">
       </div>
       <div class="row">
         <select id="county"><option value="">All counties</option></select>
@@ -344,7 +344,7 @@ function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 let activeProfile = profById[lsGet('crappie-active')] ? lsGet('crappie-active') : 'serimon';
 
 // ===== state =====
-let userLoc = null, activeId = null, launchesLoaded = false;
+let userLoc = null, originLabel = '', activeId = null, launchesLoaded = false;
 let filtered = LAKES.slice();
 let catches = [], visits = [];
 let journalWho = 'all';
@@ -411,7 +411,7 @@ const cluster = L.markerClusterGroup({ maxClusterRadius:48, spiderfyOnMaxZoom:tr
 function popupHtml(l){
   const st = lakeStats(l);
   const counties = l.counties.join(', ') + (l.counties.length>1?' counties':' County');
-  const dist = (userLoc && l._d!=null) ? `<div class="pop-dist">${l._d.toFixed(1)} mi from you</div>` : '';
+  const dist = (userLoc && l._d!=null) ? `<div class="pop-dist">${l._d.toFixed(1)} mi from ${originLabel}</div>` : '';
   const facts = `<div class="pop-facts"><div class="fact"><div class="v">${acreFmt(l.acres)}</div><div class="k">Acres</div></div><div class="fact"><div class="v">${l.elev.toLocaleString()}</div><div class="k">Elev ft</div></div></div>`;
   const logline = `<div class="pop-log"><span><b>${st.visits}</b> visits</span><span><b>${st.catches}</b> catches</span></div>`;
   const wdfwBtn = `<a class="btn ghost" href="${wdfwUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>WDFW</a>`;
@@ -425,7 +425,7 @@ function popupHtml(l){
     if (launchesLoaded) launchBlock = `<div class="pop-note">No WDFW boat launch matched nearby. May be shore access only. The WDFW page lists details.</div>`;
     actions = `<a class="btn primary" href="${dirUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions</a><div class="btn-row"><a class="btn ghost" href="${mapUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Map</a>${wdfwBtn}</div>`;
   }
-  const logbtns = `<div class="pop-logbtns"><button class="btn ghost lg-visit" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Visit</button><button class="btn log lg-catch" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Catch</button></div>`;
+  const logbtns = `<div class="pop-logbtns"><button class="btn ghost lg-visit" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Log visit</button><button class="btn log lg-catch" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Log catch</button></div>`;
   return `<div class="pop-nm">${esc(l.name)}</div><div class="pop-co">${counties}</div>${facts}${logline}${dist}${launchBlock}<div class="pop-actions">${actions}</div>${logbtns}`;
 }
 
@@ -437,9 +437,10 @@ function refreshLake(l){ if(markers[l.id]){ markers[l.id].setIcon(iconFor(l)); m
 const $list=el('list'), $search=el('search'), $county=el('county'), $sort=el('sort'), $showing=el('showing'), $clear=el('clear');
 
 function applyFilters(){
-  const q=$search.value.trim().toLowerCase(), co=$county.value, sort=$sort.value;
+  const qraw=$search.value.trim(), q=qraw.toLowerCase(), co=$county.value, sort=$sort.value;
+  const numericQ=/^\d+$/.test(qraw);
   filtered = LAKES.filter(l => {
-    if (q && !l.name.toLowerCase().includes(q)) return false;
+    if (q && !numericQ && !l.name.toLowerCase().includes(q)) return false;
     if (co && !l.counties.includes(co)) return false;
     if (activeFilters.ramp && !l.launch) return false;
     if (activeFilters.motor && !(l.launch && l.launch.motor)) return false;
@@ -459,7 +460,12 @@ function applyFilters(){
 }
 
 function renderList(){
-  if (!filtered.length){ $list.innerHTML='<div class="empty">No lakes match.<br>Try clearing the filters.</div>'; return; }
+  if (!filtered.length){
+    const eq=$search.value.trim();
+    if (eq && !/^\d+$/.test(eq) && eq.length>=3) $list.innerHTML=`<div class="empty">No lake named &ldquo;${esc(eq)}&rdquo;.<br>Press Enter to find lakes near ${esc(eq)}.</div>`;
+    else $list.innerHTML='<div class="empty">No lakes match.<br>Try clearing the filters.</div>';
+    return;
+  }
   $list.innerHTML = filtered.map(l=>{
     const st=lakeStats(l);
     const ramp=l.launch?' &middot; <span class="ramp-tag"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg>ramp</span>':'';
@@ -473,27 +479,59 @@ function renderList(){
 function setActive(id,fly){ activeId=id; document.querySelectorAll('.item').forEach(e=>e.classList.toggle('active',+e.dataset.id===id)); const e=document.querySelector(`.item[data-id="${id}"]`); if(e) e.scrollIntoView({block:'nearest',behavior:'smooth'}); if(fly){ const l=LAKES[id]; map.flyTo([l.lat,l.lng],Math.max(map.getZoom(),12),{duration:.7}); cluster.zoomToShowLayer(markers[id],()=>markers[id].openPopup()); } }
 
 $list.addEventListener('click',e=>{ const it=e.target.closest('.item'); if(it){ if(window.innerWidth<=760) closePanel(); setActive(+it.dataset.id,true); } });
-$search.addEventListener('input',applyFilters);
+$search.addEventListener('input',()=>{ const q=$search.value.trim(); if(/^\d{5}$/.test(q)) resolveZip(q); applyFilters(); });
+$search.addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const q=$search.value.trim(); if(/^\d{5}$/.test(q)) resolveZip(q); else if(q.length>=3 && !/^\d+$/.test(q)) geocodePlace(q); });
 $county.addEventListener('change',applyFilters);
 $sort.addEventListener('change',applyFilters);
 $clear.addEventListener('click',()=>{ $search.value=''; $county.value=''; applyFilters(); });
 
-// ===== near me =====
-let youMarker=null;
+// ===== location: near me + ZIP search =====
+let originMarker=null;
+function setOrigin(loc,label){
+  userLoc=loc; originLabel=label;
+  LAKES.forEach(l=>l._d=haversine(loc[0],loc[1],l.lat,l.lng));
+  LAKES.forEach(l=>markers[l.id].setPopupContent(popupHtml(l)));
+  $sort.querySelector('option[value="dist"]').disabled=false; $sort.value='dist';
+  if(originMarker) map.removeLayer(originMarker);
+  originMarker=L.circleMarker(loc,{radius:8,color:'#52c9e2',fillColor:'#52c9e2',fillOpacity:.9,weight:3}).addTo(map).bindPopup(label==='you'?'You are here':label);
+  applyFilters();
+  const near=filtered.slice(0,8).map(l=>markers[l.id].getLatLng()).concat([L.latLng(loc)]);
+  if(near.length>1) map.fitBounds(L.latLngBounds(near).pad(.15),{maxZoom:11});
+}
 el('near').addEventListener('click',()=>{
   if(!navigator.geolocation){ toast('Location is not available here.'); return; }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    userLoc=[pos.coords.latitude,pos.coords.longitude];
-    LAKES.forEach(l=>l._d=haversine(userLoc[0],userLoc[1],l.lat,l.lng));
-    LAKES.forEach(l=>markers[l.id].setPopupContent(popupHtml(l)));
-    $sort.querySelector('option[value="dist"]').disabled=false; $sort.value='dist';
-    if(youMarker) map.removeLayer(youMarker);
-    youMarker=L.circleMarker(userLoc,{radius:8,color:'#52c9e2',fillColor:'#52c9e2',fillOpacity:.9,weight:3}).addTo(map).bindPopup('You are here');
-    applyFilters();
-    const near=filtered.slice(0,8).map(l=>markers[l.id].getLatLng()).concat([L.latLng(userLoc)]);
-    if(near.length>1) map.fitBounds(L.latLngBounds(near).pad(.15),{maxZoom:11});
-  },()=>toast('Could not get your location.'),{enableHighAccuracy:true,timeout:9000});
+  navigator.geolocation.getCurrentPosition(pos=>setOrigin([pos.coords.latitude,pos.coords.longitude],'you'),()=>toast('Could not get your location.'),{enableHighAccuracy:true,timeout:9000});
 });
+let zipTimer=null, lastZip='';
+function resolveZip(zip){
+  if(zip===lastZip && userLoc) return;
+  clearTimeout(zipTimer);
+  zipTimer=setTimeout(async ()=>{
+    try{
+      const r=await fetch(`https://api.zippopotam.us/us/${zip}`);
+      if(!r.ok) throw new Error('zip');
+      const d=await r.json();
+      const p=d.places && d.places[0];
+      if(!p) throw new Error('zip');
+      lastZip=zip;
+      setOrigin([parseFloat(p.latitude),parseFloat(p.longitude)], 'ZIP '+zip);
+      toast(`Lakes near ${zip}${p['place name']?' ('+p['place name']+')':''}`);
+    }catch(e){ toast(`Could not find ZIP ${zip}`); }
+  },350);
+}
+async function geocodePlace(qstr){
+  const q=qstr.trim(); if(q.length<3) return;
+  toast(`Searching ${q}...`);
+  try{
+    const u=`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&q=${encodeURIComponent(q+' Washington')}`;
+    const r=await fetch(u,{headers:{'Accept':'application/json'}});
+    const d=await r.json();
+    if(!d || !d.length){ toast(`Could not find "${q}"`); return; }
+    const hit=d[0];
+    setOrigin([parseFloat(hit.lat),parseFloat(hit.lon)], hit.name || q);
+    toast(`Lakes near ${(hit.display_name||q).split(',')[0]}`);
+  }catch(e){ toast(`Could not search "${q}"`); }
+}
 
 // ===== WDFW launches =====
 const LAUNCH_URL='https://geodataservices.wdfw.wa.gov/arcgis/rest/services/ApplicationServices/Major_Fishing_Area/MapServer/0/query';
@@ -542,7 +580,7 @@ function setProfile(id){ if(!profById[id]) return; activeProfile=id; lsSet('crap
 
 // ===== visits + catch sheet =====
 async function logVisit(l,dateStr,who){ dateStr=dateStr||todayStr(); who=who||activeProfile; if(visits.some(v=>v.lakeId===l.slug && v.date===dateStr && v.who===who)) return false; const o={lakeId:l.slug,lakeName:l.name,who,date:dateStr,createdAt:Date.now()}; try { o.id=await idbAdd('visits',o); visits.push(o); rebuildIndex(); return true; } catch(e){ toast('Could not save. Storage may be blocked here.'); return false; } }
-async function quickVisit(id){ const l=LAKES[id]; const added=await logVisit(l); refreshLake(l); renderList(); toast(added?`Visit logged at ${l.name}`:'Already logged today'); }
+async function quickVisit(id){ const l=LAKES[id]; const added=await logVisit(l); refreshLake(l); renderList(); updateJournal(); const st=lakeStats(l); const who=profById[activeProfile].name; toast(added?`Visit logged for ${who} \u00b7 ${l.name} now ${st.visits}`:`${l.name}: ${who} already logged today`); }
 
 let sheetMode='new', editingId=null, sheetLakeIdx=null, pendingPhoto=null, keptPhoto=null, prevUrl=null;
 function fillWho(){ el('catchWho').innerHTML=PROFILES.map(p=>`<option value="${p.id}">${p.name}</option>`).join(''); }
