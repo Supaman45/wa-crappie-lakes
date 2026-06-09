@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WA Crappie Lakes Map</title>
+<title>WA Crappie Lakes</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
@@ -12,229 +12,205 @@
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0d1614;
-    --bg2:#13201d;
-    --panel:#152220;
-    --panel-soft:#1b2a27;
-    --ink:#e9f0ec;
-    --muted:#8fa79e;
-    --faint:#5f7770;
-    --water:#52c9e2;
-    --water-deep:#2b8aa6;
-    --amber:#eaa24c;
-    --amber-deep:#c97f2c;
-    --line:rgba(255,255,255,.09);
-    --line-soft:rgba(255,255,255,.05);
+    --bg:#0d1614; --bg2:#13201d; --panel:#152220; --panel-soft:#1b2a27;
+    --ink:#e9f0ec; --muted:#8fa79e; --faint:#5f7770;
+    --water:#52c9e2; --water-deep:#2b8aa6; --amber:#eaa24c; --amber-deep:#c97f2c;
+    --green:#3fae6b; --line:rgba(255,255,255,.09); --line-soft:rgba(255,255,255,.05);
     --shadow:0 10px 40px rgba(0,0,0,.45);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;margin:0;}
-  body{
-    font-family:'Hanken Grotesk',sans-serif;
-    background:var(--bg);
-    color:var(--ink);
-    overflow:hidden;
-  }
-  .app{display:grid;grid-template-columns:374px 1fr;grid-template-rows:1fr;height:100dvh;}
+  body{font-family:'Hanken Grotesk',sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;}
+  .app{display:grid;grid-template-columns:374px 1fr;height:100dvh;}
 
-  /* ---- Sidebar ---- */
-  .panel{
-    position:relative;
-    background:
-      radial-gradient(120% 60% at 0% 0%, rgba(82,201,226,.07), transparent 60%),
-      linear-gradient(180deg,var(--bg2),var(--bg));
-    border-right:1px solid var(--line);
-    display:flex;flex-direction:column;
-    min-height:0;z-index:1000;
-  }
-  .head{
-    padding:20px 22px 16px;
-    border-bottom:1px solid var(--line);
-    background:
-      repeating-linear-gradient(125deg, rgba(255,255,255,.018) 0 1px, transparent 1px 22px),
-      linear-gradient(180deg, rgba(82,201,226,.06), transparent);
-  }
-  .kicker{
-    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
-    color:var(--water);font-weight:600;margin:0 0 6px;
-    display:flex;align-items:center;gap:8px;
-  }
+  .panel{position:relative;background:radial-gradient(120% 60% at 0% 0%, rgba(82,201,226,.07), transparent 60%),linear-gradient(180deg,var(--bg2),var(--bg));border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;z-index:1000;}
+  .head{padding:18px 22px 14px;border-bottom:1px solid var(--line);background:repeating-linear-gradient(125deg, rgba(255,255,255,.018) 0 1px, transparent 1px 22px),linear-gradient(180deg, rgba(82,201,226,.06), transparent);}
+  .kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--water);font-weight:600;margin:0 0 6px;display:flex;align-items:center;gap:8px;}
   .kicker::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 3px rgba(234,162,76,.2);}
-  h1{
-    font-family:'Zilla Slab',serif;font-weight:700;
-    font-size:25px;line-height:1.05;margin:0;letter-spacing:-.01em;
-  }
+  h1{font-family:'Zilla Slab',serif;font-weight:700;font-size:24px;line-height:1.05;margin:0;letter-spacing:-.01em;}
   h1 .fish{color:var(--amber);}
-  .stats{display:flex;gap:18px;margin-top:14px;}
-  .stat .n{font-family:'Zilla Slab',serif;font-size:20px;font-weight:700;color:var(--ink);line-height:1;}
-  .stat .l{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-top:4px;}
+  .stats{display:flex;gap:18px;margin-top:12px;}
+  .stat .n{font-family:'Zilla Slab',serif;font-size:19px;font-weight:700;line-height:1;}
+  .stat .l{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-top:4px;}
 
-  .controls{padding:14px 16px 10px;display:flex;flex-direction:column;gap:9px;border-bottom:1px solid var(--line-soft);}
+  .profiles{display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid var(--line-soft);}
+  .plabel{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:600;flex:none;}
+  .pwrap{display:flex;gap:6px;flex:1;}
+  .pill{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 6px;border-radius:10px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;min-width:0;}
+  .pill .pdot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .pill .pnm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pill.active{color:var(--ink);background:var(--panel-soft);}
+
+  .tabs{display:flex;padding:10px 16px 0;gap:4px;}
+  .tab{flex:1;padding:9px 10px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;}
+  .tab.active{color:var(--ink);border-bottom-color:var(--amber);}
+
+  .controls{padding:13px 16px 10px;display:flex;flex-direction:column;gap:9px;border-bottom:1px solid var(--line-soft);}
   .search{position:relative;}
   .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--faint);}
-  .search input{
-    width:100%;padding:11px 12px 11px 36px;border-radius:10px;
-    background:var(--panel);border:1px solid var(--line);color:var(--ink);
-    font-family:inherit;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;
-  }
+  .search input{width:100%;padding:11px 12px 11px 36px;border-radius:10px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:14px;outline:none;}
   .search input::placeholder{color:var(--faint);}
-  .search input:focus{border-color:var(--water-deep);box-shadow:0 0 0 3px rgba(43,138,166,.18);}
+  .search input:focus{border-color:var(--water-deep);}
   .row{display:flex;gap:9px;}
-  select{
-    flex:1;min-width:0;padding:10px 11px;border-radius:10px;background:var(--panel);
-    border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:13px;outline:none;
-    appearance:none;-webkit-appearance:none;cursor:pointer;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa79e' stroke-width='2.4'><path d='M6 9l6 6 6-6'/></svg>");
-    background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;
-  }
+  select{flex:1;min-width:0;padding:10px 11px;border-radius:10px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:13px;outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238fa79e' stroke-width='2.4'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;}
   select:focus{border-color:var(--water-deep);}
-  .near{
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    padding:10px 12px;border-radius:10px;cursor:pointer;
-    background:linear-gradient(180deg,var(--amber),var(--amber-deep));
-    color:#241606;border:none;font-family:inherit;font-weight:700;font-size:13.5px;
-    letter-spacing:.01em;transition:transform .12s, filter .15s;white-space:nowrap;
-  }
-  .near:hover{filter:brightness(1.06);}
-  .near:active{transform:scale(.98);}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{padding:7px 11px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .12s;}
+  .chip.active{background:rgba(82,201,226,.16);border-color:var(--water-deep);color:var(--ink);}
+  .near{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;border-radius:10px;cursor:pointer;background:linear-gradient(180deg,var(--amber),var(--amber-deep));color:#241606;border:none;font-family:inherit;font-weight:700;font-size:13.5px;white-space:nowrap;}
   .near svg{width:15px;height:15px;stroke:#241606;}
+  .launch-status{font-size:11.5px;color:var(--muted);line-height:1.45;padding:9px 11px;border-radius:9px;background:var(--panel);border:1px solid var(--line-soft);display:flex;gap:8px;align-items:flex-start;}
+  .launch-status svg{width:14px;height:14px;stroke:var(--water);flex:none;margin-top:1px;}
+
   .meta{display:flex;justify-content:space-between;align-items:center;padding:10px 18px 8px;}
   .meta .count{font-size:12px;color:var(--muted);}
   .meta .count b{color:var(--ink);font-weight:600;}
   .meta .clear{font-size:12px;color:var(--water);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;display:none;}
 
-  .list{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 10px 16px;min-height:0;scrollbar-width:thin;scrollbar-color:var(--panel-soft) transparent;}
+  .list{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 10px 16px;min-height:0;}
   .list::-webkit-scrollbar{width:9px;}
   .list::-webkit-scrollbar-thumb{background:var(--panel-soft);border-radius:9px;border:2px solid transparent;background-clip:padding-box;}
-  .item{
-    padding:11px 12px;border-radius:11px;cursor:pointer;border:1px solid transparent;
-    display:flex;align-items:center;gap:11px;transition:background .12s,border-color .12s;
-  }
+  .item{padding:11px 12px;border-radius:11px;cursor:pointer;border:1px solid transparent;display:flex;align-items:center;gap:11px;}
   .item:hover{background:var(--panel);border-color:var(--line-soft);}
   .item.active{background:var(--panel);border-color:var(--water-deep);}
   .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);flex:none;box-shadow:0 0 0 3px rgba(234,162,76,.14);}
   .item .body{flex:1;min-width:0;}
   .item .nm{font-size:14px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .item .sub{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .item .dist{font-size:11px;color:var(--water);font-weight:600;flex:none;text-align:right;white-space:nowrap;}
-  .empty{padding:40px 20px;text-align:center;color:var(--faint);font-size:13.5px;}
+  .item .dist{font-size:11px;color:var(--water);font-weight:600;flex:none;}
+  .badges{display:flex;gap:6px;margin-top:5px;}
+  .lb-v,.lb-c{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;}
+  .lb-v{background:rgba(234,162,76,.16);color:var(--amber);}
+  .lb-c{background:rgba(63,174,107,.2);color:#7fd6a1;}
+  .ramp-tag{display:inline-flex;align-items:center;gap:3px;color:var(--water);font-weight:600;}
+  .ramp-tag svg{width:11px;height:11px;stroke:var(--water);}
+  .empty{padding:40px 20px;text-align:center;color:var(--faint);font-size:13.5px;line-height:1.5;}
+
+  /* journal */
+  .journal{flex:1;overflow-y:auto;min-height:0;padding:6px 14px 18px;display:flex;flex-direction:column;gap:13px;}
+  .lboard{display:flex;gap:9px;}
+  .lcard{flex:1;background:var(--panel);border:1px solid var(--line);border-top-width:3px;border-radius:11px;padding:11px 8px;text-align:center;}
+  .lcard .lc{font-size:11px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lcard .ln{font-family:'Zilla Slab',serif;font-weight:700;font-size:24px;line-height:1;margin-top:6px;}
+  .lcard .lv{font-size:10.5px;color:var(--faint);margin-top:4px;}
+  .jtotals{display:flex;gap:18px;justify-content:center;padding:2px 0 2px;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);}
+  .jtot{text-align:center;padding:8px 0;}
+  .jtot .n{font-family:'Zilla Slab',serif;font-weight:700;font-size:17px;}
+  .jtot .l{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:2px;}
+  .jfilter{display:flex;gap:6px;flex-wrap:wrap;}
+  .jf{padding:6px 11px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+  .jf.active{background:var(--panel-soft);color:var(--ink);border-color:var(--water-deep);}
+  .jlist{display:flex;flex-direction:column;gap:9px;}
+  .jcard{display:flex;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px;cursor:pointer;}
+  .jcard:hover{border-color:var(--water-deep);}
+  .jthumb{width:60px;height:60px;border-radius:9px;overflow:hidden;background:var(--bg2);flex:none;display:flex;align-items:center;justify-content:center;}
+  .jthumb img{width:100%;height:100%;object-fit:cover;}
+  .jthumb svg{width:24px;height:24px;}
+  .jbody{flex:1;min-width:0;}
+  .jname{font-family:'Zilla Slab',serif;font-weight:600;font-size:15px;display:flex;align-items:center;gap:7px;}
+  .jqty{font-family:'Hanken Grotesk',sans-serif;font-size:11px;font-weight:700;color:#7fd6a1;background:rgba(63,174,107,.2);padding:1px 7px;border-radius:999px;}
+  .jwho{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
+  .jwho .wd{width:8px;height:8px;border-radius:50%;}
+  .jmeta{font-size:12px;color:var(--muted);margin-top:3px;}
+  .jnotes{font-size:12px;color:var(--faint);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .jnote{font-size:10.5px;color:var(--faint);text-align:center;}
+
+  .panel[data-tab="log"] .controls,.panel[data-tab="log"] .meta,.panel[data-tab="log"] .list{display:none;}
+  .panel[data-tab="lakes"] .journal{display:none;}
 
   .foot{padding:11px 18px;border-top:1px solid var(--line);font-size:10.5px;color:var(--faint);line-height:1.5;}
   .foot a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line);}
-  .foot a:hover{color:var(--water);}
 
-  /* ---- Map ---- */
   .mapwrap{position:relative;min-width:0;}
   #map{position:absolute;inset:0;background:#dde6ea;}
   .leaflet-container{font-family:'Hanken Grotesk',sans-serif;background:#dde6ea;}
+  .pin svg,.pin .pin-wrap{display:block;}
+  .pin svg{filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
+  .pin-wrap{position:relative;width:26px;height:34px;}
+  .pin-badge{position:absolute;top:-4px;right:-8px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#0b1a16;color:#fff;font-size:10px;font-weight:700;line-height:17px;text-align:center;border:1.5px solid var(--green);}
+  .pin-check{position:absolute;top:-3px;right:-6px;width:16px;height:16px;border-radius:50%;background:#fff;color:var(--amber-deep);font-size:10px;font-weight:800;line-height:16px;text-align:center;}
 
-  .pin{position:relative;}
-  .pin svg{display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));}
-
-  /* cluster restyle */
   .marker-cluster{background:rgba(43,138,166,.25);}
-  .marker-cluster div{
-    background:linear-gradient(180deg,var(--water),var(--water-deep));
-    color:#06222a;font-family:'Zilla Slab',serif;font-weight:700;
-    box-shadow:0 2px 10px rgba(0,0,0,.4);
-  }
+  .marker-cluster div{background:linear-gradient(180deg,var(--water),var(--water-deep));color:#06222a;font-family:'Zilla Slab',serif;font-weight:700;box-shadow:0 2px 10px rgba(0,0,0,.4);}
   .marker-cluster span{line-height:30px;}
 
-  /* popup */
-  .leaflet-popup-content-wrapper{
-    background:var(--panel);color:var(--ink);border-radius:14px;
-    border:1px solid var(--line);box-shadow:var(--shadow);padding:2px;
-  }
+  .leaflet-popup-content-wrapper{background:var(--panel);color:var(--ink);border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow);padding:2px;}
   .leaflet-popup-tip{background:var(--panel);border:1px solid var(--line);}
-  .leaflet-popup-content{margin:14px 16px;width:236px !important;}
+  .leaflet-popup-content{margin:14px 16px;width:240px !important;}
   .leaflet-popup-close-button{color:var(--muted) !important;padding:10px 8px 0 0 !important;}
   .pop-nm{font-family:'Zilla Slab',serif;font-weight:700;font-size:17px;line-height:1.12;margin:0 14px 0 0;}
   .pop-co{font-size:11.5px;color:var(--muted);margin-top:4px;}
-  .pop-facts{display:flex;gap:8px;margin:11px 0 12px;}
+  .pop-facts{display:flex;gap:8px;margin:11px 0 10px;}
   .fact{flex:1;background:var(--bg2);border:1px solid var(--line-soft);border-radius:9px;padding:7px 9px;}
   .fact .v{font-family:'Zilla Slab',serif;font-weight:700;font-size:14px;}
   .fact .k{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:2px;}
+  .pop-log{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:0 0 11px;}
+  .pop-log b{color:var(--ink);font-family:'Zilla Slab',serif;}
   .pop-dist{font-size:12px;color:var(--water);font-weight:600;margin-bottom:10px;}
   .pop-actions{display:flex;flex-direction:column;gap:7px;}
-  .btn{
-    display:flex;align-items:center;justify-content:center;gap:7px;
-    padding:9px 10px;border-radius:9px;font-size:13px;font-weight:600;
-    text-decoration:none;font-family:inherit;transition:filter .15s,background .15s;
-  }
+  .btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:600;text-decoration:none;font-family:inherit;border:none;cursor:pointer;}
   .btn svg{width:14px;height:14px;}
   .btn.primary{background:linear-gradient(180deg,var(--amber),var(--amber-deep));color:#241606;}
   .btn.primary svg{stroke:#241606;}
-  .btn.primary:hover{filter:brightness(1.06);}
   .btn.ghost{background:var(--bg2);color:var(--ink);border:1px solid var(--line);}
   .btn.ghost svg{stroke:var(--water);}
-  .btn.ghost:hover{background:var(--panel-soft);}
+  .btn.log{background:linear-gradient(180deg,#46b877,#2f9159);color:#04220f;}
+  .btn.log svg{stroke:#04220f;}
+  .btn.danger{background:rgba(220,80,70,.14);color:#f1948c;border:1px solid rgba(220,80,70,.3);}
   .btn-row{display:flex;gap:7px;}
   .btn-row .btn{flex:1;}
-
-  /* layer control */
-  .leaflet-control-layers{
-    background:var(--panel);border:1px solid var(--line);border-radius:13px;
-    box-shadow:var(--shadow);color:var(--ink);overflow:hidden;
-  }
-  .leaflet-control-layers-toggle{
-    width:44px;height:44px;background-size:22px 22px;background-position:center;background-repeat:no-repeat;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23eaa24c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>");
-  }
-  .leaflet-control-layers-expanded{padding:10px 13px 10px 11px;min-width:158px;}
-  .leaflet-control-layers-list{font-size:13px;}
-  .leaflet-control-layers label{display:flex;align-items:center;gap:8px;margin:5px 0;cursor:pointer;font-weight:500;}
-  .leaflet-control-layers-base label span{display:flex;align-items:center;gap:8px;}
-  .leaflet-control-layers-selector{accent-color:var(--amber);width:14px;height:14px;margin:0;}
-  .leaflet-control-layers-separator{border-top:1px solid var(--line);margin:8px -2px;}
-  .leaflet-bar a{background:var(--panel);color:var(--ink);border-bottom:1px solid var(--line);}
-  .leaflet-bar a:hover{background:var(--panel-soft);}
-  .leaflet-control-scale-line{
-    background:rgba(21,34,32,.78);color:var(--ink);border-color:var(--line);
-    border-top:none;font-family:'Hanken Grotesk',sans-serif;font-size:11px;padding:2px 6px;border-radius:0 5px 0 0;
-  }
-
-  /* launch UI */
-  .launch-status{
-    font-size:11.5px;color:var(--muted);line-height:1.45;padding:9px 11px;border-radius:9px;
-    background:var(--panel);border:1px solid var(--line-soft);display:flex;gap:8px;align-items:flex-start;
-  }
-  .launch-status svg{width:14px;height:14px;stroke:var(--water);flex:none;margin-top:1px;}
-  .launch-status.off{display:none;}
-  .ramp-tag{display:inline-flex;align-items:center;gap:3px;color:var(--water);font-weight:600;}
-  .ramp-tag svg{width:11px;height:11px;stroke:var(--water);}
-  .launch-pin svg{display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));}
   .pop-launch{background:rgba(43,138,166,.12);border:1px solid rgba(82,201,226,.28);border-radius:10px;padding:9px 11px;margin:0 0 11px;}
   .pl-h{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--water);font-weight:700;}
   .pl-h svg{width:13px;height:13px;stroke:var(--water);}
-  .pl-n{font-family:'Zilla Slab',serif;font-weight:600;font-size:14px;margin-top:4px;line-height:1.15;}
+  .pl-n{font-family:'Zilla Slab',serif;font-weight:600;font-size:14px;margin-top:4px;}
   .pl-t{font-size:11.5px;color:var(--muted);margin-top:3px;}
   .pop-note{font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:11px;}
+  .pop-logbtns{display:flex;gap:7px;margin-top:8px;}
+  .pop-logbtns .btn{flex:1;}
 
-  .tile-warn{
-    position:absolute;z-index:1100;left:50%;top:50%;transform:translate(-50%,-50%);
-    max-width:300px;display:none;text-align:center;
-    background:var(--panel);border:1px solid var(--line);color:var(--ink);
-    border-radius:13px;padding:16px 18px;font-size:13px;line-height:1.5;box-shadow:var(--shadow);
-  }
+  .leaflet-control-layers{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);color:var(--ink);overflow:hidden;}
+  .leaflet-control-layers-expanded{padding:10px 13px 10px 11px;min-width:150px;}
+  .leaflet-control-layers label{display:flex;align-items:center;gap:8px;margin:5px 0;cursor:pointer;font-weight:500;font-size:13px;}
+  .leaflet-control-layers-selector{accent-color:var(--amber);width:14px;height:14px;margin:0;}
+  .leaflet-control-layers-separator{border-top:1px solid var(--line);margin:8px -2px;}
+  .leaflet-control-scale-line{background:rgba(21,34,32,.78);color:var(--ink);border-color:var(--line);border-top:none;font-size:11px;padding:2px 6px;border-radius:0 5px 0 0;}
+
+  .tile-warn{position:absolute;z-index:1100;left:50%;top:50%;transform:translate(-50%,-50%);max-width:300px;display:none;text-align:center;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:13px;padding:16px 18px;font-size:13px;line-height:1.5;box-shadow:var(--shadow);}
   .tile-warn.show{display:block;}
   .tile-warn b{color:var(--amber);}
 
-  /* mobile toggle */
-  .toggle{
-    display:none;position:absolute;top:12px;left:12px;z-index:1200;
-    background:var(--panel);border:1px solid var(--line);color:var(--ink);
-    border-radius:10px;padding:9px 13px;font-family:inherit;font-weight:600;font-size:13px;
-    box-shadow:var(--shadow);align-items:center;gap:8px;cursor:pointer;
-  }
+  .toggle{display:none;position:absolute;top:12px;left:12px;z-index:1200;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 13px;font-family:inherit;font-weight:600;font-size:13px;box-shadow:var(--shadow);align-items:center;gap:8px;cursor:pointer;}
   .toggle svg{width:16px;height:16px;stroke:var(--amber);}
+
+  /* sheet */
+  .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1900;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .sheet-bg.open{opacity:1;pointer-events:auto;}
+  .sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:100%;max-width:440px;z-index:2000;background:var(--bg2);border:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:var(--shadow);transition:transform .26s cubic-bezier(.4,0,.2,1);max-height:92dvh;display:flex;flex-direction:column;}
+  .sheet.open{transform:translate(-50%,0);}
+  .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 6px;}
+  .sheet-title{font-family:'Zilla Slab',serif;font-weight:700;font-size:19px;}
+  .sheet-x{background:none;border:none;color:var(--muted);font-size:26px;line-height:1;cursor:pointer;padding:0 4px;}
+  .sheet-body{padding:6px 18px 8px;overflow-y:auto;display:flex;flex-direction:column;gap:11px;}
+  .fld{display:flex;flex-direction:column;gap:5px;}
+  .fld>span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .fld input,.fld textarea,.fld select{background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-family:inherit;font-size:15px;padding:11px 12px;outline:none;width:100%;}
+  .fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--water-deep);}
+  .fld textarea{resize:vertical;}
+  .fld-static{font-family:'Zilla Slab',serif;font-weight:600;font-size:16px;}
+  .fld-row{display:flex;gap:10px;}
+  .fld-row .fld{flex:1;}
+  .photo-btn{background:var(--panel);border:1px dashed var(--line);border-radius:10px;color:var(--water);font-family:inherit;font-size:14px;font-weight:600;padding:12px;cursor:pointer;}
+  .photo-prev{display:none;width:100%;max-height:240px;object-fit:cover;border-radius:10px;margin-top:8px;}
+  .sheet-foot{display:flex;gap:9px;padding:12px 18px 18px;border-top:1px solid var(--line-soft);}
+  .sheet-foot .btn{flex:1;padding:13px;}
+  .sheet-foot .btn.danger{flex:0 0 auto;padding:13px 16px;}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:2200;background:#0b1a16;color:#fff;border:1px solid var(--line);border-radius:11px;padding:11px 18px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:all .2s;max-width:88%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   @media (max-width:760px){
     .app{grid-template-columns:1fr;}
-    .panel{
-      position:absolute;inset:0 0 0 0;width:88%;max-width:374px;
-      transform:translateX(-102%);transition:transform .28s cubic-bezier(.4,0,.2,1);
-      box-shadow:var(--shadow);
-    }
+    .panel{position:absolute;inset:0;width:90%;max-width:374px;transform:translateX(-102%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);}
     .panel.open{transform:translateX(0);}
     .toggle{display:flex;}
     .mapwrap{grid-column:1;grid-row:1;}
@@ -243,7 +219,7 @@
 </head>
 <body>
 <div class="app">
-  <aside class="panel" id="panel">
+  <aside class="panel" id="panel" data-tab="lakes">
     <div class="head">
       <p class="kicker">WDFW Lowland Lakes</p>
       <h1>Washington <span class="fish">Crappie</span> Lakes</h1>
@@ -252,6 +228,16 @@
         <div class="stat"><div class="n" id="stat-counties">0</div><div class="l">Counties</div></div>
         <div class="stat"><div class="n">Black</div><div class="l">Species</div></div>
       </div>
+    </div>
+
+    <div class="profiles">
+      <span class="plabel">Logging as</span>
+      <div class="pwrap" id="profiles"></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabLakes">Lakes</button>
+      <button class="tab" id="tabLog">Log</button>
     </div>
 
     <div class="controls">
@@ -266,6 +252,12 @@
           <option value="acres">Largest first</option>
           <option value="dist" disabled>Nearest first</option>
         </select>
+      </div>
+      <div class="chips">
+        <button class="chip" data-f="ramp">Has ramp</button>
+        <button class="chip" data-f="motor">Motorized</button>
+        <button class="chip" data-f="visited">Visited</button>
+        <button class="chip" data-f="caught">Caught</button>
       </div>
       <button class="near" id="near">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
@@ -284,9 +276,16 @@
 
     <div class="list" id="list"></div>
 
+    <div class="journal" id="journal">
+      <div class="lboard" id="lboard"></div>
+      <div class="jtotals" id="jtotals"></div>
+      <div class="jfilter" id="jfilter"></div>
+      <div class="jlist" id="jlist"></div>
+      <div class="jnote">Records are saved on this device, in this browser.</div>
+    </div>
+
     <div class="foot">
-      Data: <a href="https://wdfw.wa.gov/fishing/locations/lowland-lakes" target="_blank" rel="noopener">WDFW lowland lakes</a>.
-      Launches load live from WDFW. Online maps need internet and may be blocked in in-app previews. Open in a browser or your hosted link for the full basemap.
+      Data: <a href="https://wdfw.wa.gov/fishing/locations/lowland-lakes" target="_blank" rel="noopener">WDFW lowland lakes</a>. Launches load live from WDFW.
     </div>
   </aside>
 
@@ -296,10 +295,35 @@
       Lakes
     </button>
     <div id="map"></div>
-    <div class="tile-warn" id="tileWarn">
-      <b>Map tiles are blocked here.</b><br>
-      This in-app preview blocks online maps. Open this file in a web browser, or your hosted link, to see the basemap. Lake pins, launches, and directions still work.
+    <div class="tile-warn" id="tileWarn"><b>Map tiles are blocked here.</b><br>Open this page in a web browser to see the basemap. Pins, launches, and logging still work.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="sheet-h"><div class="sheet-title" id="sheetTitle">Log a catch</div><button class="sheet-x" id="sheetX" aria-label="Close">&times;</button></div>
+  <div class="sheet-body">
+    <div class="fld"><span>Lake</span><div class="fld-static" id="catchLake">&mdash;</div></div>
+    <div class="fld-row">
+      <label class="fld"><span>Angler</span><select id="catchWho"></select></label>
+      <label class="fld"><span>Date</span><input type="date" id="catchDate"></label>
     </div>
+    <div class="fld-row">
+      <label class="fld"><span>Length (in)</span><input type="number" inputmode="decimal" step="0.1" id="catchLen" placeholder="11.5"></label>
+      <label class="fld"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.01" id="catchWt" placeholder="optional"></label>
+      <label class="fld"><span>How many</span><input type="number" inputmode="numeric" min="1" id="catchQty" value="1"></label>
+    </div>
+    <label class="fld"><span>Notes</span><textarea id="catchNotes" rows="2" placeholder="Bait, depth, structure, weather..."></textarea></label>
+    <div class="fld"><span>Photo</span>
+      <input type="file" id="catchPhoto" accept="image/*" capture="environment" hidden>
+      <button type="button" class="photo-btn" id="photoBtn">Add photo</button>
+      <img class="photo-prev" id="photoPrev" alt="catch photo">
+    </div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn danger" id="catchDelete" style="display:none">Delete</button>
+    <button class="btn primary" id="catchSave">Save catch</button>
   </div>
 </div>
 
@@ -308,355 +332,302 @@
 <script>
 const LAKES = [{"name":"Alder Lake","slug":"alder-lake","acres":2877.2,"elev":1198,"counties":["Pierce"],"lat":46.772031,"lng":-122.22727},{"name":"Angle Lake","slug":"angle-lake","acres":102.8,"elev":351,"counties":["King"],"lat":47.427512,"lng":-122.286785},{"name":"Antilon Lake (Lower)","slug":"antilon-lower","acres":35.5,"elev":2329,"counties":["Chelan"],"lat":47.967512,"lng":-120.157567},{"name":"Antilon Lake (Upper)","slug":"antilon-lake-upper","acres":33.6,"elev":2329,"counties":["Chelan"],"lat":47.97575,"lng":-120.160764},{"name":"Ballinger Lake","slug":"ballinger-lake","acres":100.7,"elev":282,"counties":["Snohomish"],"lat":47.782021,"lng":-122.326817},{"name":"Banks Lake","slug":"banks-lake","acres":26888.3,"elev":1574,"counties":["Grant","Douglas"],"lat":47.85385,"lng":-119.171805},{"name":"Bass Lake","slug":"bass-lake","acres":24.2,"elev":669,"counties":["King"],"lat":47.254853,"lng":-121.995621},{"name":"Battle Ground Lake","slug":"battle-ground-lake","acres":25.4,"elev":509,"counties":["Clark"],"lat":45.804756,"lng":-122.494045},{"name":"Beaver Lake (Skagit County)","slug":"beaver-lake-skagit","acres":72.3,"elev":32,"counties":["Skagit"],"lat":48.448756,"lng":-122.218729},{"name":"Big Lake","slug":"big-lake","acres":536.2,"elev":82,"counties":["Skagit"],"lat":48.381563,"lng":-122.229995},{"name":"Billy Clapp Lake","slug":"billy-clapp-lake","acres":973.6,"elev":1340,"counties":["Grant"],"lat":47.452846,"lng":-119.248485},{"name":"Black Lake (Thurston County)","slug":"black-lake-thurston","acres":573.7,"elev":134,"counties":["Thurston"],"lat":46.98279,"lng":-122.981409},{"name":"Blackmans Lake","slug":"blackmans-lake","acres":61.0,"elev":144,"counties":["Snohomish"],"lat":47.932269,"lng":-122.094003},{"name":"Bonnie Lake","slug":"bonnie-lake","acres":327.0,"elev":1793,"counties":["Spokane"],"lat":47.28183,"lng":-117.558588},{"name":"Boundary Reservoir","slug":"boundary-reservoir","acres":1579.3,"elev":1994,"counties":["Pend Oreille"],"lat":48.853316,"lng":-117.376241},{"name":"Box Canyon Reservoir","slug":"box-canyon-reservoir","acres":9317.0,"elev":2351,"counties":["Pend Oreille"],"lat":48.237329,"lng":-117.220776},{"name":"Carlisle Lake","slug":"carlisle-lake","acres":22.2,"elev":496,"counties":["Lewis"],"lat":46.579893,"lng":-122.727066},{"name":"Chain Lake","slug":"chain-lake","acres":21.3,"elev":397,"counties":["Snohomish"],"lat":47.903786,"lng":-121.970839},{"name":"Chapman Lake","slug":"chapman-lake","acres":128.3,"elev":2156,"counties":["Spokane"],"lat":47.363848,"lng":-117.567885},{"name":"Clark Pond","slug":"clark-pond","acres":37.8,"elev":758,"counties":["Franklin"],"lat":46.521249,"lng":-119.071278},{"name":"Clear Lake (Skagit County)","slug":"clear-lake-skagit","acres":220.4,"elev":36,"counties":["Skagit"],"lat":48.460153,"lng":-122.225178},{"name":"Clear Lake (Spokane County)","slug":"clear-lake-spokane","acres":315.9,"elev":2344,"counties":["Spokane"],"lat":47.527339,"lng":-117.694776},{"name":"Coffeepot Lake","slug":"coffeepot-lake","acres":310.6,"elev":1818,"counties":["Lincoln"],"lat":47.492847,"lng":-118.563408},{"name":"Coffin Lake","slug":"coffin-lake","acres":21.0,"elev":3101,"counties":["Stevens"],"lat":48.576514,"lng":-117.553742},{"name":"Columbia Park Pond","slug":"columbia-park-pond","acres":9.8,"elev":341,"counties":["Benton"],"lat":46.219021,"lng":-119.143921},{"name":"Cottage Lake","slug":"cottage-lake","acres":62.7,"elev":235,"counties":["King"],"lat":47.753212,"lng":-122.088289},{"name":"Cow Lake","slug":"cow-lake","acres":199.3,"elev":1753,"counties":["Adams"],"lat":47.132084,"lng":-118.158123},{"name":"Dalton Lake","slug":"dalton-lake","acres":45.1,"elev":443,"counties":["Franklin"],"lat":46.297145,"lng":-118.800111},{"name":"Davis Lake (Pend Oreille County)","slug":"davis-lake-pend-oreille","acres":147.8,"elev":2182,"counties":["Pend Oreille"],"lat":48.224248,"lng":-117.293831},{"name":"Deep Lake (King County)","slug":"deep-lake-king","acres":38.8,"elev":774,"counties":["King"],"lat":47.273605,"lng":-121.939852},{"name":"Deer Lake (Stevens County)","slug":"deer-lake-stevens","acres":1146.4,"elev":2482,"counties":["Stevens"],"lat":48.111757,"lng":-117.586634},{"name":"Deer Springs Lake","slug":"deer-springs-lake","acres":61.6,"elev":1742,"counties":["Lincoln"],"lat":47.473034,"lng":-118.617065},{"name":"Diamond Lake","slug":"diamond-lake","acres":754.4,"elev":2343,"counties":["Pend Oreille"],"lat":48.128095,"lng":-117.201151},{"name":"Downs Lake","slug":"downs-lake","acres":406.1,"elev":1961,"counties":["Spokane"],"lat":47.279381,"lng":-117.808298},{"name":"Dry Lake","slug":"dry-lake","acres":81.1,"elev":1167,"counties":["Chelan"],"lat":47.911558,"lng":-120.173843},{"name":"Duck Lake","slug":"duck-lake","acres":248.6,"elev":0,"counties":["Grays Harbor"],"lat":46.970909,"lng":-124.146038},{"name":"Eloika Lake","slug":"eloika-lake","acres":629.3,"elev":1909,"counties":["Spokane"],"lat":48.019451,"lng":-117.373205},{"name":"Emma Lake","slug":"emma-lake","acres":39.1,"elev":443,"counties":["Franklin"],"lat":46.328842,"lng":-118.77205},{"name":"Evergreen Lake","slug":"evergreen-lake","acres":247.5,"elev":1204,"counties":["Grant"],"lat":47.126565,"lng":-119.918593},{"name":"Fan Lake","slug":"fan-lake","acres":73.4,"elev":1925,"counties":["Pend Oreille"],"lat":48.055395,"lng":-117.405988},{"name":"Fiorito Lakes","slug":"fiorito-lakes","acres":null,"elev":1433,"counties":["Kittitas"],"lat":46.938561,"lng":-120.50463},{"name":"Frank's Pond","slug":"franks-pond","acres":0.62,"elev":720,"counties":["Chelan"],"lat":47.817759,"lng":-119.974055},{"name":"Franklin Roosevelt Lake (Lake Roosevelt)","slug":"franklin-roosevelt-lake","acres":77684.5,"elev":1293,"counties":["Stevens","Ferry","Lincoln","Okanogan","Grant"],"lat":47.901889,"lng":-118.172461},{"name":"Harts Lake","slug":"harts-lake","acres":111.6,"elev":351,"counties":["Pierce"],"lat":46.893296,"lng":-122.469339},{"name":"Heritage Lake","slug":"heritage-lake","acres":69.8,"elev":3153,"counties":["Stevens"],"lat":48.63295,"lng":-117.528244},{"name":"Hess Lake","slug":"hess-lake","acres":7.9,"elev":1399,"counties":["Okanogan"],"lat":48.505331,"lng":-119.641611},{"name":"Hicks Lake","slug":"hicks-lake","acres":162.3,"elev":182,"counties":["Thurston"],"lat":47.021219,"lng":-122.799698},{"name":"Horseshoe Lake (Cowlitz County)","slug":"horseshoe-lake-cowlitz","acres":83.3,"elev":13,"counties":["Cowlitz"],"lat":45.892717,"lng":-122.7432},{"name":"Horseshoe Lake (Pend Oreille County)","slug":"horseshoe-lake-pend-oreille","acres":135.6,"elev":1974,"counties":["Pend Oreille"],"lat":48.111488,"lng":-117.41657},{"name":"Horsethief Lake","slug":"horsethief-lake","acres":84.5,"elev":163,"counties":["Klickitat"],"lat":45.645527,"lng":-121.102979},{"name":"I-82 Pond 4","slug":"i-82-pond-4","acres":27.4,"elev":809,"counties":["Yakima"],"lat":46.437258,"lng":-120.347319},{"name":"I-82 Pond 5","slug":"i-82-pond-5","acres":36.5,"elev":804,"counties":["Yakima"],"lat":46.431928,"lng":-120.346199},{"name":"I-82 Pond 6 (Buena Pond)","slug":"i-82-pond-6","acres":27.7,"elev":773,"counties":["Yakima"],"lat":46.420253,"lng":-120.321726},{"name":"I-82 Pond 7","slug":"i-82-pond-7","acres":7.3,"elev":760,"counties":["Yakima"],"lat":46.411388,"lng":-120.295347},{"name":"Kellogg Lake","slug":"kellogg-lake","acres":13.8,"elev":654,"counties":["Snohomish"],"lat":47.902927,"lng":-121.76283},{"name":"Kress Lake","slug":"kress-lake","acres":24.6,"elev":18,"counties":["Cowlitz"],"lat":46.04705,"lng":-122.850953},{"name":"Lacamas Lake","slug":"lacamas-lake","acres":250.4,"elev":182,"counties":["Clark"],"lat":45.616843,"lng":-122.425798},{"name":"Lake Bradley","slug":"lake-bradley","acres":9.0,"elev":439,"counties":["Pierce"],"lat":47.161091,"lng":-122.284218},{"name":"Lake Campbell","slug":"lake-campbell","acres":390.8,"elev":49,"counties":["Skagit"],"lat":48.440314,"lng":-122.609411},{"name":"Lake Cassidy","slug":"cassidy-lake","acres":123.1,"elev":323,"counties":["Snohomish"],"lat":48.052035,"lng":-122.095196},{"name":"Lake Dolloff","slug":"lake-dolloff","acres":20.3,"elev":414,"counties":["King"],"lat":47.325218,"lng":-122.286404},{"name":"Lake Fenwick","slug":"lake-fenwick","acres":17.2,"elev":119,"counties":["King"],"lat":47.366238,"lng":-122.27125},{"name":"Lake Gillette","slug":"lake-gillette","acres":25.3,"elev":3151,"counties":["Stevens"],"lat":48.614229,"lng":-117.543014},{"name":"Lake Goodwin","slug":"lake-goodwin","acres":535.5,"elev":328,"counties":["Snohomish"],"lat":48.134687,"lng":-122.293759},{"name":"Lake Kapowsin","slug":"lake-kapowsin","acres":490.2,"elev":585,"counties":["Pierce"],"lat":46.972931,"lng":-122.227488},{"name":"Lake Leo","slug":"lake-leo","acres":32.2,"elev":3169,"counties":["Pend Oreille"],"lat":48.647901,"lng":-117.496481},{"name":"Lake Loma","slug":"lake-loma","acres":21.3,"elev":569,"counties":["Snohomish"],"lat":48.13432,"lng":-122.252195},{"name":"Lake Martha (Snohomish County)","slug":"martha-lake-snohomish","acres":59.8,"elev":190,"counties":["Snohomish"],"lat":48.16899,"lng":-122.341379},{"name":"Lake McMurray","slug":"lake-mcmurray","acres":155.4,"elev":230,"counties":["Skagit"],"lat":48.314316,"lng":-122.22616},{"name":"Lake Roesiger","slug":"lake-roesiger","acres":346.7,"elev":577,"counties":["Snohomish"],"lat":47.994672,"lng":-121.909154},{"name":"Lake Sacajawea","slug":"lake-sacajawea","acres":45.5,"elev":8,"counties":["Cowlitz"],"lat":46.13117,"lng":-122.949935},{"name":"Lake Sawyer","slug":"lake-sawyer","acres":285.7,"elev":498,"counties":["King"],"lat":47.333257,"lng":-122.037614},{"name":"Lake Sherry","slug":"lake-sherry","acres":26.1,"elev":3148,"counties":["Stevens"],"lat":48.609285,"lng":-117.543692},{"name":"Lake Shoecraft","slug":"lake-shoecraft","acres":131.7,"elev":328,"counties":["Snohomish"],"lat":48.129309,"lng":-122.303407},{"name":"Lake Spokane","slug":"lake-spokane","acres":4747.9,"elev":1538,"counties":["Stevens"],"lat":47.831469,"lng":-117.762552},{"name":"Lake St. Clair","slug":"st.-clair-lake","acres":233.1,"elev":77,"counties":["Thurston"],"lat":46.994559,"lng":-122.726246},{"name":"Lake Stevens","slug":"lake-stevens","acres":1003.4,"elev":214,"counties":["Snohomish"],"lat":48.00438,"lng":-122.084708},{"name":"Lake Tapps","slug":"lake-tapps","acres":2433.1,"elev":546,"counties":["Pierce"],"lat":47.214209,"lng":-122.169187},{"name":"Lake Thomas","slug":"lake-thomas","acres":162.6,"elev":3162,"counties":["Stevens"],"lat":48.62384,"lng":-117.540321},{"name":"Lake Umatilla","slug":"lake-umatilla","acres":48737.8,"elev":268,"counties":["Klickitat"],"lat":45.811665,"lng":-119.999705},{"name":"Lake Union","slug":"lake-union","acres":1030.5,"elev":17,"counties":["King"],"lat":47.646541,"lng":-122.343594},{"name":"Lake Wallula","slug":"lake-wallula","acres":26273.9,"elev":343,"counties":["Benton"],"lat":45.93606,"lng":-119.106598},{"name":"Lake Washington","slug":"lake-washington","acres":21933.6,"elev":17,"counties":["King"],"lat":47.601594,"lng":-122.275275},{"name":"Larsen Lake","slug":"larsen-lake","acres":9.8,"elev":253,"counties":["King"],"lat":47.605062,"lng":-122.140302},{"name":"Leader Lake","slug":"leader-lake","acres":155.0,"elev":2258,"counties":["Okanogan"],"lat":48.359905,"lng":-119.678267},{"name":"Leland Lake","slug":"leland-lake","acres":107.8,"elev":191,"counties":["Jefferson"],"lat":47.896676,"lng":-122.881788},{"name":"Liberty Lake","slug":"liberty-lake","acres":706.1,"elev":2053,"counties":["Spokane"],"lat":47.645159,"lng":-117.07807},{"name":"Long Lake (Grant County)","slug":"long-lake-grant","acres":73.5,"elev":1000,"counties":["Grant"],"lat":46.931177,"lng":-119.20702},{"name":"Long Lake (Kitsap County)","slug":"long-lake-kitsap","acres":320.9,"elev":122,"counties":["Kitsap"],"lat":47.483153,"lng":-122.589829},{"name":"Lost (Crappie) Lake","slug":"lost-crappie-lake","acres":9.0,"elev":622,"counties":["Snohomish"],"lat":47.828475,"lng":-121.791552},{"name":"Lower Goose Lake","slug":"lower-goose-lake","acres":65.4,"elev":862,"counties":["Grant"],"lat":46.923852,"lng":-119.288988},{"name":"Mesa Lake","slug":"mesa-lake","acres":47.8,"elev":749,"counties":["Franklin"],"lat":46.567828,"lng":-119.037891},{"name":"Mitchell Pond","slug":"mitchell-pond","acres":3.3,"elev":343,"counties":["Benton"],"lat":46.06271,"lng":-118.951675},{"name":"Moses Lake","slug":"moses-lake","acres":6727.9,"elev":1050,"counties":["Grant"],"lat":47.184562,"lng":-119.359089},{"name":"Mound Pond","slug":"mound-pond","acres":33.7,"elev":343,"counties":["Benton"],"lat":46.028572,"lng":-118.965528},{"name":"Munn Lake","slug":"munn-lake","acres":32.0,"elev":145,"counties":["Thurston"],"lat":46.985028,"lng":-122.879391},{"name":"Newman Lake","slug":"newman-lake","acres":1099.1,"elev":2130,"counties":["Spokane"],"lat":47.777189,"lng":-117.100543},{"name":"Ohop Lake","slug":"ohop-lake","acres":218.2,"elev":527,"counties":["Pierce"],"lat":46.905224,"lng":-122.273341},{"name":"Palmer Lake","slug":"palmer-lake","acres":2032.5,"elev":1150,"counties":["Okanogan"],"lat":48.893104,"lng":-119.618705},{"name":"Palmer Pond","slug":"palmer-pond","acres":4.9,"elev":344,"counties":["Benton"],"lat":46.004879,"lng":-118.996917},{"name":"Panther Lake (Snohomish County)","slug":"panther-lake-snohomish","acres":45.4,"elev":459,"counties":["Snohomish"],"lat":47.948629,"lng":-122.00585},{"name":"Patterson Lake","slug":"patterson-lake","acres":160.2,"elev":2391,"counties":["Okanogan"],"lat":48.456386,"lng":-120.245597},{"name":"Pattison Lake","slug":"pattison-lake","acres":254.6,"elev":162,"counties":["Thurston"],"lat":46.994751,"lng":-122.77742},{"name":"Phantom Lake","slug":"phantom-lake","acres":64.4,"elev":258,"counties":["King"],"lat":47.593301,"lng":-122.124654},{"name":"Pierre Lake","slug":"pierre-lake","acres":85.8,"elev":2009,"counties":["Stevens"],"lat":48.900554,"lng":-118.138693},{"name":"Potholes Reservoir","slug":"potholes-reservoir","acres":14281.5,"elev":1042,"counties":["Grant"],"lat":46.996189,"lng":-119.298678},{"name":"Powerline Lake","slug":"powerline-lake","acres":27.2,"elev":835,"counties":["Franklin"],"lat":46.640017,"lng":-119.065921},{"name":"Rapjohn Lake","slug":"rapjohn-lake","acres":59.1,"elev":636,"counties":["Pierce"],"lat":46.905177,"lng":-122.342204},{"name":"Riffe Lake","slug":"riffe-lake","acres":11325.9,"elev":774,"counties":["Lewis"],"lat":46.477388,"lng":-122.295061},{"name":"Rock Lake","slug":"rock-lake-whitman","acres":2189.6,"elev":1728,"counties":["Whitman"],"lat":47.181857,"lng":-117.679924},{"name":"Roses Lake","slug":"roses-lake","acres":178.2,"elev":1168,"counties":["Chelan"],"lat":47.904241,"lng":-120.154174},{"name":"Rowland Lake","slug":"rowland-lake","acres":71.3,"elev":77,"counties":["Klickitat"],"lat":45.708484,"lng":-121.381187},{"name":"Shiner Lake","slug":"shiner-lake","acres":81.1,"elev":713,"counties":["Adams"],"lat":46.878383,"lng":-119.300263},{"name":"Silver Lake (Cowlitz County)","slug":"silver-lake-cowlitz","acres":1424.2,"elev":489,"counties":["Cowlitz"],"lat":46.289715,"lng":-122.799487},{"name":"Silver Lake (Pierce County)","slug":"silver-lake-pierce","acres":133.2,"elev":607,"counties":["Pierce"],"lat":46.884852,"lng":-122.365583},{"name":"Silver Lake (Spokane County)","slug":"silver-lake-spokane","acres":418.1,"elev":2345,"counties":["Spokane"],"lat":47.544484,"lng":-117.653158},{"name":"Soda Lake","slug":"soda-lake","acres":154.1,"elev":1002,"counties":["Grant"],"lat":46.963,"lng":-119.238451},{"name":"South Lewis County Park Pond","slug":"south-lewis-county-park-pond","acres":14.1,"elev":93,"counties":["Lewis"],"lat":46.432923,"lng":-122.843539},{"name":"Sprague Lake","slug":"sprague-lake","acres":1760.1,"elev":1882,"counties":["Adams","Lincoln"],"lat":47.259702,"lng":-118.065938},{"name":"Stickney Lake","slug":"stickney-lake","acres":24.2,"elev":444,"counties":["Snohomish"],"lat":47.875195,"lng":-122.256048},{"name":"Switch Pond","slug":"switch-pond","acres":5.1,"elev":343,"counties":["Benton"],"lat":46.011968,"lng":-118.98798},{"name":"Tanwax Lake","slug":"tanwax-lake","acres":172.8,"elev":613,"counties":["Pierce"],"lat":46.950231,"lng":-122.266436},{"name":"Thompson Seep North","slug":"thompson-seep-north","acres":16.2,"elev":812,"counties":["Franklin"],"lat":46.688762,"lng":-119.260496},{"name":"Thompson Seep South","slug":"thompson-seep-south","acres":58.2,"elev":793,"counties":["Franklin"],"lat":46.675362,"lng":-119.272949},{"name":"Trout Lake","slug":"trout-lake-king-1","acres":15.8,"elev":329,"counties":["King"],"lat":47.266125,"lng":-122.27959},{"name":"Twin Lakes - Lower","slug":"twin-lakes-lower","acres":49.0,"elev":1877,"counties":["Lincoln"],"lat":47.525655,"lng":-118.516156},{"name":"Twin Lakes - Upper","slug":"twin-lakes-upper","acres":40.9,"elev":1881,"counties":["Lincoln"],"lat":47.532049,"lng":-118.499224},{"name":"Upper Goose Lake","slug":"upper-goose-lake","acres":130.4,"elev":865,"counties":["Grant"],"lat":46.941414,"lng":-119.278265},{"name":"Vancouver Lake","slug":"vancouver-lake","acres":2286.7,"elev":8,"counties":["Clark"],"lat":45.673665,"lng":-122.717972},{"name":"Wapato Lake","slug":"wapato-lake-chelan","acres":195.2,"elev":1232,"counties":["Chelan"],"lat":47.91805,"lng":-120.16372},{"name":"Washburn Island Pond","slug":"washburn-island-pond","acres":119.4,"elev":783,"counties":["Okanogan"],"lat":48.095985,"lng":-119.671127},{"name":"Waughop Lake","slug":"waughop-lake","acres":30.1,"elev":241,"counties":["Pierce"],"lat":47.170579,"lng":-122.564531},{"name":"Whitestone Lake","slug":"whitestone-lake","acres":147.2,"elev":1264,"counties":["Okanogan"],"lat":48.788793,"lng":-119.469055},{"name":"Yellepit Pond","slug":"yellepit-pond","acres":35.4,"elev":343,"counties":["Benton"],"lat":46.018868,"lng":-118.979441}];
 
-// ---- state ----
-let userLoc = null;
-let activeId = null;
-let launchesLoaded = false;
-const markers = {};
+// ===== profiles =====
+const PROFILES = [
+  { id:'serimon', name:'Serimon', color:'#eaa24c' },
+  { id:'zaki',    name:'Zaki',    color:'#4cc6e0' },
+  { id:'chance',  name:'Chance',  color:'#8bd450' }
+];
+const profById = {}; PROFILES.forEach(p => profById[p.id] = p);
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+let activeProfile = profById[lsGet('crappie-active')] ? lsGet('crappie-active') : 'serimon';
+
+// ===== state =====
+let userLoc = null, activeId = null, launchesLoaded = false;
 let filtered = LAKES.slice();
+let catches = [], visits = [];
+let journalWho = 'all';
+const markers = {}, logIndex = {}, photoUrls = {};
+const activeFilters = { ramp:false, motor:false, visited:false, caught:false };
+const el = id => document.getElementById(id);
 
-// ---- helpers ----
+// ===== helpers =====
 const acreFmt = n => n == null ? "n/a" : (n >= 1000 ? Math.round(n).toLocaleString() : n.toFixed(n < 10 ? 1 : 0));
-function haversine(a, b, c, d){
-  const R = 3958.8, t = Math.PI/180;
-  const dLat=(c-a)*t, dLng=(d-b)*t;
-  const x = Math.sin(dLat/2)**2 + Math.cos(a*t)*Math.cos(c*t)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
-}
-function dirUrl(l){ return `https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}`; }
-function mapUrl(l){ return `https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}`; }
-function wdfwUrl(l){ return `https://wdfw.wa.gov/fishing/locations/lowland-lakes/${l.slug}`; }
+function haversine(a,b,c,d){ const R=3958.8,t=Math.PI/180; const dLat=(c-a)*t,dLng=(d-b)*t; const x=Math.sin(dLat/2)**2+Math.cos(a*t)*Math.cos(c*t)*Math.sin(dLng/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
+const dirUrl = l => `https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}`;
+const mapUrl = l => `https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}`;
+const wdfwUrl = l => `https://wdfw.wa.gov/fishing/locations/lowland-lakes/${l.slug}`;
+function todayStr(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function fmtDate(s){ if(!s) return ''; const p=s.split('-'); return `${p[1]}/${p[2]}/${p[0].slice(2)}`; }
+function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-// ---- map ----
-const map = L.map('map', { zoomControl:false, attributionControl:true }).setView([47.4, -120.4], 7);
+// ===== IndexedDB =====
+const DB_NAME='crappie-log-v2', DB_VER=1;
+let _db=null;
+function dbOpen(){ return new Promise((res,rej)=>{ if(_db) return res(_db); const r=indexedDB.open(DB_NAME,DB_VER); r.onupgradeneeded=e=>{ const d=e.target.result; if(!d.objectStoreNames.contains('catches')) d.createObjectStore('catches',{keyPath:'id',autoIncrement:true}); if(!d.objectStoreNames.contains('visits')) d.createObjectStore('visits',{keyPath:'id',autoIncrement:true}); }; r.onsuccess=e=>{ _db=e.target.result; res(_db); }; r.onerror=()=>rej(r.error); }); }
+function ost(name,mode){ return dbOpen().then(d=>d.transaction(name,mode).objectStore(name)); }
+function idbAll(name){ return ost(name,'readonly').then(s=>new Promise((res,rej)=>{ const r=s.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error); })); }
+function idbAdd(name,o){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })); }
+function idbPut(name,o){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })); }
+function idbDel(name,id){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); })); }
+
+function rebuildIndex(){ LAKES.forEach(l=>logIndex[l.slug]={visits:0,catches:0}); visits.forEach(v=>{ if(logIndex[v.lakeId]) logIndex[v.lakeId].visits++; }); catches.forEach(c=>{ if(logIndex[c.lakeId]) logIndex[c.lakeId].catches+=(c.qty||1); }); }
+function lakeStats(l){ return logIndex[l.slug] || {visits:0,catches:0}; }
+function photoUrl(c){ if(!c.photo) return null; if(!photoUrls[c.id]) photoUrls[c.id]=URL.createObjectURL(c.photo); return photoUrls[c.id]; }
+async function loadLog(){ try { const r = await Promise.all([idbAll('catches'),idbAll('visits')]); catches=r[0]; visits=r[1]; } catch(e){ catches=[]; visits=[]; } rebuildIndex(); }
+
+function downscale(file,max,q){ max=max||1500; q=q||0.82; return new Promise((res,rej)=>{ const img=new Image(); const url=URL.createObjectURL(file); img.onload=()=>{ URL.revokeObjectURL(url); let w=img.width,h=img.height; if(w>=h){ if(w>max){ h=Math.round(h*max/w); w=max; } } else if(h>max){ w=Math.round(w*max/h); h=max; } const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); cv.toBlob(b=>b?res(b):rej(new Error('blob')),'image/jpeg',q); }; img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('img')); }; img.src=url; }); }
+
+// ===== map =====
+const map = L.map('map', { zoomControl:false, attributionControl:true }).setView([47.4,-120.4], 7);
 L.control.zoom({ position:'bottomright' }).addTo(map);
 L.control.scale({ position:'bottomleft', imperial:true, metric:false }).addTo(map);
 
-// --- base layers (all keyless) ---
-const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-  maxZoom:19, attribution:'Tiles &copy; Esri'
-});
-const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  maxZoom:19, attribution:'Imagery &copy; Esri, Maxar, Earthstar Geographics'
-});
-const esriLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-  maxZoom:19, attribution:''
-});
+const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom:19, attribution:'Tiles &copy; Esri' });
+const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:19, attribution:'Imagery &copy; Esri, Maxar' });
+const esriLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom:19 });
 const hybrid = L.layerGroup([esriImagery, esriLabels]);
-const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-  maxZoom:17, attribution:'&copy; OpenTopoMap (CC-BY-SA)'
-});
-const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
-});
-const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-  maxZoom:19, attribution:'&copy; OpenStreetMap &copy; CARTO'
-});
+const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom:17, attribution:'&copy; OpenTopoMap (CC-BY-SA)' });
+const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap contributors' });
+const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19, attribution:'&copy; OSM &copy; CARTO' });
 
 const launchLayer = L.layerGroup();
-
-street.addTo(map); // most compatible default
+street.addTo(map);
 launchLayer.addTo(map);
-L.control.layers({
-  'Street': street,
-  'Street (light)': cartoLight,
-  'Topographic': esriTopo,
-  'Satellite': esriImagery,
-  'Satellite + labels': hybrid,
-  'Terrain': openTopo
-}, { 'Boat launches': launchLayer }, { position:'topright', collapsed:false }).addTo(map);
+L.control.layers({ 'Street':street, 'Street (light)':cartoLight, 'Topographic':esriTopo, 'Satellite':esriImagery, 'Satellite + labels':hybrid, 'Terrain':openTopo }, { 'Boat launches':launchLayer }, { position:'topright', collapsed:false }).addTo(map);
 
-// surface a notice if the environment blocks online map tiles
-const tileWarn = document.getElementById('tileWarn');
+const tileWarn = el('tileWarn');
 let tileErrs = 0;
-[street, cartoLight, esriTopo, esriImagery, esriLabels, openTopo].forEach(layer => {
-  layer.on('tileerror', () => { if (++tileErrs >= 6) tileWarn.classList.add('show'); });
-  layer.on('tileload', () => tileWarn.classList.remove('show'));
-});
+[street,cartoLight,esriTopo,esriImagery,esriLabels,openTopo].forEach(layer => { layer.on('tileerror',()=>{ if(++tileErrs>=6) tileWarn.classList.add('show'); }); layer.on('tileload',()=>tileWarn.classList.remove('show')); });
 
-const pinIcon = L.divIcon({
-  className:'pin',
-  html:`<svg width="26" height="34" viewBox="0 0 26 34" fill="none">
-    <path d="M13 0C5.8 0 0 5.7 0 12.8 0 22 13 34 13 34s13-12 13-21.2C26 5.7 20.2 0 13 0z" fill="#eaa24c"/>
-    <path d="M13 0C5.8 0 0 5.7 0 12.8 0 22 13 34 13 34s13-12 13-21.2C26 5.7 20.2 0 13 0z" fill="url(#g)" fill-opacity=".25"/>
-    <circle cx="13" cy="13" r="5" fill="#241606"/>
-    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="34"><stop stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient></defs>
-  </svg>`,
-  iconSize:[26,34], iconAnchor:[13,34], popupAnchor:[0,-32]
-});
+// ===== markers =====
+function pinSvg(color){ return `<svg width="26" height="34" viewBox="0 0 26 34" fill="none"><path d="M13 0C5.8 0 0 5.7 0 12.8 0 22 13 34 13 34s13-12 13-21.2C26 5.7 20.2 0 13 0z" fill="${color}"/><path d="M13 0C5.8 0 0 5.7 0 12.8 0 22 13 34 13 34s13-12 13-21.2C26 5.7 20.2 0 13 0z" fill="url(#g)" fill-opacity=".22"/><circle cx="13" cy="13" r="5" fill="#0b1a16"/><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="34"><stop stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient></defs></svg>`; }
+function iconFor(l){ const st=lakeStats(l); if(st.catches>0) return L.divIcon({className:'pin',html:`<div class="pin-wrap">${pinSvg('#3fae6b')}<span class="pin-badge">${st.catches}</span></div>`,iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-32]}); if(st.visits>0) return L.divIcon({className:'pin',html:`<div class="pin-wrap">${pinSvg('#eaa24c')}<span class="pin-check">&#10003;</span></div>`,iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-32]}); return L.divIcon({className:'pin',html:pinSvg('#eaa24c'),iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-32]}); }
+const launchIcon = L.divIcon({ className:'launch-pin', html:`<div style="width:23px;height:23px;border-radius:50%;background:#2b8aa6;border:2px solid #d4f1fb;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg></div>`, iconSize:[23,23], iconAnchor:[11,11], popupAnchor:[0,-12] });
 
-const launchIcon = L.divIcon({
-  className:'launch-pin',
-  html:`<div style="width:23px;height:23px;border-radius:50%;background:#2b8aa6;border:2px solid #d4f1fb;display:flex;align-items:center;justify-content:center;">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg>
-  </div>`,
-  iconSize:[23,23], iconAnchor:[11,11], popupAnchor:[0,-12]
-});
-
-const cluster = L.markerClusterGroup({
-  maxClusterRadius:48,
-  spiderfyOnMaxZoom:true,
-  showCoverageOnHover:false,
-  iconCreateFunction(c){
-    const n = c.getChildCount();
-    const s = n < 10 ? 34 : n < 50 ? 40 : 46;
-    return L.divIcon({
-      html:`<div style="width:${s}px;height:${s}px;line-height:${s}px;border-radius:50%;text-align:center;font-family:'Zilla Slab',serif;font-weight:700;">${n}</div>`,
-      className:'marker-cluster', iconSize:[s,s]
-    });
-  }
-});
+const cluster = L.markerClusterGroup({ maxClusterRadius:48, spiderfyOnMaxZoom:true, showCoverageOnHover:false, iconCreateFunction(c){ const n=c.getChildCount(); const s=n<10?34:n<50?40:46; return L.divIcon({ html:`<div style="width:${s}px;height:${s}px;line-height:${s}px;border-radius:50%;text-align:center;font-family:'Zilla Slab',serif;font-weight:700;">${n}</div>`, className:'marker-cluster', iconSize:[s,s] }); } });
 
 function popupHtml(l){
-  const counties = l.counties.join(', ') + (l.counties.length > 1 ? ' counties' : ' County');
-  const dist = (userLoc && l._d != null) ? `<div class="pop-dist">${l._d.toFixed(1)} mi from you</div>` : '';
-  const facts = `<div class="pop-facts">
-      <div class="fact"><div class="v">${acreFmt(l.acres)}</div><div class="k">Acres</div></div>
-      <div class="fact"><div class="v">${l.elev.toLocaleString()}</div><div class="k">Elev ft</div></div>
-    </div>`;
-  const wdfwBtn = `<a class="btn ghost" href="${wdfwUrl(l)}" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>WDFW</a>`;
-
-  let launchBlock = '', actions;
+  const st = lakeStats(l);
+  const counties = l.counties.join(', ') + (l.counties.length>1?' counties':' County');
+  const dist = (userLoc && l._d!=null) ? `<div class="pop-dist">${l._d.toFixed(1)} mi from you</div>` : '';
+  const facts = `<div class="pop-facts"><div class="fact"><div class="v">${acreFmt(l.acres)}</div><div class="k">Acres</div></div><div class="fact"><div class="v">${l.elev.toLocaleString()}</div><div class="k">Elev ft</div></div></div>`;
+  const logline = `<div class="pop-log"><span><b>${st.visits}</b> visits</span><span><b>${st.catches}</b> catches</span></div>`;
+  const wdfwBtn = `<a class="btn ghost" href="${wdfwUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>WDFW</a>`;
+  let launchBlock='', actions;
   if (l.launch){
-    const s = l.launch;
-    const tags = [s.type, s.motor ? 'motors OK' : 'no motors', s.ada ? 'ADA' : null, s.hp || null].filter(Boolean).join(' &middot; ');
-    launchBlock = `<div class="pop-launch">
-      <div class="pl-h"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg>Boat launch</div>
-      <div class="pl-n">${s.name}</div>
-      <div class="pl-t">${tags}</div>
-    </div>`;
-    actions = `<a class="btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions to ramp</a>
-      <div class="btn-row">
-        <a class="btn ghost" href="${dirUrl(l)}" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Lake center</a>
-        ${wdfwBtn}
-      </div>`;
+    const s=l.launch;
+    const tags=[s.type, s.motor?'motors OK':'no motors', s.ada?'ADA':null, s.hp||null].filter(Boolean).join(' &middot; ');
+    launchBlock = `<div class="pop-launch"><div class="pl-h"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg>Boat launch</div><div class="pl-n">${esc(s.name)}</div><div class="pl-t">${tags}</div></div>`;
+    actions = `<a class="btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions to ramp</a><div class="btn-row"><a class="btn ghost" href="${dirUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Lake center</a>${wdfwBtn}</div>`;
   } else {
-    if (launchesLoaded) launchBlock = `<div class="pop-note">No WDFW boat launch matched nearby. This lake may be shore access only. The WDFW page lists access details.</div>`;
-    actions = `<a class="btn primary" href="${dirUrl(l)}" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions</a>
-      <div class="btn-row">
-        <a class="btn ghost" href="${mapUrl(l)}" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Map</a>
-        ${wdfwBtn}
-      </div>`;
+    if (launchesLoaded) launchBlock = `<div class="pop-note">No WDFW boat launch matched nearby. May be shore access only. The WDFW page lists details.</div>`;
+    actions = `<a class="btn primary" href="${dirUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions</a><div class="btn-row"><a class="btn ghost" href="${mapUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Map</a>${wdfwBtn}</div>`;
   }
-  return `<div class="pop-nm">${l.name}</div><div class="pop-co">${counties}</div>${facts}${dist}${launchBlock}<div class="pop-actions">${actions}</div>`;
+  const logbtns = `<div class="pop-logbtns"><button class="btn ghost lg-visit" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Visit</button><button class="btn log lg-catch" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Catch</button></div>`;
+  return `<div class="pop-nm">${esc(l.name)}</div><div class="pop-co">${counties}</div>${facts}${logline}${dist}${launchBlock}<div class="pop-actions">${actions}</div>${logbtns}`;
 }
 
-LAKES.forEach((l, i) => {
-  l.id = i;
-  const m = L.marker([l.lat, l.lng], { icon:pinIcon });
-  m.bindPopup(popupHtml(l), { maxWidth:280, autoPanPadding:[30,30] });
-  m.on('popupopen', () => setActive(l.id, false));
-  markers[i] = m;
-});
+LAKES.forEach((l,i) => { l.id=i; const m=L.marker([l.lat,l.lng],{icon:iconFor(l)}); m.bindPopup(popupHtml(l),{maxWidth:280,autoPanPadding:[30,30]}); m.on('popupopen',()=>setActive(l.id,false)); markers[i]=m; });
 
-// ---- rendering ----
-const $list = document.getElementById('list');
-const $search = document.getElementById('search');
-const $county = document.getElementById('county');
-const $sort = document.getElementById('sort');
-const $showing = document.getElementById('showing');
-const $clear = document.getElementById('clear');
+function refreshLake(l){ if(markers[l.id]){ markers[l.id].setIcon(iconFor(l)); markers[l.id].setPopupContent(popupHtml(l)); } }
+
+// ===== list =====
+const $list=el('list'), $search=el('search'), $county=el('county'), $sort=el('sort'), $showing=el('showing'), $clear=el('clear');
 
 function applyFilters(){
-  const q = $search.value.trim().toLowerCase();
-  const co = $county.value;
-  const sort = $sort.value;
-
+  const q=$search.value.trim().toLowerCase(), co=$county.value, sort=$sort.value;
   filtered = LAKES.filter(l => {
     if (q && !l.name.toLowerCase().includes(q)) return false;
     if (co && !l.counties.includes(co)) return false;
+    if (activeFilters.ramp && !l.launch) return false;
+    if (activeFilters.motor && !(l.launch && l.launch.motor)) return false;
+    if (activeFilters.visited && lakeStats(l).visits<=0) return false;
+    if (activeFilters.caught && lakeStats(l).catches<=0) return false;
     return true;
   });
-
-  if (sort === 'acres') filtered.sort((a,b)=>(b.acres||0)-(a.acres||0));
-  else if (sort === 'dist' && userLoc) filtered.sort((a,b)=>(a._d??1e9)-(b._d??1e9));
+  if (sort==='acres') filtered.sort((a,b)=>(b.acres||0)-(a.acres||0));
+  else if (sort==='dist' && userLoc) filtered.sort((a,b)=>(a._d??1e9)-(b._d??1e9));
   else filtered.sort((a,b)=>a.name.localeCompare(b.name));
-
   cluster.clearLayers();
-  filtered.forEach(l => cluster.addLayer(markers[l.id]));
+  filtered.forEach(l=>cluster.addLayer(markers[l.id]));
   if (!map.hasLayer(cluster)) cluster.addTo(map);
-
   renderList();
-  $showing.textContent = filtered.length;
-  $clear.style.display = (q || co) ? 'block' : 'none';
+  $showing.textContent=filtered.length;
+  $clear.style.display=(q||co)?'block':'none';
 }
 
 function renderList(){
-  if (!filtered.length){ $list.innerHTML = '<div class="empty">No lakes match.<br>Try clearing the filters.</div>'; return; }
-  $list.innerHTML = filtered.map(l => {
-    const ramp = l.launch ? ' &middot; <span class="ramp-tag"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg>ramp</span>' : '';
-    const sub = l.counties.join(', ') + ' &middot; ' + acreFmt(l.acres) + ' ac' + ramp;
-    const dist = (userLoc && l._d != null) ? `<div class="dist">${l._d.toFixed(0)} mi</div>` : '';
-    return `<div class="item${l.id===activeId?' active':''}" data-id="${l.id}">
-      <div class="dot"></div>
-      <div class="body"><div class="nm">${l.name}</div><div class="sub">${sub}</div></div>${dist}
-    </div>`;
+  if (!filtered.length){ $list.innerHTML='<div class="empty">No lakes match.<br>Try clearing the filters.</div>'; return; }
+  $list.innerHTML = filtered.map(l=>{
+    const st=lakeStats(l);
+    const ramp=l.launch?' &middot; <span class="ramp-tag"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg>ramp</span>':'';
+    const sub=l.counties.join(', ')+' &middot; '+acreFmt(l.acres)+' ac'+ramp;
+    const badges=(st.visits||st.catches)?`<div class="badges">${st.visits?`<span class="lb-v">${st.visits} visit${st.visits>1?'s':''}</span>`:''}${st.catches?`<span class="lb-c">${st.catches} catch${st.catches>1?'es':''}</span>`:''}</div>`:'';
+    const dist=(userLoc && l._d!=null)?`<div class="dist">${l._d.toFixed(0)} mi</div>`:'';
+    return `<div class="item${l.id===activeId?' active':''}" data-id="${l.id}"><div class="dot"></div><div class="body"><div class="nm">${esc(l.name)}</div><div class="sub">${sub}</div>${badges}</div>${dist}</div>`;
   }).join('');
 }
 
-function setActive(id, fly){
-  activeId = id;
-  document.querySelectorAll('.item').forEach(el => el.classList.toggle('active', +el.dataset.id === id));
-  const el = document.querySelector(`.item[data-id="${id}"]`);
-  if (el) el.scrollIntoView({ block:'nearest', behavior:'smooth' });
-  if (fly){
-    const l = LAKES[id];
-    map.flyTo([l.lat, l.lng], Math.max(map.getZoom(), 12), { duration:.7 });
-    cluster.zoomToShowLayer(markers[id], () => markers[id].openPopup());
-  }
-}
+function setActive(id,fly){ activeId=id; document.querySelectorAll('.item').forEach(e=>e.classList.toggle('active',+e.dataset.id===id)); const e=document.querySelector(`.item[data-id="${id}"]`); if(e) e.scrollIntoView({block:'nearest',behavior:'smooth'}); if(fly){ const l=LAKES[id]; map.flyTo([l.lat,l.lng],Math.max(map.getZoom(),12),{duration:.7}); cluster.zoomToShowLayer(markers[id],()=>markers[id].openPopup()); } }
 
-$list.addEventListener('click', e => {
-  const item = e.target.closest('.item');
-  if (item){ if (window.innerWidth <= 760) closePanel(); setActive(+item.dataset.id, true); }
-});
-$search.addEventListener('input', applyFilters);
-$county.addEventListener('change', applyFilters);
-$sort.addEventListener('change', applyFilters);
-$clear.addEventListener('click', () => { $search.value=''; $county.value=''; applyFilters(); });
+$list.addEventListener('click',e=>{ const it=e.target.closest('.item'); if(it){ if(window.innerWidth<=760) closePanel(); setActive(+it.dataset.id,true); } });
+$search.addEventListener('input',applyFilters);
+$county.addEventListener('change',applyFilters);
+$sort.addEventListener('change',applyFilters);
+$clear.addEventListener('click',()=>{ $search.value=''; $county.value=''; applyFilters(); });
 
-// ---- near me ----
-let youMarker = null;
-document.getElementById('near').addEventListener('click', () => {
-  if (!navigator.geolocation){ alert('Location is not available in this browser.'); return; }
-  navigator.geolocation.getCurrentPosition(pos => {
-    userLoc = [pos.coords.latitude, pos.coords.longitude];
-    LAKES.forEach(l => l._d = haversine(userLoc[0], userLoc[1], l.lat, l.lng));
-    LAKES.forEach(l => markers[l.id].setPopupContent(popupHtml(l)));
-    $sort.querySelector('option[value="dist"]').disabled = false;
-    $sort.value = 'dist';
-    if (youMarker) map.removeLayer(youMarker);
-    youMarker = L.circleMarker(userLoc, { radius:8, color:'#52c9e2', fillColor:'#52c9e2', fillOpacity:.9, weight:3 })
-      .addTo(map).bindPopup('You are here');
+// ===== near me =====
+let youMarker=null;
+el('near').addEventListener('click',()=>{
+  if(!navigator.geolocation){ toast('Location is not available here.'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    userLoc=[pos.coords.latitude,pos.coords.longitude];
+    LAKES.forEach(l=>l._d=haversine(userLoc[0],userLoc[1],l.lat,l.lng));
+    LAKES.forEach(l=>markers[l.id].setPopupContent(popupHtml(l)));
+    $sort.querySelector('option[value="dist"]').disabled=false; $sort.value='dist';
+    if(youMarker) map.removeLayer(youMarker);
+    youMarker=L.circleMarker(userLoc,{radius:8,color:'#52c9e2',fillColor:'#52c9e2',fillOpacity:.9,weight:3}).addTo(map).bindPopup('You are here');
     applyFilters();
-    const near = filtered.slice(0, 8).map(l => markers[l.id].getLatLng()).concat([L.latLng(userLoc)]);
-    map.fitBounds(L.latLngBounds(near).pad(.15), { maxZoom:11 });
-  }, () => alert('Could not get your location. Check location permissions.'), { enableHighAccuracy:true, timeout:9000 });
+    const near=filtered.slice(0,8).map(l=>markers[l.id].getLatLng()).concat([L.latLng(userLoc)]);
+    if(near.length>1) map.fitBounds(L.latLngBounds(near).pad(.15),{maxZoom:11});
+  },()=>toast('Could not get your location.'),{enableHighAccuracy:true,timeout:9000});
 });
 
-// ---- WDFW boat launches (live) ----
-const LAUNCH_URL = 'https://geodataservices.wdfw.wa.gov/arcgis/rest/services/ApplicationServices/Major_Fishing_Area/MapServer/0/query';
-const LAUNCH_TYPE = { 1:'Concrete ramp', 2:'Gravel ramp', 3:'Hand launch', 4:'Carry-down' };
-const $launchStatus = document.getElementById('launchStatus');
-const $launchText = document.getElementById('launchStatusText');
-
-function setLaunchStatus(text, hide){
-  if (hide){ $launchStatus.classList.add('off'); return; }
-  $launchText.textContent = text;
-}
-function norm(s){
-  return (s||'').toLowerCase()
-    .replace(/\(.*?\)/g,' ')
-    .replace(/[^a-z0-9 ]/g,' ')
-    .replace(/\b(lake|lakes|pond|reservoir|access|area|ramp|boat|launch|site|wdfw|public|fishing|the|of|and)\b/g,' ')
-    .replace(/\s+/g,' ').trim();
-}
-function nameMatch(key, hay){
-  if (!key) return false;
-  if (key.length >= 4 && hay.includes(key)) return true;
-  const toks = key.split(' ').filter(t => t.length >= 3);
-  return toks.length > 0 && toks.every(t => hay.includes(t));
-}
-
+// ===== WDFW launches =====
+const LAUNCH_URL='https://geodataservices.wdfw.wa.gov/arcgis/rest/services/ApplicationServices/Major_Fishing_Area/MapServer/0/query';
+const LAUNCH_TYPE={1:'Concrete ramp',2:'Gravel ramp',3:'Hand launch',4:'Carry-down'};
+function setLaunchStatus(t){ el('launchStatusText').textContent=t; }
+function norm(s){ return (s||'').toLowerCase().replace(/\(.*?\)/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\b(lake|lakes|pond|reservoir|access|area|ramp|boat|launch|site|wdfw|public|fishing|the|of|and)\b/g,' ').replace(/\s+/g,' ').trim(); }
+function nameMatch(key,hay){ if(!key) return false; if(key.length>=4 && hay.includes(key)) return true; const t=key.split(' ').filter(x=>x.length>=3); return t.length>0 && t.every(x=>hay.includes(x)); }
 async function loadLaunches(){
-  const params = new URLSearchParams({
-    where:'Launch=1',
-    outFields:'FacilityName,CommonName,LaunchType,Motorized,ADABoatLaunch,CountyName,HorsePowerLimit',
-    returnGeometry:'true', outSR:'4326', f:'geojson'
-  });
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 13000);
+  const params=new URLSearchParams({ where:'Launch=1', outFields:'FacilityName,CommonName,LaunchType,Motorized,ADABoatLaunch,CountyName,HorsePowerLimit', returnGeometry:'true', outSR:'4326', f:'geojson' });
+  const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),13000);
   try {
-    const res = await fetch(`${LAUNCH_URL}?${params}`, { signal:ctrl.signal });
-    clearTimeout(timer);
-    const data = await res.json();
-    const launches = (data.features || [])
-      .filter(f => f.geometry && f.geometry.coordinates)
-      .map(f => {
-        const p = f.properties || {};
-        return {
-          name: p.FacilityName || p.CommonName || 'WDFW water access',
-          hay: norm((p.FacilityName||'') + ' ' + (p.CommonName||'')),
-          county: (p.CountyName||'').trim(),
-          type: LAUNCH_TYPE[p.LaunchType] || 'Launch',
-          motor: p.Motorized === 1,
-          ada: p.ADABoatLaunch === 1,
-          hp: (p.HorsePowerLimit||'').trim(),
-          lat: f.geometry.coordinates[1],
-          lng: f.geometry.coordinates[0]
-        };
-      });
-    if (!launches.length){ setLaunchStatus('No WDFW launch records returned. Directions use lake centers.'); return; }
+    const res=await fetch(`${LAUNCH_URL}?${params}`,{signal:ctrl.signal}); clearTimeout(timer);
+    const data=await res.json();
+    const launches=(data.features||[]).filter(f=>f.geometry&&f.geometry.coordinates).map(f=>{ const p=f.properties||{}; return { name:p.FacilityName||p.CommonName||'WDFW water access', hay:norm((p.FacilityName||'')+' '+(p.CommonName||'')), county:(p.CountyName||'').trim(), type:LAUNCH_TYPE[p.LaunchType]||'Launch', motor:p.Motorized===1, ada:p.ADABoatLaunch===1, hp:(p.HorsePowerLimit||'').trim(), lat:f.geometry.coordinates[1], lng:f.geometry.coordinates[0] }; });
+    if(!launches.length){ setLaunchStatus('No WDFW launch records returned. Directions use lake centers.'); return; }
     matchLaunches(launches);
-  } catch (e) {
-    clearTimeout(timer);
-    setLaunchStatus('Live WDFW launch data could not load here (often a browser security block). Open the file from a web address and it will populate. Directions use lake centers for now.');
-  }
+  } catch(e){ clearTimeout(timer); setLaunchStatus('Live WDFW launch data could not load. Directions use lake centers.'); }
 }
-
 function matchLaunches(launches){
-  let matched = 0;
-  LAKES.forEach(l => {
-    const key = norm(l.name);
-    const gate = l.acres > 5000 ? 30 : l.acres > 500 ? 14 : 7; // km, scaled to lake size
-    let best = null, bestScore = -1, bestDist = Infinity;
-    for (const s of launches){
-      const d = haversine(l.lat, l.lng, s.lat, s.lng);
-      const nm = nameMatch(key, s.hay);
-      const co = l.counties.includes(s.county);
-      if (d > gate && !(nm && d < 45)) continue; // name match allowed a bit farther on big waters
-      let score;
-      if (nm && co) score = 3;
-      else if (nm) score = 2;
-      else if (co && d < 5) score = 1;
-      else continue;
-      if (score > bestScore || (score === bestScore && d < bestDist)){ best = s; bestScore = score; bestDist = d; }
+  let matched=0;
+  LAKES.forEach(l=>{
+    const key=norm(l.name), gate=l.acres>5000?30:l.acres>500?14:7;
+    let best=null,bestScore=-1,bestDist=Infinity;
+    for(const s of launches){
+      const d=haversine(l.lat,l.lng,s.lat,s.lng), nm=nameMatch(key,s.hay), co=l.counties.includes(s.county);
+      if(d>gate && !(nm && d<45)) continue;
+      let score; if(nm&&co) score=3; else if(nm) score=2; else if(co&&d<5) score=1; else continue;
+      if(score>bestScore || (score===bestScore && d<bestDist)){ best=s; bestScore=score; bestDist=d; }
     }
-    if (best){ l.launch = { ...best, dist: bestDist }; matched++; }
-    else l.launch = null;
+    l.launch = best ? Object.assign({},best,{dist:bestDist}) : null;
+    if(best) matched++;
   });
-
   launchLayer.clearLayers();
-  LAKES.forEach(l => {
-    if (!l.launch) return;
-    const s = l.launch;
-    const tags = [s.type, s.motor ? 'motors OK' : 'no motors', s.ada ? 'ADA' : null, s.hp || null].filter(Boolean).join(' &middot; ');
-    L.marker([s.lat, s.lng], { icon:launchIcon, zIndexOffset:-100 })
-      .bindPopup(`<div class="pop-nm" style="font-size:15px">${s.name}</div>
-        <div class="pop-co">Boat launch &middot; ${l.name}</div>
-        <div class="pl-t" style="margin-top:6px">${tags}</div>
-        <div class="pop-actions" style="margin-top:11px">
-          <a class="btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions to ramp</a>
-        </div>`, { maxWidth:250 })
-      .addTo(launchLayer);
+  LAKES.forEach(l=>{ if(!l.launch) return; const s=l.launch; const tags=[s.type,s.motor?'motors OK':'no motors',s.ada?'ADA':null,s.hp||null].filter(Boolean).join(' &middot; ');
+    L.marker([s.lat,s.lng],{icon:launchIcon,zIndexOffset:-100}).bindPopup(`<div class="pop-nm" style="font-size:15px">${esc(s.name)}</div><div class="pop-co">Boat launch &middot; ${esc(l.name)}</div><div class="pl-t" style="margin-top:6px">${tags}</div><div class="pop-actions" style="margin-top:11px"><a class="btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions to ramp</a></div>`,{maxWidth:250}).addTo(launchLayer);
   });
-
-  launchesLoaded = true;
-  LAKES.forEach(l => markers[l.id].setPopupContent(popupHtml(l)));
-  renderList();
-  setLaunchStatus(`${matched} of ${LAKES.length} lakes matched to a WDFW boat launch. Toggle launches in the layer menu, top right.`);
+  launchesLoaded=true;
+  LAKES.forEach(l=>markers[l.id].setPopupContent(popupHtml(l)));
+  applyFilters();
+  setLaunchStatus(`${matched} of ${LAKES.length} lakes matched to a WDFW boat launch. Toggle launches in the layer menu.`);
 }
 
-// ---- mobile panel ----
-const panel = document.getElementById('panel');
-function closePanel(){ panel.classList.remove('open'); }
-document.getElementById('toggle').addEventListener('click', () => panel.classList.toggle('open'));
+// ===== profiles UI =====
+function renderProfiles(){ el('profiles').innerHTML = PROFILES.map(p=>`<button class="pill${p.id===activeProfile?' active':''}" data-p="${p.id}" style="${p.id===activeProfile?`border-color:${p.color}`:''}"><span class="pdot" style="background:${p.color}"></span><span class="pnm">${p.name}</span></button>`).join(''); }
+function setProfile(id){ if(!profById[id]) return; activeProfile=id; lsSet('crappie-active',id); renderProfiles(); }
 
-// ---- init ----
+// ===== visits + catch sheet =====
+async function logVisit(l,dateStr,who){ dateStr=dateStr||todayStr(); who=who||activeProfile; if(visits.some(v=>v.lakeId===l.slug && v.date===dateStr && v.who===who)) return false; const o={lakeId:l.slug,lakeName:l.name,who,date:dateStr,createdAt:Date.now()}; try { o.id=await idbAdd('visits',o); visits.push(o); rebuildIndex(); return true; } catch(e){ toast('Could not save. Storage may be blocked here.'); return false; } }
+async function quickVisit(id){ const l=LAKES[id]; const added=await logVisit(l); refreshLake(l); renderList(); toast(added?`Visit logged at ${l.name}`:'Already logged today'); }
+
+let sheetMode='new', editingId=null, sheetLakeIdx=null, pendingPhoto=null, keptPhoto=null, prevUrl=null;
+function fillWho(){ el('catchWho').innerHTML=PROFILES.map(p=>`<option value="${p.id}">${p.name}</option>`).join(''); }
+function showSheet(){ el('sheet').classList.add('open'); el('sheetBg').classList.add('open'); }
+function hideSheet(){ el('sheet').classList.remove('open'); el('sheetBg').classList.remove('open'); }
+function resetPhoto(){ pendingPhoto=null; keptPhoto=null; if(prevUrl){ URL.revokeObjectURL(prevUrl); prevUrl=null; } el('catchPhoto').value=''; el('photoPrev').style.display='none'; el('photoPrev').removeAttribute('src'); el('photoBtn').textContent='Add photo'; }
+function openCatch(idx){ sheetMode='new'; editingId=null; sheetLakeIdx=idx; const l=LAKES[idx]; el('sheetTitle').textContent='Log a catch'; el('catchLake').textContent=l.name; el('catchWho').value=activeProfile; el('catchDate').value=todayStr(); el('catchLen').value=''; el('catchWt').value=''; el('catchQty').value='1'; el('catchNotes').value=''; resetPhoto(); el('catchDelete').style.display='none'; el('catchSave').textContent='Save catch'; showSheet(); }
+function openCatchView(c){ sheetMode='edit'; editingId=c.id; sheetLakeIdx=LAKES.findIndex(x=>x.slug===c.lakeId); const l=LAKES[sheetLakeIdx]; el('sheetTitle').textContent='Catch details'; el('catchLake').textContent=l?l.name:c.lakeName; el('catchWho').value=c.who||'serimon'; el('catchDate').value=c.date||todayStr(); el('catchLen').value=c.length??''; el('catchWt').value=c.weight??''; el('catchQty').value=c.qty||1; el('catchNotes').value=c.notes||''; resetPhoto(); if(c.photo){ keptPhoto=c.photo; const u=photoUrl(c); el('photoPrev').src=u; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } el('catchDelete').style.display='inline-flex'; el('catchSave').textContent='Save changes'; showSheet(); }
+async function saveCatch(){
+  const l=LAKES[sheetLakeIdx]; if(!l){ hideSheet(); return; }
+  const o={ lakeId:l.slug, lakeName:l.name, who:el('catchWho').value, date:el('catchDate').value||todayStr(), length:parseFloat(el('catchLen').value)||null, weight:parseFloat(el('catchWt').value)||null, qty:parseInt(el('catchQty').value)||1, notes:el('catchNotes').value.trim(), photo: pendingPhoto||keptPhoto||null, createdAt:Date.now() };
+  try {
+    if(sheetMode==='edit' && editingId!=null){ o.id=editingId; await idbPut('catches',o); const i=catches.findIndex(c=>c.id===editingId); if(i>=0) catches[i]=o; if(photoUrls[editingId]){ URL.revokeObjectURL(photoUrls[editingId]); delete photoUrls[editingId]; } }
+    else { o.id=await idbAdd('catches',o); catches.push(o); }
+  } catch(e){ toast('Could not save. Storage may be blocked here.'); return; }
+  await logVisit(l,o.date,o.who); rebuildIndex(); refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast(sheetMode==='edit'?'Catch updated':`Catch logged at ${l.name}`);
+}
+async function deleteCatch(){ if(editingId==null) return; try { await idbDel('catches',editingId); } catch(e){} catches=catches.filter(c=>c.id!==editingId); if(photoUrls[editingId]){ URL.revokeObjectURL(photoUrls[editingId]); delete photoUrls[editingId]; } const l=LAKES[sheetLakeIdx]; rebuildIndex(); if(l) refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast('Catch deleted'); }
+
+// ===== journal =====
+function updateJournal(){ renderLeaderboard(); renderTotals(); renderJournalList(); }
+function renderLeaderboard(){
+  const m={}; PROFILES.forEach(p=>m[p.id]={catches:0,visits:0});
+  catches.forEach(c=>{ if(m[c.who]) m[c.who].catches+=(c.qty||1); });
+  visits.forEach(v=>{ if(m[v.who]) m[v.who].visits++; });
+  el('lboard').innerHTML=PROFILES.map(p=>`<div class="lcard" style="border-top-color:${p.color}"><div class="lc" style="color:${p.color}">${p.name}</div><div class="ln">${m[p.id].catches}</div><div class="lv">${m[p.id].visits} visit${m[p.id].visits===1?'':'s'}</div></div>`).join('');
+}
+function renderTotals(){
+  const tc=catches.reduce((a,c)=>a+(c.qty||1),0);
+  const lakesFished=new Set([].concat(visits.map(v=>v.lakeId),catches.map(c=>c.lakeId))).size;
+  el('jtotals').innerHTML=`<div class="jtot"><div class="n">${visits.length}</div><div class="l">Visits</div></div><div class="jtot"><div class="n">${tc}</div><div class="l">Catches</div></div><div class="jtot"><div class="n">${lakesFished}</div><div class="l">Lakes fished</div></div>`;
+}
+function renderJournalFilter(){ el('jfilter').innerHTML=`<button class="jf${journalWho==='all'?' active':''}" data-w="all">All</button>`+PROFILES.map(p=>`<button class="jf${journalWho===p.id?' active':''}" data-w="${p.id}">${p.name}</button>`).join(''); }
+function renderJournalList(){
+  const wrap=el('jlist');
+  let rows=catches.slice();
+  if(journalWho!=='all') rows=rows.filter(c=>c.who===journalWho);
+  if(!rows.length){ wrap.innerHTML='<div class="empty">No catches yet.<br>Open a lake on the map and tap Catch to log one.</div>'; return; }
+  rows.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt);
+  wrap.innerHTML=rows.map(c=>{
+    const u=photoUrl(c), p=profById[c.who]||{name:'?',color:'#888'};
+    const size=[c.length?c.length+' in':null,c.weight?c.weight+' lb':null].filter(Boolean).join(' · ');
+    const qty=(c.qty||1)>1?`<span class="jqty">x${c.qty}</span>`:'';
+    const thumb=u?`<img src="${u}" alt="">`:'<svg viewBox="0 0 24 24" fill="none" stroke="#5f7770" stroke-width="1.5"><path d="M3 12c3-5 7-7 12-7 3 0 6 2 6 4s-3 4-6 4c-5 0-9-2-12-7z"/><circle cx="8" cy="11" r="1"/></svg>';
+    return `<div class="jcard" data-cid="${c.id}"><div class="jthumb">${thumb}</div><div class="jbody"><div class="jname">${esc(c.lakeName)}${qty}</div><div class="jmeta">${fmtDate(c.date)}${size?' · '+size:''}</div><div class="jwho"><span class="wd" style="background:${p.color}"></span>${p.name}</div>${c.notes?`<div class="jnotes">${esc(c.notes)}</div>`:''}</div></div>`;
+  }).join('');
+}
+function setJournalWho(w){ journalWho=w; renderJournalFilter(); renderJournalList(); }
+
+// ===== tabs + wiring =====
+function setTab(t){ el('panel').setAttribute('data-tab',t); el('tabLakes').classList.toggle('active',t==='lakes'); el('tabLog').classList.toggle('active',t==='log'); if(t==='log') updateJournal(); }
+const panel=el('panel');
+function closePanel(){ panel.classList.remove('open'); }
+
+function setupUI(){
+  el('profiles').addEventListener('click',e=>{ const b=e.target.closest('.pill'); if(b){ setProfile(b.dataset.p); toast(`Logging as ${profById[activeProfile].name}`); } });
+  el('tabLakes').addEventListener('click',()=>setTab('lakes'));
+  el('tabLog').addEventListener('click',()=>setTab('log'));
+  document.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{ const f=ch.dataset.f; activeFilters[f]=!activeFilters[f]; ch.classList.toggle('active',activeFilters[f]); applyFilters(); }));
+  el('toggle').addEventListener('click',()=>panel.classList.toggle('open'));
+  el('photoBtn').addEventListener('click',()=>el('catchPhoto').click());
+  el('catchPhoto').addEventListener('change',async()=>{ const f=el('catchPhoto').files[0]; if(!f) return; try { pendingPhoto=await downscale(f); keptPhoto=null; if(prevUrl) URL.revokeObjectURL(prevUrl); prevUrl=URL.createObjectURL(pendingPhoto); el('photoPrev').src=prevUrl; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } catch(e){ toast('Could not read that image'); } });
+  el('catchSave').addEventListener('click',saveCatch);
+  el('catchDelete').addEventListener('click',deleteCatch);
+  el('sheetX').addEventListener('click',hideSheet);
+  el('sheetBg').addEventListener('click',hideSheet);
+  el('jfilter').addEventListener('click',e=>{ const b=e.target.closest('.jf'); if(b) setJournalWho(b.dataset.w); });
+  el('jlist').addEventListener('click',e=>{ const card=e.target.closest('.jcard'); if(card){ const c=catches.find(x=>x.id==card.dataset.cid); if(c) openCatchView(c); } });
+  document.addEventListener('click',e=>{ const v=e.target.closest('.lg-visit'); if(v){ quickVisit(+v.dataset.lake); return; } const c=e.target.closest('.lg-catch'); if(c){ map.closePopup(); openCatch(+c.dataset.lake); } });
+}
+
+// ===== init =====
 (function init(){
-  const counties = [...new Set(LAKES.flatMap(l => l.counties))].sort();
-  $county.innerHTML = '<option value="">All counties</option>' + counties.map(c => `<option value="${c}">${c}</option>`).join('');
-  document.getElementById('stat-lakes').textContent = LAKES.length;
-  document.getElementById('stat-counties').textContent = counties.length;
-  document.getElementById('total').textContent = LAKES.length;
+  const counties=[...new Set(LAKES.flatMap(l=>l.counties))].sort();
+  $county.innerHTML='<option value="">All counties</option>'+counties.map(c=>`<option value="${c}">${c}</option>`).join('');
+  el('stat-lakes').textContent=LAKES.length;
+  el('stat-counties').textContent=counties.length;
+  el('total').textContent=LAKES.length;
+  fillWho();
+  renderProfiles();
+  renderJournalFilter();
+  setupUI();
   applyFilters();
   loadLaunches();
+  loadLog().then(()=>{ LAKES.forEach(refreshLake); applyFilters(); updateJournal(); });
 })();
 </script>
 </body>
