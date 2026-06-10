@@ -182,6 +182,31 @@
   .toggle{display:none;position:absolute;top:12px;left:12px;z-index:1200;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 13px;font-family:inherit;font-weight:600;font-size:13px;box-shadow:var(--shadow);align-items:center;gap:8px;cursor:pointer;}
   .toggle svg{width:16px;height:16px;stroke:var(--amber);}
 
+  .legend{display:flex;flex-wrap:wrap;gap:9px 12px;padding:2px 16px 11px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line-soft);}
+  .legend .lg-item{display:inline-flex;align-items:center;gap:5px;}
+  .legend .lg-sym{color:var(--amber);font-size:13px;line-height:1;}
+  .sp-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none;}
+  .it-star{color:var(--amber);margin-left:6px;font-size:12px;}
+  .badges .sp-dot{margin-right:2px;}
+
+  .pin-star{position:absolute;top:-4px;right:-6px;width:16px;height:16px;border-radius:50%;background:#fff;color:#dca23c;font-size:11px;font-weight:800;line-height:16px;text-align:center;}
+  .pin-flag{position:absolute;top:-4px;right:-6px;width:16px;height:16px;border-radius:50%;background:#fff;color:#4c84d6;font-size:11px;font-weight:800;line-height:16px;text-align:center;}
+
+  .pop-sp{display:flex;flex-wrap:wrap;gap:9px;margin:0 0 11px;font-size:11.5px;color:var(--muted);}
+  .sp-tag{display:inline-flex;align-items:center;gap:5px;}
+  .pop-tags{border-top:1px solid var(--line-soft);margin-top:10px;padding-top:11px;display:flex;flex-direction:column;gap:8px;}
+  .tg-row{display:flex;gap:7px;}
+  .tg{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;padding:8px 6px;cursor:pointer;}
+  .tg.on{color:var(--ink);border-color:var(--amber);background:rgba(234,162,76,.14);}
+  .tg.lk-wish.on{border-color:#4c84d6;background:rgba(76,132,214,.16);}
+  .sw-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .sw{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;outline:none;}
+  .sw.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg2);}
+  .sw-x{background:var(--bg2);color:var(--muted);font-size:15px;line-height:18px;}
+  .pop-tags select{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:inherit;font-size:13px;padding:8px 9px;outline:none;}
+
+  .jspecies{display:flex;flex-wrap:wrap;gap:13px;justify-content:center;font-size:12px;color:var(--muted);}
+
   /* sheet */
   .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1900;opacity:0;pointer-events:none;transition:opacity .2s;}
   .sheet-bg.open{opacity:1;pointer-events:auto;}
@@ -226,7 +251,7 @@
       <div class="stats">
         <div class="stat"><div class="n" id="stat-lakes">0</div><div class="l">Lakes</div></div>
         <div class="stat"><div class="n" id="stat-counties">0</div><div class="l">Counties</div></div>
-        <div class="stat"><div class="n">Black</div><div class="l">Species</div></div>
+        <div class="stat"><div class="n" id="stat-species">3</div><div class="l">Species</div></div>
       </div>
     </div>
 
@@ -253,7 +278,13 @@
           <option value="dist" disabled>Nearest first</option>
         </select>
       </div>
+      <div class="row">
+        <select id="species"><option value="">All species</option></select>
+        <select id="cat"><option value="">All categories</option></select>
+      </div>
       <div class="chips">
+        <button class="chip" data-f="fav">Favorites</button>
+        <button class="chip" data-f="wish">Want to visit</button>
         <button class="chip" data-f="ramp">Has ramp</button>
         <button class="chip" data-f="motor">Motorized</button>
         <button class="chip" data-f="visited">Visited</button>
@@ -269,6 +300,8 @@
       </div>
     </div>
 
+    <div class="legend" id="legend"></div>
+
     <div class="meta">
       <div class="count"><b id="showing">0</b> of <span id="total">0</span> shown</div>
       <button class="clear" id="clear">Reset</button>
@@ -279,6 +312,7 @@
     <div class="journal" id="journal">
       <div class="lboard" id="lboard"></div>
       <div class="jtotals" id="jtotals"></div>
+      <div class="jspecies" id="jspecies"></div>
       <div class="jfilter" id="jfilter"></div>
       <div class="jlist" id="jlist"></div>
       <div class="jnote">Records are saved on this device, in this browser.</div>
@@ -309,6 +343,7 @@
       <label class="fld"><span>Angler</span><select id="catchWho"></select></label>
       <label class="fld"><span>Date</span><input type="date" id="catchDate"></label>
     </div>
+    <label class="fld"><span>Species</span><select id="catchSpecies"></select></label>
     <div class="fld-row">
       <label class="fld"><span>Length (in)</span><input type="number" inputmode="decimal" step="0.1" id="catchLen" placeholder="11.5"></label>
       <label class="fld"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.01" id="catchWt" placeholder="optional"></label>
@@ -339,6 +374,17 @@ const PROFILES = [
   { id:'chance',  name:'Chance',  color:'#8bd450' }
 ];
 const profById = {}; PROFILES.forEach(p => profById[p.id] = p);
+
+// ===== species, categories, colors =====
+const SPECIES = [
+  { id:'crappie',    name:'Black crappie',   short:'Crappie',    color:'#4fb477' },
+  { id:'largemouth', name:'Largemouth bass', short:'Largemouth', color:'#4c84d6' },
+  { id:'smallmouth', name:'Smallmouth bass', short:'Smallmouth', color:'#c97f3a' }
+];
+const spById = {}; SPECIES.forEach(s => spById[s.id] = s);
+const CATS = ['Honey hole','Producer','Scouting','Crowded','Skip'];
+const SWATCHES = ['#e0533d','#e0913f','#e6c43d','#5bbf6a','#4c84d6','#9b6fe0','#e06fb0','#7a8a99'];
+
 function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 let activeProfile = profById[lsGet('crappie-active')] ? lsGet('crappie-active') : 'serimon';
@@ -348,8 +394,8 @@ let userLoc = null, originLabel = '', activeId = null, launchesLoaded = false;
 let filtered = LAKES.slice();
 let catches = [], visits = [];
 let journalWho = 'all';
-const markers = {}, logIndex = {}, photoUrls = {};
-const activeFilters = { ramp:false, motor:false, visited:false, caught:false };
+const markers = {}, logIndex = {}, photoUrls = {}, metaMap = {};
+const activeFilters = { fav:false, wish:false, ramp:false, motor:false, visited:false, caught:false };
 const el = id => document.getElementById(id);
 
 // ===== helpers =====
@@ -363,19 +409,33 @@ function fmtDate(s){ if(!s) return ''; const p=s.split('-'); return `${p[1]}/${p
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 // ===== IndexedDB =====
-const DB_NAME='crappie-log-v2', DB_VER=1;
+const DB_NAME='crappie-log-v2', DB_VER=2;
 let _db=null;
-function dbOpen(){ return new Promise((res,rej)=>{ if(_db) return res(_db); const r=indexedDB.open(DB_NAME,DB_VER); r.onupgradeneeded=e=>{ const d=e.target.result; if(!d.objectStoreNames.contains('catches')) d.createObjectStore('catches',{keyPath:'id',autoIncrement:true}); if(!d.objectStoreNames.contains('visits')) d.createObjectStore('visits',{keyPath:'id',autoIncrement:true}); }; r.onsuccess=e=>{ _db=e.target.result; res(_db); }; r.onerror=()=>rej(r.error); }); }
+function dbOpen(){ return new Promise((res,rej)=>{ if(_db) return res(_db); const r=indexedDB.open(DB_NAME,DB_VER); r.onupgradeneeded=e=>{ const d=e.target.result; if(!d.objectStoreNames.contains('catches')) d.createObjectStore('catches',{keyPath:'id',autoIncrement:true}); if(!d.objectStoreNames.contains('visits')) d.createObjectStore('visits',{keyPath:'id',autoIncrement:true}); if(!d.objectStoreNames.contains('meta')) d.createObjectStore('meta',{keyPath:'k'}); }; r.onsuccess=e=>{ _db=e.target.result; res(_db); }; r.onerror=()=>rej(r.error); }); }
 function ost(name,mode){ return dbOpen().then(d=>d.transaction(name,mode).objectStore(name)); }
 function idbAll(name){ return ost(name,'readonly').then(s=>new Promise((res,rej)=>{ const r=s.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error); })); }
 function idbAdd(name,o){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })); }
 function idbPut(name,o){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })); }
 function idbDel(name,id){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); })); }
 
-function rebuildIndex(){ LAKES.forEach(l=>logIndex[l.slug]={visits:0,catches:0}); visits.forEach(v=>{ if(logIndex[v.lakeId]) logIndex[v.lakeId].visits++; }); catches.forEach(c=>{ if(logIndex[c.lakeId]) logIndex[c.lakeId].catches+=(c.qty||1); }); }
-function lakeStats(l){ return logIndex[l.slug] || {visits:0,catches:0}; }
+function rebuildIndex(){
+  LAKES.forEach(l=>logIndex[l.slug]={visits:0,catches:0,sp:{},top:null});
+  visits.forEach(v=>{ const x=logIndex[v.lakeId]; if(x) x.visits++; });
+  catches.forEach(c=>{ const x=logIndex[c.lakeId]; if(x){ const q=c.qty||1; x.catches+=q; const s=c.species||'crappie'; x.sp[s]=(x.sp[s]||0)+q; } });
+  LAKES.forEach(l=>{ const x=logIndex[l.slug]; let best=null,bn=0; for(const k in x.sp){ if(x.sp[k]>bn){ bn=x.sp[k]; best=k; } } x.top=best; });
+}
+function lakeStats(l){ return logIndex[l.slug] || {visits:0,catches:0,sp:{},top:null}; }
+function metaKey(who,slug){ return who+':'+slug; }
+function getMeta(l,who){ return metaMap[metaKey(who||activeProfile,l.slug)] || {fav:false,wish:false,color:null,cat:''}; }
+async function setMeta(l,patch){
+  const key=metaKey(activeProfile,l.slug);
+  const next=Object.assign({k:key,who:activeProfile,lakeId:l.slug,fav:false,wish:false,color:null,cat:''}, metaMap[key]||{}, patch);
+  metaMap[key]=next;
+  try { await idbPut('meta',next); } catch(e){ toast('Could not save tag here'); }
+  refreshLake(l); applyFilters();
+}
 function photoUrl(c){ if(!c.photo) return null; if(!photoUrls[c.id]) photoUrls[c.id]=URL.createObjectURL(c.photo); return photoUrls[c.id]; }
-async function loadLog(){ try { const r = await Promise.all([idbAll('catches'),idbAll('visits')]); catches=r[0]; visits=r[1]; } catch(e){ catches=[]; visits=[]; } rebuildIndex(); }
+async function loadLog(){ try { const r = await Promise.all([idbAll('catches'),idbAll('visits'),idbAll('meta')]); catches=r[0]; visits=r[1]; (r[2]||[]).forEach(m=>metaMap[m.k]=m); } catch(e){ catches=[]; visits=[]; } rebuildIndex(); }
 
 function downscale(file,max,q){ max=max||1500; q=q||0.82; return new Promise((res,rej)=>{ const img=new Image(); const url=URL.createObjectURL(file); img.onload=()=>{ URL.revokeObjectURL(url); let w=img.width,h=img.height; if(w>=h){ if(w>max){ h=Math.round(h*max/w); w=max; } } else if(h>max){ w=Math.round(w*max/h); h=max; } const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); cv.toBlob(b=>b?res(b):rej(new Error('blob')),'image/jpeg',q); }; img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('img')); }; img.src=url; }); }
 
@@ -403,7 +463,16 @@ let tileErrs = 0;
 
 // ===== markers =====
 function pinSvg(color){ return `<svg width="26" height="34" viewBox="0 0 26 34" fill="none"><path d="M13 0C5.8 0 0 5.7 0 12.8 0 22 13 34 13 34s13-12 13-21.2C26 5.7 20.2 0 13 0z" fill="${color}"/><path d="M13 0C5.8 0 0 5.7 0 12.8 0 22 13 34 13 34s13-12 13-21.2C26 5.7 20.2 0 13 0z" fill="url(#g)" fill-opacity=".22"/><circle cx="13" cy="13" r="5" fill="#0b1a16"/><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="34"><stop stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient></defs></svg>`; }
-function iconFor(l){ const st=lakeStats(l); if(st.catches>0) return L.divIcon({className:'pin',html:`<div class="pin-wrap">${pinSvg('#3fae6b')}<span class="pin-badge">${st.catches}</span></div>`,iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-32]}); if(st.visits>0) return L.divIcon({className:'pin',html:`<div class="pin-wrap">${pinSvg('#eaa24c')}<span class="pin-check">&#10003;</span></div>`,iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-32]}); return L.divIcon({className:'pin',html:pinSvg('#eaa24c'),iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-32]}); }
+function pinColor(l){ const m=getMeta(l); if(m.color) return m.color; const top=lakeStats(l).top; if(top && spById[top]) return spById[top].color; return '#eaa24c'; }
+function iconFor(l){
+  const st=lakeStats(l), m=getMeta(l), color=pinColor(l);
+  let badge='';
+  if(st.catches>0) badge=`<span class="pin-badge">${st.catches}</span>`;
+  else if(m.fav) badge='<span class="pin-star">&#9733;</span>';
+  else if(m.wish) badge='<span class="pin-flag">&#9873;</span>';
+  else if(st.visits>0) badge='<span class="pin-check">&#10003;</span>';
+  return L.divIcon({className:'pin',html:`<div class="pin-wrap">${pinSvg(color)}${badge}</div>`,iconSize:[26,34],iconAnchor:[13,34],popupAnchor:[0,-32]});
+}
 const launchIcon = L.divIcon({ className:'launch-pin', html:`<div style="width:23px;height:23px;border-radius:50%;background:#2b8aa6;border:2px solid #d4f1fb;display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg></div>`, iconSize:[23,23], iconAnchor:[11,11], popupAnchor:[0,-12] });
 
 const cluster = L.markerClusterGroup({ maxClusterRadius:48, spiderfyOnMaxZoom:true, showCoverageOnHover:false, iconCreateFunction(c){ const n=c.getChildCount(); const s=n<10?34:n<50?40:46; return L.divIcon({ html:`<div style="width:${s}px;height:${s}px;line-height:${s}px;border-radius:50%;text-align:center;font-family:'Zilla Slab',serif;font-weight:700;">${n}</div>`, className:'marker-cluster', iconSize:[s,s] }); } });
@@ -414,6 +483,9 @@ function popupHtml(l){
   const dist = (userLoc && l._d!=null) ? `<div class="pop-dist">${l._d.toFixed(1)} mi from ${originLabel}</div>` : '';
   const facts = `<div class="pop-facts"><div class="fact"><div class="v">${acreFmt(l.acres)}</div><div class="k">Acres</div></div><div class="fact"><div class="v">${l.elev.toLocaleString()}</div><div class="k">Elev ft</div></div></div>`;
   const logline = `<div class="pop-log"><span><b>${st.visits}</b> visits</span><span><b>${st.catches}</b> catches</span></div>`;
+  const spLine = st.catches>0 ? `<div class="pop-sp">${SPECIES.filter(s=>st.sp[s.id]).map(s=>`<span class="sp-tag"><span class="sp-dot" style="background:${s.color}"></span>${st.sp[s.id]} ${s.short}</span>`).join('')}</div>` : '';
+  const m = getMeta(l);
+  const tagRow = `<div class="pop-tags"><div class="tg-row"><button class="tg lk-fav${m.fav?' on':''}" data-lake="${l.id}">${m.fav?'&#9733;':'&#9734;'} Favorite</button><button class="tg lk-wish${m.wish?' on':''}" data-lake="${l.id}">&#9873; Want to visit</button></div><div class="sw-row">${SWATCHES.map(c=>`<button class="sw lk-color${m.color===c?' on':''}" data-lake="${l.id}" data-color="${c}" style="background:${c}"></button>`).join('')}<button class="sw sw-x lk-color${!m.color?' on':''}" data-lake="${l.id}" data-color="" title="Default color">&times;</button></div><select class="lk-cat" data-lake="${l.id}"><option value="">No category</option>${CATS.map(c=>`<option value="${c}"${m.cat===c?' selected':''}>${c}</option>`).join('')}</select></div>`;
   const wdfwBtn = `<a class="btn ghost" href="${wdfwUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>WDFW</a>`;
   let launchBlock='', actions;
   if (l.launch){
@@ -426,7 +498,7 @@ function popupHtml(l){
     actions = `<a class="btn primary" href="${dirUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions</a><div class="btn-row"><a class="btn ghost" href="${mapUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Map</a>${wdfwBtn}</div>`;
   }
   const logbtns = `<div class="pop-logbtns"><button class="btn ghost lg-visit" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Log visit</button><button class="btn log lg-catch" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Log catch</button></div>`;
-  return `<div class="pop-nm">${esc(l.name)}</div><div class="pop-co">${counties}</div>${facts}${logline}${dist}${launchBlock}<div class="pop-actions">${actions}</div>${logbtns}`;
+  return `<div class="pop-nm">${esc(l.name)}</div><div class="pop-co">${counties}</div>${facts}${logline}${spLine}${dist}${launchBlock}<div class="pop-actions">${actions}</div>${logbtns}${tagRow}`;
 }
 
 LAKES.forEach((l,i) => { l.id=i; const m=L.marker([l.lat,l.lng],{icon:iconFor(l)}); m.bindPopup(popupHtml(l),{maxWidth:280,autoPanPadding:[30,30]}); m.on('popupopen',()=>setActive(l.id,false)); markers[i]=m; });
@@ -434,18 +506,23 @@ LAKES.forEach((l,i) => { l.id=i; const m=L.marker([l.lat,l.lng],{icon:iconFor(l)
 function refreshLake(l){ if(markers[l.id]){ markers[l.id].setIcon(iconFor(l)); markers[l.id].setPopupContent(popupHtml(l)); } }
 
 // ===== list =====
-const $list=el('list'), $search=el('search'), $county=el('county'), $sort=el('sort'), $showing=el('showing'), $clear=el('clear');
+const $list=el('list'), $search=el('search'), $county=el('county'), $sort=el('sort'), $showing=el('showing'), $clear=el('clear'), $species=el('species'), $cat=el('cat');
 
 function applyFilters(){
-  const qraw=$search.value.trim(), q=qraw.toLowerCase(), co=$county.value, sort=$sort.value;
+  const qraw=$search.value.trim(), q=qraw.toLowerCase(), co=$county.value, sort=$sort.value, sp=$species.value, cat=$cat.value;
   const numericQ=/^\d+$/.test(qraw);
   filtered = LAKES.filter(l => {
     if (q && !numericQ && !l.name.toLowerCase().includes(q)) return false;
     if (co && !l.counties.includes(co)) return false;
+    const m=getMeta(l), st=lakeStats(l);
+    if (activeFilters.fav && !m.fav) return false;
+    if (activeFilters.wish && !m.wish) return false;
     if (activeFilters.ramp && !l.launch) return false;
     if (activeFilters.motor && !(l.launch && l.launch.motor)) return false;
-    if (activeFilters.visited && lakeStats(l).visits<=0) return false;
-    if (activeFilters.caught && lakeStats(l).catches<=0) return false;
+    if (activeFilters.visited && st.visits<=0) return false;
+    if (activeFilters.caught && st.catches<=0) return false;
+    if (sp && !st.sp[sp]) return false;
+    if (cat && m.cat!==cat) return false;
     return true;
   });
   if (sort==='acres') filtered.sort((a,b)=>(b.acres||0)-(a.acres||0));
@@ -456,7 +533,8 @@ function applyFilters(){
   if (!map.hasLayer(cluster)) cluster.addTo(map);
   renderList();
   $showing.textContent=filtered.length;
-  $clear.style.display=(q||co)?'block':'none';
+  const anyFilter=q||co||sp||cat||Object.values(activeFilters).some(Boolean);
+  $clear.style.display=anyFilter?'block':'none';
 }
 
 function renderList(){
@@ -467,12 +545,15 @@ function renderList(){
     return;
   }
   $list.innerHTML = filtered.map(l=>{
-    const st=lakeStats(l);
+    const st=lakeStats(l), m=getMeta(l);
     const ramp=l.launch?' &middot; <span class="ramp-tag"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 14h18l-2 5H5l-2-5z"/><path d="M5 14V7l7 3"/><path d="M12 3v7"/></svg>ramp</span>':'';
-    const sub=l.counties.join(', ')+' &middot; '+acreFmt(l.acres)+' ac'+ramp;
-    const badges=(st.visits||st.catches)?`<div class="badges">${st.visits?`<span class="lb-v">${st.visits} visit${st.visits>1?'s':''}</span>`:''}${st.catches?`<span class="lb-c">${st.catches} catch${st.catches>1?'es':''}</span>`:''}</div>`:'';
+    const catTxt=m.cat?` &middot; ${esc(m.cat)}`:'';
+    const sub=l.counties.join(', ')+' &middot; '+acreFmt(l.acres)+' ac'+ramp+catTxt;
+    const spDots=st.catches>0?SPECIES.filter(s=>st.sp[s.id]).map(s=>`<span class="sp-dot" style="background:${s.color}" title="${s.short}"></span>`).join(''):'';
+    const badges=(st.visits||st.catches)?`<div class="badges">${st.visits?`<span class="lb-v">${st.visits} visit${st.visits>1?'s':''}</span>`:''}${st.catches?`<span class="lb-c">${spDots}${st.catches} catch${st.catches>1?'es':''}</span>`:''}</div>`:'';
+    const star=m.fav?'<span class="it-star">&#9733;</span>':'';
     const dist=(userLoc && l._d!=null)?`<div class="dist">${l._d.toFixed(0)} mi</div>`:'';
-    return `<div class="item${l.id===activeId?' active':''}" data-id="${l.id}"><div class="dot"></div><div class="body"><div class="nm">${esc(l.name)}</div><div class="sub">${sub}</div>${badges}</div>${dist}</div>`;
+    return `<div class="item${l.id===activeId?' active':''}" data-id="${l.id}"><div class="dot" style="background:${pinColor(l)};box-shadow:0 0 0 3px ${pinColor(l)}22"></div><div class="body"><div class="nm">${esc(l.name)}${star}</div><div class="sub">${sub}</div>${badges}</div>${dist}</div>`;
   }).join('');
 }
 
@@ -483,7 +564,9 @@ $search.addEventListener('input',()=>{ const q=$search.value.trim(); if(/^\d{5}$
 $search.addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const q=$search.value.trim(); if(/^\d{5}$/.test(q)) resolveZip(q); else if(q.length>=3 && !/^\d+$/.test(q)) geocodePlace(q); });
 $county.addEventListener('change',applyFilters);
 $sort.addEventListener('change',applyFilters);
-$clear.addEventListener('click',()=>{ $search.value=''; $county.value=''; applyFilters(); });
+$species.addEventListener('change',applyFilters);
+$cat.addEventListener('change',applyFilters);
+$clear.addEventListener('click',()=>{ $search.value=''; $county.value=''; $species.value=''; $cat.value=''; Object.keys(activeFilters).forEach(k=>activeFilters[k]=false); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active')); applyFilters(); });
 
 // ===== location: near me + ZIP search =====
 let originMarker=null;
@@ -576,7 +659,7 @@ function matchLaunches(launches){
 
 // ===== profiles UI =====
 function renderProfiles(){ el('profiles').innerHTML = PROFILES.map(p=>`<button class="pill${p.id===activeProfile?' active':''}" data-p="${p.id}" style="${p.id===activeProfile?`border-color:${p.color}`:''}"><span class="pdot" style="background:${p.color}"></span><span class="pnm">${p.name}</span></button>`).join(''); }
-function setProfile(id){ if(!profById[id]) return; activeProfile=id; lsSet('crappie-active',id); renderProfiles(); }
+function setProfile(id){ if(!profById[id]) return; activeProfile=id; lsSet('crappie-active',id); renderProfiles(); LAKES.forEach(refreshLake); applyFilters(); }
 
 // ===== visits + catch sheet =====
 async function logVisit(l,dateStr,who){ dateStr=dateStr||todayStr(); who=who||activeProfile; if(visits.some(v=>v.lakeId===l.slug && v.date===dateStr && v.who===who)) return false; const o={lakeId:l.slug,lakeName:l.name,who,date:dateStr,createdAt:Date.now()}; try { o.id=await idbAdd('visits',o); visits.push(o); rebuildIndex(); return true; } catch(e){ toast('Could not save. Storage may be blocked here.'); return false; } }
@@ -584,14 +667,16 @@ async function quickVisit(id){ const l=LAKES[id]; const added=await logVisit(l);
 
 let sheetMode='new', editingId=null, sheetLakeIdx=null, pendingPhoto=null, keptPhoto=null, prevUrl=null;
 function fillWho(){ el('catchWho').innerHTML=PROFILES.map(p=>`<option value="${p.id}">${p.name}</option>`).join(''); }
+function fillSpecies(){ el('catchSpecies').innerHTML=SPECIES.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''); }
 function showSheet(){ el('sheet').classList.add('open'); el('sheetBg').classList.add('open'); }
 function hideSheet(){ el('sheet').classList.remove('open'); el('sheetBg').classList.remove('open'); }
 function resetPhoto(){ pendingPhoto=null; keptPhoto=null; if(prevUrl){ URL.revokeObjectURL(prevUrl); prevUrl=null; } el('catchPhoto').value=''; el('photoPrev').style.display='none'; el('photoPrev').removeAttribute('src'); el('photoBtn').textContent='Add photo'; }
-function openCatch(idx){ sheetMode='new'; editingId=null; sheetLakeIdx=idx; const l=LAKES[idx]; el('sheetTitle').textContent='Log a catch'; el('catchLake').textContent=l.name; el('catchWho').value=activeProfile; el('catchDate').value=todayStr(); el('catchLen').value=''; el('catchWt').value=''; el('catchQty').value='1'; el('catchNotes').value=''; resetPhoto(); el('catchDelete').style.display='none'; el('catchSave').textContent='Save catch'; showSheet(); }
-function openCatchView(c){ sheetMode='edit'; editingId=c.id; sheetLakeIdx=LAKES.findIndex(x=>x.slug===c.lakeId); const l=LAKES[sheetLakeIdx]; el('sheetTitle').textContent='Catch details'; el('catchLake').textContent=l?l.name:c.lakeName; el('catchWho').value=c.who||'serimon'; el('catchDate').value=c.date||todayStr(); el('catchLen').value=c.length??''; el('catchWt').value=c.weight??''; el('catchQty').value=c.qty||1; el('catchNotes').value=c.notes||''; resetPhoto(); if(c.photo){ keptPhoto=c.photo; const u=photoUrl(c); el('photoPrev').src=u; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } el('catchDelete').style.display='inline-flex'; el('catchSave').textContent='Save changes'; showSheet(); }
+function openCatch(idx){ sheetMode='new'; editingId=null; sheetLakeIdx=idx; const l=LAKES[idx]; el('sheetTitle').textContent='Log a catch'; el('catchLake').textContent=l.name; el('catchWho').value=activeProfile; el('catchSpecies').value=lsGet('crappie-lastsp')||'crappie'; el('catchDate').value=todayStr(); el('catchLen').value=''; el('catchWt').value=''; el('catchQty').value='1'; el('catchNotes').value=''; resetPhoto(); el('catchDelete').style.display='none'; el('catchSave').textContent='Save catch'; showSheet(); }
+function openCatchView(c){ sheetMode='edit'; editingId=c.id; sheetLakeIdx=LAKES.findIndex(x=>x.slug===c.lakeId); const l=LAKES[sheetLakeIdx]; el('sheetTitle').textContent='Catch details'; el('catchLake').textContent=l?l.name:c.lakeName; el('catchWho').value=c.who||'serimon'; el('catchSpecies').value=c.species||'crappie'; el('catchDate').value=c.date||todayStr(); el('catchLen').value=c.length??''; el('catchWt').value=c.weight??''; el('catchQty').value=c.qty||1; el('catchNotes').value=c.notes||''; resetPhoto(); if(c.photo){ keptPhoto=c.photo; const u=photoUrl(c); el('photoPrev').src=u; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } el('catchDelete').style.display='inline-flex'; el('catchSave').textContent='Save changes'; showSheet(); }
 async function saveCatch(){
   const l=LAKES[sheetLakeIdx]; if(!l){ hideSheet(); return; }
-  const o={ lakeId:l.slug, lakeName:l.name, who:el('catchWho').value, date:el('catchDate').value||todayStr(), length:parseFloat(el('catchLen').value)||null, weight:parseFloat(el('catchWt').value)||null, qty:parseInt(el('catchQty').value)||1, notes:el('catchNotes').value.trim(), photo: pendingPhoto||keptPhoto||null, createdAt:Date.now() };
+  const o={ lakeId:l.slug, lakeName:l.name, who:el('catchWho').value, species:el('catchSpecies').value, date:el('catchDate').value||todayStr(), length:parseFloat(el('catchLen').value)||null, weight:parseFloat(el('catchWt').value)||null, qty:parseInt(el('catchQty').value)||1, notes:el('catchNotes').value.trim(), photo: pendingPhoto||keptPhoto||null, createdAt:Date.now() };
+  lsSet('crappie-lastsp', o.species);
   try {
     if(sheetMode==='edit' && editingId!=null){ o.id=editingId; await idbPut('catches',o); const i=catches.findIndex(c=>c.id===editingId); if(i>=0) catches[i]=o; if(photoUrls[editingId]){ URL.revokeObjectURL(photoUrls[editingId]); delete photoUrls[editingId]; } }
     else { o.id=await idbAdd('catches',o); catches.push(o); }
@@ -601,7 +686,12 @@ async function saveCatch(){
 async function deleteCatch(){ if(editingId==null) return; try { await idbDel('catches',editingId); } catch(e){} catches=catches.filter(c=>c.id!==editingId); if(photoUrls[editingId]){ URL.revokeObjectURL(photoUrls[editingId]); delete photoUrls[editingId]; } const l=LAKES[sheetLakeIdx]; rebuildIndex(); if(l) refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast('Catch deleted'); }
 
 // ===== journal =====
-function updateJournal(){ renderLeaderboard(); renderTotals(); renderJournalList(); }
+function updateJournal(){ renderLeaderboard(); renderTotals(); renderJournalSpecies(); renderJournalList(); }
+function renderJournalSpecies(){
+  const rows = journalWho==='all' ? catches : catches.filter(c=>c.who===journalWho);
+  const t={}; rows.forEach(c=>{ const s=c.species||'crappie'; t[s]=(t[s]||0)+(c.qty||1); });
+  el('jspecies').innerHTML = SPECIES.map(s=>`<span class="sp-tag"><span class="sp-dot" style="background:${s.color}"></span>${t[s.id]||0} ${s.short}</span>`).join('');
+}
 function renderLeaderboard(){
   const m={}; PROFILES.forEach(p=>m[p.id]={catches:0,visits:0});
   catches.forEach(c=>{ if(m[c.who]) m[c.who].catches+=(c.qty||1); });
@@ -621,11 +711,11 @@ function renderJournalList(){
   if(!rows.length){ wrap.innerHTML='<div class="empty">No catches yet.<br>Open a lake on the map and tap Catch to log one.</div>'; return; }
   rows.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt);
   wrap.innerHTML=rows.map(c=>{
-    const u=photoUrl(c), p=profById[c.who]||{name:'?',color:'#888'};
+    const u=photoUrl(c), p=profById[c.who]||{name:'?',color:'#888'}, sp=spById[c.species||'crappie']||spById.crappie;
     const size=[c.length?c.length+' in':null,c.weight?c.weight+' lb':null].filter(Boolean).join(' · ');
     const qty=(c.qty||1)>1?`<span class="jqty">x${c.qty}</span>`:'';
     const thumb=u?`<img src="${u}" alt="">`:'<svg viewBox="0 0 24 24" fill="none" stroke="#5f7770" stroke-width="1.5"><path d="M3 12c3-5 7-7 12-7 3 0 6 2 6 4s-3 4-6 4c-5 0-9-2-12-7z"/><circle cx="8" cy="11" r="1"/></svg>';
-    return `<div class="jcard" data-cid="${c.id}"><div class="jthumb">${thumb}</div><div class="jbody"><div class="jname">${esc(c.lakeName)}${qty}</div><div class="jmeta">${fmtDate(c.date)}${size?' · '+size:''}</div><div class="jwho"><span class="wd" style="background:${p.color}"></span>${p.name}</div>${c.notes?`<div class="jnotes">${esc(c.notes)}</div>`:''}</div></div>`;
+    return `<div class="jcard" data-cid="${c.id}"><div class="jthumb">${thumb}</div><div class="jbody"><div class="jname">${esc(c.lakeName)}${qty}</div><div class="jmeta">${fmtDate(c.date)}${size?' · '+size:''}</div><div class="jwho"><span class="wd" style="background:${p.color}"></span>${p.name}<span class="wd" style="background:${sp.color};margin-left:8px"></span>${sp.short}</div>${c.notes?`<div class="jnotes">${esc(c.notes)}</div>`:''}</div></div>`;
   }).join('');
 }
 function setJournalWho(w){ journalWho=w; renderJournalFilter(); renderJournalList(); }
@@ -649,18 +739,32 @@ function setupUI(){
   el('sheetBg').addEventListener('click',hideSheet);
   el('jfilter').addEventListener('click',e=>{ const b=e.target.closest('.jf'); if(b) setJournalWho(b.dataset.w); });
   el('jlist').addEventListener('click',e=>{ const card=e.target.closest('.jcard'); if(card){ const c=catches.find(x=>x.id==card.dataset.cid); if(c) openCatchView(c); } });
-  document.addEventListener('click',e=>{ const v=e.target.closest('.lg-visit'); if(v){ quickVisit(+v.dataset.lake); return; } const c=e.target.closest('.lg-catch'); if(c){ map.closePopup(); openCatch(+c.dataset.lake); } });
+  document.addEventListener('click',e=>{
+    const v=e.target.closest('.lg-visit'); if(v){ quickVisit(+v.dataset.lake); return; }
+    const c=e.target.closest('.lg-catch'); if(c){ map.closePopup(); openCatch(+c.dataset.lake); return; }
+    const f=e.target.closest('.lk-fav'); if(f){ const l=LAKES[+f.dataset.lake]; const nv=!getMeta(l).fav; setMeta(l,{fav:nv}); toast(nv?`${l.name} added to favorites`:`${l.name} removed from favorites`); return; }
+    const w=e.target.closest('.lk-wish'); if(w){ const l=LAKES[+w.dataset.lake]; const nv=!getMeta(l).wish; setMeta(l,{wish:nv}); toast(nv?`${l.name} added to Want to visit`:`${l.name} removed from Want to visit`); return; }
+    const sw=e.target.closest('.lk-color'); if(sw){ const l=LAKES[+sw.dataset.lake]; setMeta(l,{color:sw.dataset.color||null}); return; }
+  });
+  document.addEventListener('change',e=>{ const cs=e.target.closest('.lk-cat'); if(cs){ setMeta(LAKES[+cs.dataset.lake],{cat:cs.value}); } });
 }
+
+function renderLegend(){ el('legend').innerHTML = SPECIES.map(s=>`<span class="lg-item"><span class="sp-dot" style="background:${s.color}"></span>${s.short}</span>`).join('')+'<span class="lg-item"><span class="lg-sym">&#9733;</span>Favorite</span><span class="lg-item"><span class="lg-sym">&#9873;</span>Want to visit</span>'; }
 
 // ===== init =====
 (function init(){
   const counties=[...new Set(LAKES.flatMap(l=>l.counties))].sort();
   $county.innerHTML='<option value="">All counties</option>'+counties.map(c=>`<option value="${c}">${c}</option>`).join('');
+  $species.innerHTML='<option value="">All species</option>'+SPECIES.map(s=>`<option value="${s.id}">${s.short}</option>`).join('');
+  $cat.innerHTML='<option value="">All categories</option>'+CATS.map(c=>`<option value="${c}">${c}</option>`).join('');
   el('stat-lakes').textContent=LAKES.length;
   el('stat-counties').textContent=counties.length;
+  el('stat-species').textContent=SPECIES.length;
   el('total').textContent=LAKES.length;
   fillWho();
+  fillSpecies();
   renderProfiles();
+  renderLegend();
   renderJournalFilter();
   setupUI();
   applyFilters();
