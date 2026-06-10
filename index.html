@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Crappie Lakes">
+<meta name="theme-color" content="#0d1614">
 <title>WA Crappie Lakes</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
@@ -115,8 +120,10 @@
   .jnotes{font-size:12px;color:var(--faint);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
   .jnote{font-size:10.5px;color:var(--faint);text-align:center;}
 
-  .panel[data-tab="log"] .controls,.panel[data-tab="log"] .meta,.panel[data-tab="log"] .list{display:none;}
-  .panel[data-tab="lakes"] .journal{display:none;}
+  .journal,.plan{display:none;}
+  .panel[data-tab="log"] .journal{display:flex;}
+  .panel[data-tab="plan"] .plan{display:flex;}
+  .panel[data-tab="log"] .controls,.panel[data-tab="log"] .legend,.panel[data-tab="log"] .meta,.panel[data-tab="log"] .list,.panel[data-tab="plan"] .controls,.panel[data-tab="plan"] .legend,.panel[data-tab="plan"] .meta,.panel[data-tab="plan"] .list{display:none;}
 
   .foot{padding:11px 18px;border-top:1px solid var(--line);font-size:10.5px;color:var(--faint);line-height:1.5;}
   .foot a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line);}
@@ -220,6 +227,29 @@
   .rbig{font-family:'Zilla Slab',serif;font-weight:700;font-size:17px;line-height:1.1;}
   .rmeta{font-size:11.5px;color:var(--muted);margin-top:2px;}
   .rempty{font-size:12px;color:var(--faint);}
+  .plan{flex:1;overflow-y:auto;min-height:0;padding:8px 14px 18px;flex-direction:column;gap:12px;}
+  .plan-head{display:flex;flex-direction:column;gap:9px;}
+  .planrow1{display:flex;align-items:center;justify-content:space-between;}
+  .prefresh{background:var(--panel);border:1px solid var(--line);color:var(--water);font-family:inherit;font-size:12px;font-weight:600;border-radius:8px;padding:6px 11px;cursor:pointer;}
+  .dayrow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;}
+  .day{flex:0 0 auto;padding:7px 11px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+  .day.active{background:var(--panel-soft);color:var(--ink);border-color:var(--water-deep);}
+  .plan-note{font-size:11.5px;color:var(--faint);line-height:1.5;}
+  .planlist{display:flex;flex-direction:column;gap:8px;}
+  .prow{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;}
+  .prow:hover{border-color:var(--water-deep);}
+  .pscore{flex:none;width:40px;height:40px;border-radius:10px;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:'Zilla Slab',serif;font-weight:700;font-size:16px;}
+  .pbody{min-width:0;}
+  .pname{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pwhy{font-size:12px;color:var(--water);margin-top:2px;text-transform:capitalize;}
+  .pmeta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .tripbtn{position:absolute;z-index:1200;top:12px;left:12px;background:linear-gradient(180deg,var(--amber),var(--amber-deep));color:#241606;border:none;border-radius:10px;padding:9px 14px;font-family:inherit;font-weight:700;font-size:13px;box-shadow:var(--shadow);cursor:pointer;}
+  .trip-hud{position:absolute;z-index:1300;top:12px;left:50%;transform:translateX(-50%);display:none;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:7px 9px 7px 13px;box-shadow:var(--shadow);}
+  .trip-hud.show{display:flex;}
+  .trip-stat{font-family:'Zilla Slab',serif;font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;}
+  .trip-act{border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;background:var(--bg2);color:var(--ink);}
+  .trip-act.log{background:linear-gradient(180deg,#46b877,#2f9159);color:#04220f;border:none;}
+  @media(max-width:760px){ .tripbtn{top:58px;left:10px;} }
 
   .pill-out{flex:0 0 auto;color:var(--muted);}
 
@@ -295,6 +325,7 @@
     <div class="tabs">
       <button class="tab active" id="tabLakes">Lakes</button>
       <button class="tab" id="tabLog">Log</button>
+      <button class="tab" id="tabPlan">Plan</button>
     </div>
 
     <div class="controls">
@@ -355,6 +386,15 @@
       <div class="jnote">Synced live to your crew's shared log.</div>
     </div>
 
+    <div class="plan" id="plan">
+      <div class="plan-head">
+        <div class="planrow1"><div class="jsec">Bite forecast</div><button class="prefresh" id="planRefresh">Refresh</button></div>
+        <div class="dayrow" id="dayRow"></div>
+      </div>
+      <div class="plan-note" id="planNote">Open to load the 7-day bite forecast.</div>
+      <div class="planlist" id="planList"></div>
+    </div>
+
     <div class="foot">
       Data: <a href="https://wdfw.wa.gov/fishing/locations/lowland-lakes" target="_blank" rel="noopener">WDFW lowland lakes</a>. Launches load live from WDFW.
     </div>
@@ -366,6 +406,8 @@
       Lakes
     </button>
     <div id="map"></div>
+    <button class="tripbtn" id="tripBtn">Start trip</button>
+    <div class="trip-hud" id="tripHud"><span class="trip-stat" id="tripStat">0 min</span><button class="trip-act log" id="tripLog">Log catch here</button><button class="trip-act" id="tripEnd">End</button></div>
     <div class="tile-warn" id="tileWarn"><b>Map tiles are blocked here.</b><br>Open this page in a web browser to see the basemap. Pins, launches, and logging still work.</div>
   </div>
 </div>
@@ -873,7 +915,31 @@ function renderJournalList(){
 function setJournalWho(w){ journalWho=w; updateJournal(); }
 
 // ===== tabs + wiring =====
-function setTab(t){ el('panel').setAttribute('data-tab',t); el('tabLakes').classList.toggle('active',t==='lakes'); el('tabLog').classList.toggle('active',t==='log'); if(t==='log') updateJournal(); }
+// ===== bite-window planner =====
+let planLakes=[], planFc=null, planDay=0, planLoaded=false, planBusy=false;
+const SYN=29.530588853, NEWMOON=Date.UTC(2000,0,6,18,14)/86400000;
+function moonFactor(dateStr){ const d=Date.parse(dateStr+'T12:00:00Z')/86400000; const age=(((d-NEWMOON)%SYN)+SYN)%SYN; return Math.abs(Math.cos(2*Math.PI*age/SYN)); }
+function skyFromCode(c){ if(c==null) return .6; if(c===0) return .45; if(c<=2) return .8; if(c===3) return 1; if(c<=48) return .7; if(c<=67) return .85; if(c<=77) return .55; if(c<=82) return .75; return .6; }
+function windScore(w){ if(w==null) return .5; if(w<3) return .45; if(w>22) return .2; return Math.max(.3, 1-Math.abs(w-8)/16); }
+function precipScore(p){ if(p==null) return .6; if(p<=20) return 1; if(p<=50) return .8; if(p<=70) return .55; return .3; }
+function tempScore(t){ if(t==null) return .6; if(t>=58&&t<=80) return 1; if(t>=48&&t<88) return .8; if(t>=40&&t<95) return .55; return .3; }
+function dayScore(fc,i){ if(!fc||!fc.daily) return null; const d=fc.daily; const w=d.wind_speed_10m_max&&d.wind_speed_10m_max[i], p=d.precipitation_probability_max&&d.precipitation_probability_max[i], t=d.temperature_2m_max&&d.temperature_2m_max[i], c=d.weather_code&&d.weather_code[i], moon=moonFactor(d.time[i]); const s=.25*windScore(w)+.25*skyFromCode(c)+.2*precipScore(p)+.15*tempScore(t)+.15*moon; return { score:Math.round(s*100), w, p, t, c, moon }; }
+function whyText(x){ const b=[]; if(skyFromCode(x.c)>=.95) b.push('overcast'); else if(skyFromCode(x.c)<=.5) b.push('bright sky'); if(windScore(x.w)>=.8) b.push('light chop'); else if(x.w!=null&&x.w>22) b.push('windy'); if(x.p!=null&&x.p<=20) b.push('dry'); else if(x.p!=null&&x.p>70) b.push('wet'); if(x.moon>=.8) b.push('strong moon'); return b.slice(0,3).join(', ')||'mixed conditions'; }
+function planCandidates(){ const set=[], seen={}; LAKES.forEach(l=>{ const m=getMeta(l); if(m.fav||m.wish){ set.push(l); seen[l.id]=1; } }); const rest=LAKES.slice().sort((a,b)=> userLoc ? ((a._d??1e9)-(b._d??1e9)) : ((b.acres||0)-(a.acres||0)) ); for(const l of rest){ if(set.length>=24) break; if(!seen[l.id]){ set.push(l); seen[l.id]=1; } } return set.slice(0,24); }
+async function loadPlan(force){ if(planLoaded&&!force){ renderDayRow(); renderPlan(); return; } if(planBusy) return; planBusy=true; el('planNote').textContent='Loading 7-day forecast...'; planLakes=planCandidates(); try{ const lat=planLakes.map(l=>l.lat).join(','), lng=planLakes.map(l=>l.lng).join(','); const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7`; const r=await fetch(url); const d=await r.json(); planFc=Array.isArray(d)?d:[d]; planLoaded=true; renderDayRow(); renderPlan(); el('planNote').textContent='Guide from wind, sky, rain, temperature, and moon. Tap a lake to open it.'; }catch(e){ el('planNote').textContent='Could not load the forecast. Check your signal and tap Refresh.'; } planBusy=false; }
+function renderDayRow(){ const d=planFc&&planFc[0]&&planFc[0].daily; if(!d){ el('dayRow').innerHTML=''; return; } el('dayRow').innerHTML=d.time.map((t,i)=>{ const dt=new Date(t+'T12:00:00'); const lab= i===0?'Today': i===1?'Tomorrow': dt.toLocaleDateString(undefined,{weekday:'short'}); return `<button class="day${i===planDay?' active':''}" data-d="${i}">${lab}</button>`; }).join(''); }
+function scoreColor(s){ return s>=70?'#4fb477': s>=50?'#eaa24c':'#7a8a99'; }
+function renderPlan(){ if(!planFc){ el('planList').innerHTML=''; return; } const rows=planLakes.map((l,idx)=>({ l, s:dayScore(planFc[idx],planDay) })).filter(r=>r.s).sort((a,b)=>b.s.score-a.s.score); if(!rows.length){ el('planList').innerHTML='<div class="empty">No forecast data.</div>'; return; } el('planList').innerHTML=rows.map(r=>{ const x=r.s, col=scoreColor(x.score); const meta=[x.t!=null?Math.round(x.t)+'\u00b0':null, x.w!=null?Math.round(x.w)+' mph':null, x.p!=null?x.p+'% rain':null].filter(Boolean).join(' \u00b7 '); return `<div class="prow" data-idx="${r.l.id}"><div class="pscore" style="color:${col};border-color:${col}">${x.score}</div><div class="pbody"><div class="pname">${esc(r.l.name)}</div><div class="pwhy">${whyText(x)}</div><div class="pmeta">${meta}</div></div></div>`; }).join(''); }
+function setPlanDay(i){ planDay=i; renderDayRow(); renderPlan(); }
+
+// ===== trip mode (live session) =====
+let tripOn=false, tripWatch=null, tripLine=null, tripPts=[], tripStart=0, tripDist=0, tripTimer=null;
+function startTrip(){ if(!navigator.geolocation){ toast('Location is not available here.'); return; } tripOn=true; tripPts=[]; tripDist=0; tripStart=Date.now(); if(tripLine) map.removeLayer(tripLine); tripLine=L.polyline([],{color:'#52c9e2',weight:4,opacity:.85}).addTo(map); el('tripBtn').style.display='none'; el('tripHud').classList.add('show'); tripTimer=setInterval(updateTripStat,1000); updateTripStat(); tripWatch=navigator.geolocation.watchPosition(p=>{ const pt=[p.coords.latitude,p.coords.longitude]; if(tripPts.length){ const a=tripPts[tripPts.length-1]; tripDist+=haversine(a[0],a[1],pt[0],pt[1]); } tripPts.push(pt); tripLine.addLatLng(pt); if(tripPts.length===1) map.setView(pt,Math.max(map.getZoom(),14)); }, ()=>toast('Waiting for GPS...'), {enableHighAccuracy:true,maximumAge:5000,timeout:15000}); }
+function updateTripStat(){ const mins=Math.floor((Date.now()-tripStart)/60000); el('tripStat').textContent=`${mins} min \u00b7 ${tripDist.toFixed(2)} mi`; }
+function tripLogHere(){ if(!tripPts.length){ toast('Waiting for GPS fix...'); return; } const [la,ln]=tripPts[tripPts.length-1]; let best=0,bd=1e9; LAKES.forEach((l,i)=>{ const d=haversine(la,ln,l.lat,l.lng); if(d<bd){ bd=d; best=i; } }); if(window.innerWidth<=760) closePanel(); openCatch(best); toast(`Nearest lake: ${LAKES[best].name}`); }
+function endTrip(){ tripOn=false; if(tripWatch!=null){ navigator.geolocation.clearWatch(tripWatch); tripWatch=null; } if(tripTimer){ clearInterval(tripTimer); tripTimer=null; } el('tripHud').classList.remove('show'); el('tripBtn').style.display=''; const mins=Math.floor((Date.now()-tripStart)/60000); toast(`Trip done \u00b7 ${mins} min \u00b7 ${tripDist.toFixed(2)} mi`); }
+
+function setTab(t){ el('panel').setAttribute('data-tab',t); el('tabLakes').classList.toggle('active',t==='lakes'); el('tabLog').classList.toggle('active',t==='log'); el('tabPlan').classList.toggle('active',t==='plan'); if(t==='log') updateJournal(); if(t==='plan') loadPlan(false); }
 const panel=el('panel');
 function closePanel(){ panel.classList.remove('open'); }
 
@@ -884,6 +950,13 @@ function setupUI(){
   });
   el('tabLakes').addEventListener('click',()=>setTab('lakes'));
   el('tabLog').addEventListener('click',()=>setTab('log'));
+  el('tabPlan').addEventListener('click',()=>setTab('plan'));
+  el('planRefresh').addEventListener('click',()=>loadPlan(true));
+  el('dayRow').addEventListener('click',e=>{ const b=e.target.closest('.day'); if(b) setPlanDay(+b.dataset.d); });
+  el('planList').addEventListener('click',e=>{ const r=e.target.closest('.prow'); if(r){ if(window.innerWidth<=760) closePanel(); setTab('lakes'); setActive(+r.dataset.idx,true); } });
+  el('tripBtn').addEventListener('click',startTrip);
+  el('tripLog').addEventListener('click',tripLogHere);
+  el('tripEnd').addEventListener('click',endTrip);
   document.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{ const f=ch.dataset.f; activeFilters[f]=!activeFilters[f]; ch.classList.toggle('active',activeFilters[f]); applyFilters(); }));
   el('toggle').addEventListener('click',()=>panel.classList.toggle('open'));
   el('photoBtn').addEventListener('click',()=>el('catchPhoto').click());
@@ -909,6 +982,7 @@ function renderLegend(){ el('legend').innerHTML = SPECIES.map(s=>`<span class="l
 
 // ===== init =====
 (function init(){
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
   const counties=[...new Set(LAKES.flatMap(l=>l.counties))].sort();
   $county.innerHTML='<option value="">All counties</option>'+counties.map(c=>`<option value="${c}">${c}</option>`).join('');
   $species.innerHTML='<option value="">All species</option>'+SPECIES.map(s=>`<option value="${s.id}">${s.short}</option>`).join('');
