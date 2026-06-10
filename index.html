@@ -207,6 +207,21 @@
 
   .jspecies{display:flex;flex-wrap:wrap;gap:13px;justify-content:center;font-size:12px;color:var(--muted);}
 
+  .pill-out{flex:0 0 auto;color:var(--muted);}
+
+  .gate{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;padding:22px;background:radial-gradient(120% 80% at 50% 0%, rgba(82,201,226,.10), transparent 60%),linear-gradient(180deg,var(--bg2),var(--bg));}
+  .gate.show{display:flex;}
+  .gate-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:26px 24px;text-align:center;}
+  .gate-kick{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--water);font-weight:600;margin-bottom:8px;}
+  .gate-logo{font-family:'Zilla Slab',serif;font-weight:700;font-size:26px;line-height:1.05;}
+  .gate-logo span{color:var(--amber);}
+  .gate-sub{font-size:13.5px;color:var(--muted);line-height:1.5;margin:12px 0 18px;}
+  .gate input{width:100%;padding:13px 14px;border-radius:11px;background:var(--bg2);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:15px;outline:none;text-align:center;}
+  .gate input:focus{border-color:var(--water-deep);}
+  .gate-btn{width:100%;margin-top:11px;padding:13px;border:none;border-radius:11px;background:linear-gradient(180deg,var(--amber),var(--amber-deep));color:#241606;font-family:inherit;font-weight:700;font-size:14.5px;cursor:pointer;}
+  .gate-btn:disabled{opacity:.6;cursor:default;}
+  .gate-status{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:13px;min-height:18px;}
+
   /* sheet */
   .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1900;opacity:0;pointer-events:none;transition:opacity .2s;}
   .sheet-bg.open{opacity:1;pointer-events:auto;}
@@ -256,7 +271,7 @@
     </div>
 
     <div class="profiles">
-      <span class="plabel">Logging as</span>
+      <span class="plabel">Signed in</span>
       <div class="pwrap" id="profiles"></div>
     </div>
 
@@ -334,13 +349,23 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-kick">WDFW Lowland Lakes</div>
+    <div class="gate-logo">Washington <span>Crappie</span> Lakes</div>
+    <p class="gate-sub">Sign in to sync your catches, visits, and photos with your crew. We email you a one-tap link, no password.</p>
+    <input id="gateEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
+    <button class="gate-btn" id="gateSend">Email me a magic link</button>
+    <div class="gate-status" id="gateStatus"></div>
+  </div>
+</div>
 <div class="sheet-bg" id="sheetBg"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true">
   <div class="sheet-h"><div class="sheet-title" id="sheetTitle">Log a catch</div><button class="sheet-x" id="sheetX" aria-label="Close">&times;</button></div>
   <div class="sheet-body">
     <div class="fld"><span>Lake</span><div class="fld-static" id="catchLake">&mdash;</div></div>
     <div class="fld-row">
-      <label class="fld"><span>Angler</span><select id="catchWho"></select></label>
+      <div class="fld"><span>Angler</span><div class="fld-static" id="catchWhoName">You</div></div>
       <label class="fld"><span>Date</span><input type="date" id="catchDate"></label>
     </div>
     <label class="fld"><span>Species</span><select id="catchSpecies"></select></label>
@@ -364,16 +389,20 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const LAKES = [{"name":"Alder Lake","slug":"alder-lake","acres":2877.2,"elev":1198,"counties":["Pierce"],"lat":46.772031,"lng":-122.22727},{"name":"Angle Lake","slug":"angle-lake","acres":102.8,"elev":351,"counties":["King"],"lat":47.427512,"lng":-122.286785},{"name":"Antilon Lake (Lower)","slug":"antilon-lower","acres":35.5,"elev":2329,"counties":["Chelan"],"lat":47.967512,"lng":-120.157567},{"name":"Antilon Lake (Upper)","slug":"antilon-lake-upper","acres":33.6,"elev":2329,"counties":["Chelan"],"lat":47.97575,"lng":-120.160764},{"name":"Ballinger Lake","slug":"ballinger-lake","acres":100.7,"elev":282,"counties":["Snohomish"],"lat":47.782021,"lng":-122.326817},{"name":"Banks Lake","slug":"banks-lake","acres":26888.3,"elev":1574,"counties":["Grant","Douglas"],"lat":47.85385,"lng":-119.171805},{"name":"Bass Lake","slug":"bass-lake","acres":24.2,"elev":669,"counties":["King"],"lat":47.254853,"lng":-121.995621},{"name":"Battle Ground Lake","slug":"battle-ground-lake","acres":25.4,"elev":509,"counties":["Clark"],"lat":45.804756,"lng":-122.494045},{"name":"Beaver Lake (Skagit County)","slug":"beaver-lake-skagit","acres":72.3,"elev":32,"counties":["Skagit"],"lat":48.448756,"lng":-122.218729},{"name":"Big Lake","slug":"big-lake","acres":536.2,"elev":82,"counties":["Skagit"],"lat":48.381563,"lng":-122.229995},{"name":"Billy Clapp Lake","slug":"billy-clapp-lake","acres":973.6,"elev":1340,"counties":["Grant"],"lat":47.452846,"lng":-119.248485},{"name":"Black Lake (Thurston County)","slug":"black-lake-thurston","acres":573.7,"elev":134,"counties":["Thurston"],"lat":46.98279,"lng":-122.981409},{"name":"Blackmans Lake","slug":"blackmans-lake","acres":61.0,"elev":144,"counties":["Snohomish"],"lat":47.932269,"lng":-122.094003},{"name":"Bonnie Lake","slug":"bonnie-lake","acres":327.0,"elev":1793,"counties":["Spokane"],"lat":47.28183,"lng":-117.558588},{"name":"Boundary Reservoir","slug":"boundary-reservoir","acres":1579.3,"elev":1994,"counties":["Pend Oreille"],"lat":48.853316,"lng":-117.376241},{"name":"Box Canyon Reservoir","slug":"box-canyon-reservoir","acres":9317.0,"elev":2351,"counties":["Pend Oreille"],"lat":48.237329,"lng":-117.220776},{"name":"Carlisle Lake","slug":"carlisle-lake","acres":22.2,"elev":496,"counties":["Lewis"],"lat":46.579893,"lng":-122.727066},{"name":"Chain Lake","slug":"chain-lake","acres":21.3,"elev":397,"counties":["Snohomish"],"lat":47.903786,"lng":-121.970839},{"name":"Chapman Lake","slug":"chapman-lake","acres":128.3,"elev":2156,"counties":["Spokane"],"lat":47.363848,"lng":-117.567885},{"name":"Clark Pond","slug":"clark-pond","acres":37.8,"elev":758,"counties":["Franklin"],"lat":46.521249,"lng":-119.071278},{"name":"Clear Lake (Skagit County)","slug":"clear-lake-skagit","acres":220.4,"elev":36,"counties":["Skagit"],"lat":48.460153,"lng":-122.225178},{"name":"Clear Lake (Spokane County)","slug":"clear-lake-spokane","acres":315.9,"elev":2344,"counties":["Spokane"],"lat":47.527339,"lng":-117.694776},{"name":"Coffeepot Lake","slug":"coffeepot-lake","acres":310.6,"elev":1818,"counties":["Lincoln"],"lat":47.492847,"lng":-118.563408},{"name":"Coffin Lake","slug":"coffin-lake","acres":21.0,"elev":3101,"counties":["Stevens"],"lat":48.576514,"lng":-117.553742},{"name":"Columbia Park Pond","slug":"columbia-park-pond","acres":9.8,"elev":341,"counties":["Benton"],"lat":46.219021,"lng":-119.143921},{"name":"Cottage Lake","slug":"cottage-lake","acres":62.7,"elev":235,"counties":["King"],"lat":47.753212,"lng":-122.088289},{"name":"Cow Lake","slug":"cow-lake","acres":199.3,"elev":1753,"counties":["Adams"],"lat":47.132084,"lng":-118.158123},{"name":"Dalton Lake","slug":"dalton-lake","acres":45.1,"elev":443,"counties":["Franklin"],"lat":46.297145,"lng":-118.800111},{"name":"Davis Lake (Pend Oreille County)","slug":"davis-lake-pend-oreille","acres":147.8,"elev":2182,"counties":["Pend Oreille"],"lat":48.224248,"lng":-117.293831},{"name":"Deep Lake (King County)","slug":"deep-lake-king","acres":38.8,"elev":774,"counties":["King"],"lat":47.273605,"lng":-121.939852},{"name":"Deer Lake (Stevens County)","slug":"deer-lake-stevens","acres":1146.4,"elev":2482,"counties":["Stevens"],"lat":48.111757,"lng":-117.586634},{"name":"Deer Springs Lake","slug":"deer-springs-lake","acres":61.6,"elev":1742,"counties":["Lincoln"],"lat":47.473034,"lng":-118.617065},{"name":"Diamond Lake","slug":"diamond-lake","acres":754.4,"elev":2343,"counties":["Pend Oreille"],"lat":48.128095,"lng":-117.201151},{"name":"Downs Lake","slug":"downs-lake","acres":406.1,"elev":1961,"counties":["Spokane"],"lat":47.279381,"lng":-117.808298},{"name":"Dry Lake","slug":"dry-lake","acres":81.1,"elev":1167,"counties":["Chelan"],"lat":47.911558,"lng":-120.173843},{"name":"Duck Lake","slug":"duck-lake","acres":248.6,"elev":0,"counties":["Grays Harbor"],"lat":46.970909,"lng":-124.146038},{"name":"Eloika Lake","slug":"eloika-lake","acres":629.3,"elev":1909,"counties":["Spokane"],"lat":48.019451,"lng":-117.373205},{"name":"Emma Lake","slug":"emma-lake","acres":39.1,"elev":443,"counties":["Franklin"],"lat":46.328842,"lng":-118.77205},{"name":"Evergreen Lake","slug":"evergreen-lake","acres":247.5,"elev":1204,"counties":["Grant"],"lat":47.126565,"lng":-119.918593},{"name":"Fan Lake","slug":"fan-lake","acres":73.4,"elev":1925,"counties":["Pend Oreille"],"lat":48.055395,"lng":-117.405988},{"name":"Fiorito Lakes","slug":"fiorito-lakes","acres":null,"elev":1433,"counties":["Kittitas"],"lat":46.938561,"lng":-120.50463},{"name":"Frank's Pond","slug":"franks-pond","acres":0.62,"elev":720,"counties":["Chelan"],"lat":47.817759,"lng":-119.974055},{"name":"Franklin Roosevelt Lake (Lake Roosevelt)","slug":"franklin-roosevelt-lake","acres":77684.5,"elev":1293,"counties":["Stevens","Ferry","Lincoln","Okanogan","Grant"],"lat":47.901889,"lng":-118.172461},{"name":"Harts Lake","slug":"harts-lake","acres":111.6,"elev":351,"counties":["Pierce"],"lat":46.893296,"lng":-122.469339},{"name":"Heritage Lake","slug":"heritage-lake","acres":69.8,"elev":3153,"counties":["Stevens"],"lat":48.63295,"lng":-117.528244},{"name":"Hess Lake","slug":"hess-lake","acres":7.9,"elev":1399,"counties":["Okanogan"],"lat":48.505331,"lng":-119.641611},{"name":"Hicks Lake","slug":"hicks-lake","acres":162.3,"elev":182,"counties":["Thurston"],"lat":47.021219,"lng":-122.799698},{"name":"Horseshoe Lake (Cowlitz County)","slug":"horseshoe-lake-cowlitz","acres":83.3,"elev":13,"counties":["Cowlitz"],"lat":45.892717,"lng":-122.7432},{"name":"Horseshoe Lake (Pend Oreille County)","slug":"horseshoe-lake-pend-oreille","acres":135.6,"elev":1974,"counties":["Pend Oreille"],"lat":48.111488,"lng":-117.41657},{"name":"Horsethief Lake","slug":"horsethief-lake","acres":84.5,"elev":163,"counties":["Klickitat"],"lat":45.645527,"lng":-121.102979},{"name":"I-82 Pond 4","slug":"i-82-pond-4","acres":27.4,"elev":809,"counties":["Yakima"],"lat":46.437258,"lng":-120.347319},{"name":"I-82 Pond 5","slug":"i-82-pond-5","acres":36.5,"elev":804,"counties":["Yakima"],"lat":46.431928,"lng":-120.346199},{"name":"I-82 Pond 6 (Buena Pond)","slug":"i-82-pond-6","acres":27.7,"elev":773,"counties":["Yakima"],"lat":46.420253,"lng":-120.321726},{"name":"I-82 Pond 7","slug":"i-82-pond-7","acres":7.3,"elev":760,"counties":["Yakima"],"lat":46.411388,"lng":-120.295347},{"name":"Kellogg Lake","slug":"kellogg-lake","acres":13.8,"elev":654,"counties":["Snohomish"],"lat":47.902927,"lng":-121.76283},{"name":"Kress Lake","slug":"kress-lake","acres":24.6,"elev":18,"counties":["Cowlitz"],"lat":46.04705,"lng":-122.850953},{"name":"Lacamas Lake","slug":"lacamas-lake","acres":250.4,"elev":182,"counties":["Clark"],"lat":45.616843,"lng":-122.425798},{"name":"Lake Bradley","slug":"lake-bradley","acres":9.0,"elev":439,"counties":["Pierce"],"lat":47.161091,"lng":-122.284218},{"name":"Lake Campbell","slug":"lake-campbell","acres":390.8,"elev":49,"counties":["Skagit"],"lat":48.440314,"lng":-122.609411},{"name":"Lake Cassidy","slug":"cassidy-lake","acres":123.1,"elev":323,"counties":["Snohomish"],"lat":48.052035,"lng":-122.095196},{"name":"Lake Dolloff","slug":"lake-dolloff","acres":20.3,"elev":414,"counties":["King"],"lat":47.325218,"lng":-122.286404},{"name":"Lake Fenwick","slug":"lake-fenwick","acres":17.2,"elev":119,"counties":["King"],"lat":47.366238,"lng":-122.27125},{"name":"Lake Gillette","slug":"lake-gillette","acres":25.3,"elev":3151,"counties":["Stevens"],"lat":48.614229,"lng":-117.543014},{"name":"Lake Goodwin","slug":"lake-goodwin","acres":535.5,"elev":328,"counties":["Snohomish"],"lat":48.134687,"lng":-122.293759},{"name":"Lake Kapowsin","slug":"lake-kapowsin","acres":490.2,"elev":585,"counties":["Pierce"],"lat":46.972931,"lng":-122.227488},{"name":"Lake Leo","slug":"lake-leo","acres":32.2,"elev":3169,"counties":["Pend Oreille"],"lat":48.647901,"lng":-117.496481},{"name":"Lake Loma","slug":"lake-loma","acres":21.3,"elev":569,"counties":["Snohomish"],"lat":48.13432,"lng":-122.252195},{"name":"Lake Martha (Snohomish County)","slug":"martha-lake-snohomish","acres":59.8,"elev":190,"counties":["Snohomish"],"lat":48.16899,"lng":-122.341379},{"name":"Lake McMurray","slug":"lake-mcmurray","acres":155.4,"elev":230,"counties":["Skagit"],"lat":48.314316,"lng":-122.22616},{"name":"Lake Roesiger","slug":"lake-roesiger","acres":346.7,"elev":577,"counties":["Snohomish"],"lat":47.994672,"lng":-121.909154},{"name":"Lake Sacajawea","slug":"lake-sacajawea","acres":45.5,"elev":8,"counties":["Cowlitz"],"lat":46.13117,"lng":-122.949935},{"name":"Lake Sawyer","slug":"lake-sawyer","acres":285.7,"elev":498,"counties":["King"],"lat":47.333257,"lng":-122.037614},{"name":"Lake Sherry","slug":"lake-sherry","acres":26.1,"elev":3148,"counties":["Stevens"],"lat":48.609285,"lng":-117.543692},{"name":"Lake Shoecraft","slug":"lake-shoecraft","acres":131.7,"elev":328,"counties":["Snohomish"],"lat":48.129309,"lng":-122.303407},{"name":"Lake Spokane","slug":"lake-spokane","acres":4747.9,"elev":1538,"counties":["Stevens"],"lat":47.831469,"lng":-117.762552},{"name":"Lake St. Clair","slug":"st.-clair-lake","acres":233.1,"elev":77,"counties":["Thurston"],"lat":46.994559,"lng":-122.726246},{"name":"Lake Stevens","slug":"lake-stevens","acres":1003.4,"elev":214,"counties":["Snohomish"],"lat":48.00438,"lng":-122.084708},{"name":"Lake Tapps","slug":"lake-tapps","acres":2433.1,"elev":546,"counties":["Pierce"],"lat":47.214209,"lng":-122.169187},{"name":"Lake Thomas","slug":"lake-thomas","acres":162.6,"elev":3162,"counties":["Stevens"],"lat":48.62384,"lng":-117.540321},{"name":"Lake Umatilla","slug":"lake-umatilla","acres":48737.8,"elev":268,"counties":["Klickitat"],"lat":45.811665,"lng":-119.999705},{"name":"Lake Union","slug":"lake-union","acres":1030.5,"elev":17,"counties":["King"],"lat":47.646541,"lng":-122.343594},{"name":"Lake Wallula","slug":"lake-wallula","acres":26273.9,"elev":343,"counties":["Benton"],"lat":45.93606,"lng":-119.106598},{"name":"Lake Washington","slug":"lake-washington","acres":21933.6,"elev":17,"counties":["King"],"lat":47.601594,"lng":-122.275275},{"name":"Larsen Lake","slug":"larsen-lake","acres":9.8,"elev":253,"counties":["King"],"lat":47.605062,"lng":-122.140302},{"name":"Leader Lake","slug":"leader-lake","acres":155.0,"elev":2258,"counties":["Okanogan"],"lat":48.359905,"lng":-119.678267},{"name":"Leland Lake","slug":"leland-lake","acres":107.8,"elev":191,"counties":["Jefferson"],"lat":47.896676,"lng":-122.881788},{"name":"Liberty Lake","slug":"liberty-lake","acres":706.1,"elev":2053,"counties":["Spokane"],"lat":47.645159,"lng":-117.07807},{"name":"Long Lake (Grant County)","slug":"long-lake-grant","acres":73.5,"elev":1000,"counties":["Grant"],"lat":46.931177,"lng":-119.20702},{"name":"Long Lake (Kitsap County)","slug":"long-lake-kitsap","acres":320.9,"elev":122,"counties":["Kitsap"],"lat":47.483153,"lng":-122.589829},{"name":"Lost (Crappie) Lake","slug":"lost-crappie-lake","acres":9.0,"elev":622,"counties":["Snohomish"],"lat":47.828475,"lng":-121.791552},{"name":"Lower Goose Lake","slug":"lower-goose-lake","acres":65.4,"elev":862,"counties":["Grant"],"lat":46.923852,"lng":-119.288988},{"name":"Mesa Lake","slug":"mesa-lake","acres":47.8,"elev":749,"counties":["Franklin"],"lat":46.567828,"lng":-119.037891},{"name":"Mitchell Pond","slug":"mitchell-pond","acres":3.3,"elev":343,"counties":["Benton"],"lat":46.06271,"lng":-118.951675},{"name":"Moses Lake","slug":"moses-lake","acres":6727.9,"elev":1050,"counties":["Grant"],"lat":47.184562,"lng":-119.359089},{"name":"Mound Pond","slug":"mound-pond","acres":33.7,"elev":343,"counties":["Benton"],"lat":46.028572,"lng":-118.965528},{"name":"Munn Lake","slug":"munn-lake","acres":32.0,"elev":145,"counties":["Thurston"],"lat":46.985028,"lng":-122.879391},{"name":"Newman Lake","slug":"newman-lake","acres":1099.1,"elev":2130,"counties":["Spokane"],"lat":47.777189,"lng":-117.100543},{"name":"Ohop Lake","slug":"ohop-lake","acres":218.2,"elev":527,"counties":["Pierce"],"lat":46.905224,"lng":-122.273341},{"name":"Palmer Lake","slug":"palmer-lake","acres":2032.5,"elev":1150,"counties":["Okanogan"],"lat":48.893104,"lng":-119.618705},{"name":"Palmer Pond","slug":"palmer-pond","acres":4.9,"elev":344,"counties":["Benton"],"lat":46.004879,"lng":-118.996917},{"name":"Panther Lake (Snohomish County)","slug":"panther-lake-snohomish","acres":45.4,"elev":459,"counties":["Snohomish"],"lat":47.948629,"lng":-122.00585},{"name":"Patterson Lake","slug":"patterson-lake","acres":160.2,"elev":2391,"counties":["Okanogan"],"lat":48.456386,"lng":-120.245597},{"name":"Pattison Lake","slug":"pattison-lake","acres":254.6,"elev":162,"counties":["Thurston"],"lat":46.994751,"lng":-122.77742},{"name":"Phantom Lake","slug":"phantom-lake","acres":64.4,"elev":258,"counties":["King"],"lat":47.593301,"lng":-122.124654},{"name":"Pierre Lake","slug":"pierre-lake","acres":85.8,"elev":2009,"counties":["Stevens"],"lat":48.900554,"lng":-118.138693},{"name":"Potholes Reservoir","slug":"potholes-reservoir","acres":14281.5,"elev":1042,"counties":["Grant"],"lat":46.996189,"lng":-119.298678},{"name":"Powerline Lake","slug":"powerline-lake","acres":27.2,"elev":835,"counties":["Franklin"],"lat":46.640017,"lng":-119.065921},{"name":"Rapjohn Lake","slug":"rapjohn-lake","acres":59.1,"elev":636,"counties":["Pierce"],"lat":46.905177,"lng":-122.342204},{"name":"Riffe Lake","slug":"riffe-lake","acres":11325.9,"elev":774,"counties":["Lewis"],"lat":46.477388,"lng":-122.295061},{"name":"Rock Lake","slug":"rock-lake-whitman","acres":2189.6,"elev":1728,"counties":["Whitman"],"lat":47.181857,"lng":-117.679924},{"name":"Roses Lake","slug":"roses-lake","acres":178.2,"elev":1168,"counties":["Chelan"],"lat":47.904241,"lng":-120.154174},{"name":"Rowland Lake","slug":"rowland-lake","acres":71.3,"elev":77,"counties":["Klickitat"],"lat":45.708484,"lng":-121.381187},{"name":"Shiner Lake","slug":"shiner-lake","acres":81.1,"elev":713,"counties":["Adams"],"lat":46.878383,"lng":-119.300263},{"name":"Silver Lake (Cowlitz County)","slug":"silver-lake-cowlitz","acres":1424.2,"elev":489,"counties":["Cowlitz"],"lat":46.289715,"lng":-122.799487},{"name":"Silver Lake (Pierce County)","slug":"silver-lake-pierce","acres":133.2,"elev":607,"counties":["Pierce"],"lat":46.884852,"lng":-122.365583},{"name":"Silver Lake (Spokane County)","slug":"silver-lake-spokane","acres":418.1,"elev":2345,"counties":["Spokane"],"lat":47.544484,"lng":-117.653158},{"name":"Soda Lake","slug":"soda-lake","acres":154.1,"elev":1002,"counties":["Grant"],"lat":46.963,"lng":-119.238451},{"name":"South Lewis County Park Pond","slug":"south-lewis-county-park-pond","acres":14.1,"elev":93,"counties":["Lewis"],"lat":46.432923,"lng":-122.843539},{"name":"Sprague Lake","slug":"sprague-lake","acres":1760.1,"elev":1882,"counties":["Adams","Lincoln"],"lat":47.259702,"lng":-118.065938},{"name":"Stickney Lake","slug":"stickney-lake","acres":24.2,"elev":444,"counties":["Snohomish"],"lat":47.875195,"lng":-122.256048},{"name":"Switch Pond","slug":"switch-pond","acres":5.1,"elev":343,"counties":["Benton"],"lat":46.011968,"lng":-118.98798},{"name":"Tanwax Lake","slug":"tanwax-lake","acres":172.8,"elev":613,"counties":["Pierce"],"lat":46.950231,"lng":-122.266436},{"name":"Thompson Seep North","slug":"thompson-seep-north","acres":16.2,"elev":812,"counties":["Franklin"],"lat":46.688762,"lng":-119.260496},{"name":"Thompson Seep South","slug":"thompson-seep-south","acres":58.2,"elev":793,"counties":["Franklin"],"lat":46.675362,"lng":-119.272949},{"name":"Trout Lake","slug":"trout-lake-king-1","acres":15.8,"elev":329,"counties":["King"],"lat":47.266125,"lng":-122.27959},{"name":"Twin Lakes - Lower","slug":"twin-lakes-lower","acres":49.0,"elev":1877,"counties":["Lincoln"],"lat":47.525655,"lng":-118.516156},{"name":"Twin Lakes - Upper","slug":"twin-lakes-upper","acres":40.9,"elev":1881,"counties":["Lincoln"],"lat":47.532049,"lng":-118.499224},{"name":"Upper Goose Lake","slug":"upper-goose-lake","acres":130.4,"elev":865,"counties":["Grant"],"lat":46.941414,"lng":-119.278265},{"name":"Vancouver Lake","slug":"vancouver-lake","acres":2286.7,"elev":8,"counties":["Clark"],"lat":45.673665,"lng":-122.717972},{"name":"Wapato Lake","slug":"wapato-lake-chelan","acres":195.2,"elev":1232,"counties":["Chelan"],"lat":47.91805,"lng":-120.16372},{"name":"Washburn Island Pond","slug":"washburn-island-pond","acres":119.4,"elev":783,"counties":["Okanogan"],"lat":48.095985,"lng":-119.671127},{"name":"Waughop Lake","slug":"waughop-lake","acres":30.1,"elev":241,"counties":["Pierce"],"lat":47.170579,"lng":-122.564531},{"name":"Whitestone Lake","slug":"whitestone-lake","acres":147.2,"elev":1264,"counties":["Okanogan"],"lat":48.788793,"lng":-119.469055},{"name":"Yellepit Pond","slug":"yellepit-pond","acres":35.4,"elev":343,"counties":["Benton"],"lat":46.018868,"lng":-118.979441}];
 
-// ===== profiles =====
-const PROFILES = [
-  { id:'serimon', name:'Serimon', color:'#eaa24c' },
-  { id:'zaki',    name:'Zaki',    color:'#4cc6e0' },
-  { id:'chance',  name:'Chance',  color:'#8bd450' }
-];
-const profById = {}; PROFILES.forEach(p => profById[p.id] = p);
+// ===== supabase =====
+const SB_URL='https://ptdsxxttsyfczoacyyqg.supabase.co';
+const SB_KEY='sb_publishable_BrWe4LtnNnAI1_v_evwP3w_aBUIOmEz';
+const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true } }) : null;
+
+// ===== profiles (loaded from the database after login) =====
+let PROFILES = [];
+const profById = {};
+let me = null;            // { id, email } of the signed-in angler
+let activeProfile = null; // current user's id
 
 // ===== species, categories, colors =====
 const SPECIES = [
@@ -387,7 +416,6 @@ const SWATCHES = ['#e0533d','#e0913f','#e6c43d','#5bbf6a','#4c84d6','#9b6fe0','#
 
 function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
-let activeProfile = profById[lsGet('crappie-active')] ? lsGet('crappie-active') : 'serimon';
 
 // ===== state =====
 let userLoc = null, originLabel = '', activeId = null, launchesLoaded = false;
@@ -408,16 +436,7 @@ function todayStr(){ const d=new Date(); return new Date(d.getTime()-d.getTimezo
 function fmtDate(s){ if(!s) return ''; const p=s.split('-'); return `${p[1]}/${p[2]}/${p[0].slice(2)}`; }
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-// ===== IndexedDB =====
-const DB_NAME='crappie-log-v2', DB_VER=2;
-let _db=null;
-function dbOpen(){ return new Promise((res,rej)=>{ if(_db) return res(_db); const r=indexedDB.open(DB_NAME,DB_VER); r.onupgradeneeded=e=>{ const d=e.target.result; if(!d.objectStoreNames.contains('catches')) d.createObjectStore('catches',{keyPath:'id',autoIncrement:true}); if(!d.objectStoreNames.contains('visits')) d.createObjectStore('visits',{keyPath:'id',autoIncrement:true}); if(!d.objectStoreNames.contains('meta')) d.createObjectStore('meta',{keyPath:'k'}); }; r.onsuccess=e=>{ _db=e.target.result; res(_db); }; r.onerror=()=>rej(r.error); }); }
-function ost(name,mode){ return dbOpen().then(d=>d.transaction(name,mode).objectStore(name)); }
-function idbAll(name){ return ost(name,'readonly').then(s=>new Promise((res,rej)=>{ const r=s.getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error); })); }
-function idbAdd(name,o){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.add(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })); }
-function idbPut(name,o){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.put(o); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); })); }
-function idbDel(name,id){ return ost(name,'readwrite').then(s=>new Promise((res,rej)=>{ const r=s.delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); })); }
-
+// ===== data layer (Supabase cloud) =====
 function rebuildIndex(){
   LAKES.forEach(l=>logIndex[l.slug]={visits:0,catches:0,sp:{},top:null});
   visits.forEach(v=>{ const x=logIndex[v.lakeId]; if(x) x.visits++; });
@@ -428,14 +447,31 @@ function lakeStats(l){ return logIndex[l.slug] || {visits:0,catches:0,sp:{},top:
 function metaKey(who,slug){ return who+':'+slug; }
 function getMeta(l,who){ return metaMap[metaKey(who||activeProfile,l.slug)] || {fav:false,wish:false,color:null,cat:''}; }
 async function setMeta(l,patch){
+  if(!me||!sb) return;
   const key=metaKey(activeProfile,l.slug);
   const next=Object.assign({k:key,who:activeProfile,lakeId:l.slug,fav:false,wish:false,color:null,cat:''}, metaMap[key]||{}, patch);
-  metaMap[key]=next;
-  try { await idbPut('meta',next); } catch(e){ toast('Could not save tag here'); }
-  refreshLake(l); applyFilters();
+  metaMap[key]=next; refreshLake(l); applyFilters();
+  const { error } = await sb.from('lake_tags').upsert({ user_id:me.id, lake_id:l.slug, fav:next.fav, wish:next.wish, color:next.color, cat:next.cat||null, updated_at:new Date().toISOString() }, { onConflict:'user_id,lake_id' });
+  if(error) toast('Tag did not sync');
 }
-function photoUrl(c){ if(!c.photo) return null; if(!photoUrls[c.id]) photoUrls[c.id]=URL.createObjectURL(c.photo); return photoUrls[c.id]; }
-async function loadLog(){ try { const r = await Promise.all([idbAll('catches'),idbAll('visits'),idbAll('meta')]); catches=r[0]; visits=r[1]; (r[2]||[]).forEach(m=>metaMap[m.k]=m); } catch(e){ catches=[]; visits=[]; } rebuildIndex(); }
+function pubUrl(path){ try { return path && sb ? sb.storage.from('catch-photos').getPublicUrl(path).data.publicUrl : null; } catch(e){ return null; } }
+function photoUrl(c){ return c.photoUrlStr || null; }
+function mapCatch(r){ return { id:r.id, lakeId:r.lake_id, lakeName:r.lake_name, who:r.user_id, species:r.species||'crappie', date:r.date, length:r.length, weight:r.weight, qty:r.qty||1, notes:r.notes||'', photo_path:r.photo_path||null, photoUrlStr: pubUrl(r.photo_path) }; }
+async function loadProfiles(){
+  const { data } = await sb.from('profiles').select('id,name,color').order('created_at');
+  PROFILES.length=0; for(const k in profById) delete profById[k];
+  (data||[]).forEach(p=>{ PROFILES.push(p); profById[p.id]=p; });
+  if(me && !profById[me.id]){ const p={id:me.id,name:(me.email||'You').split('@')[0],color:'#eaa24c'}; PROFILES.push(p); profById[p.id]=p; }
+  activeProfile = me ? me.id : (PROFILES[0] && PROFILES[0].id) || null;
+}
+async function loadData(){
+  const [c,v,t] = await Promise.all([ sb.from('catches').select('*'), sb.from('visits').select('*'), sb.from('lake_tags').select('*') ]);
+  catches=(c.data||[]).map(mapCatch);
+  visits=(v.data||[]).map(r=>({ id:r.id, lakeId:r.lake_id, lakeName:r.lake_name, who:r.user_id, date:r.date }));
+  for(const k in metaMap) delete metaMap[k];
+  (t.data||[]).forEach(r=>{ const k=metaKey(r.user_id,r.lake_id); metaMap[k]={k,who:r.user_id,lakeId:r.lake_id,fav:r.fav,wish:r.wish,color:r.color,cat:r.cat||''}; });
+  rebuildIndex();
+}
 
 function downscale(file,max,q){ max=max||1500; q=q||0.82; return new Promise((res,rej)=>{ const img=new Image(); const url=URL.createObjectURL(file); img.onload=()=>{ URL.revokeObjectURL(url); let w=img.width,h=img.height; if(w>=h){ if(w>max){ h=Math.round(h*max/w); w=max; } } else if(h>max){ w=Math.round(w*max/h); h=max; } const cv=document.createElement('canvas'); cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h); cv.toBlob(b=>b?res(b):rej(new Error('blob')),'image/jpeg',q); }; img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('img')); }; img.src=url; }); }
 
@@ -658,32 +694,89 @@ function matchLaunches(launches){
 }
 
 // ===== profiles UI =====
-function renderProfiles(){ el('profiles').innerHTML = PROFILES.map(p=>`<button class="pill${p.id===activeProfile?' active':''}" data-p="${p.id}" style="${p.id===activeProfile?`border-color:${p.color}`:''}"><span class="pdot" style="background:${p.color}"></span><span class="pnm">${p.name}</span></button>`).join(''); }
-function setProfile(id){ if(!profById[id]) return; activeProfile=id; lsSet('crappie-active',id); renderProfiles(); LAKES.forEach(refreshLake); applyFilters(); }
+function renderProfiles(){
+  if(!me){ el('profiles').innerHTML=''; return; }
+  const p = profById[me.id] || {name:(me.email||'You').split('@')[0], color:'#eaa24c'};
+  el('profiles').innerHTML = `<button class="pill active" id="meChip" style="border-color:${p.color}" title="Tap to rename"><span class="pdot" style="background:${p.color}"></span><span class="pnm">${esc(p.name)}</span></button><button class="pill pill-out" id="logoutBtn" title="Sign out">Sign out</button>`;
+}
+async function updateProfileName(name){ if(!me) return; const { error }=await sb.from('profiles').update({name}).eq('id',me.id); if(error){ toast('Name did not save'); return; } if(profById[me.id]) profById[me.id].name=name; renderProfiles(); LAKES.forEach(refreshLake); updateJournal(); toast('Name updated'); }
+
+// ===== auth =====
+let entered=false, rtChan=null;
+function showGate(msg){ const g=el('gate'); if(g) g.classList.add('show'); if(msg) el('gateStatus').textContent=msg; }
+function hideGate(){ const g=el('gate'); if(g) g.classList.remove('show'); }
+async function sendLink(){
+  if(!sb) return;
+  const email=el('gateEmail').value.trim();
+  if(!/.+@.+\..+/.test(email)){ el('gateStatus').textContent='Enter a valid email address.'; return; }
+  el('gateSend').disabled=true; el('gateStatus').textContent='Sending the link...';
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: location.origin + location.pathname } });
+  el('gateSend').disabled=false;
+  el('gateStatus').textContent = error ? ('Could not send: '+error.message) : 'Check your email and tap the link. You can open it on this device.';
+}
+async function handleSession(session){
+  if(session && session.user){
+    if(entered && me && me.id===session.user.id) return;
+    me={ id:session.user.id, email:session.user.email }; entered=true; await enterApp();
+  } else { entered=false; me=null; if(rtChan){ try{ sb.removeChannel(rtChan); }catch(e){} rtChan=null; } showGate(); }
+}
+async function enterApp(){
+  hideGate();
+  try { await loadProfiles(); await loadData(); } catch(e){}
+  renderProfiles(); renderJournalFilter(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); subscribeRealtime();
+  if(location.hash && location.hash.indexOf('access_token')>=0) history.replaceState(null,'',location.pathname);
+}
+async function doLogout(){ try{ await sb.auth.signOut(); }catch(e){} catches=[]; visits=[]; for(const k in metaMap) delete metaMap[k]; rebuildIndex(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); showGate(); }
+function subscribeRealtime(){
+  if(!sb || rtChan) return;
+  let t=null; const bump=()=>{ clearTimeout(t); t=setTimeout(async()=>{ try{ await loadData(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); }catch(e){} }, 600); };
+  rtChan = sb.channel('crappie-sync')
+    .on('postgres_changes',{event:'*',schema:'public',table:'catches'}, bump)
+    .on('postgres_changes',{event:'*',schema:'public',table:'visits'}, bump)
+    .subscribe();
+}
 
 // ===== visits + catch sheet =====
-async function logVisit(l,dateStr,who){ dateStr=dateStr||todayStr(); who=who||activeProfile; if(visits.some(v=>v.lakeId===l.slug && v.date===dateStr && v.who===who)) return false; const o={lakeId:l.slug,lakeName:l.name,who,date:dateStr,createdAt:Date.now()}; try { o.id=await idbAdd('visits',o); visits.push(o); rebuildIndex(); return true; } catch(e){ toast('Could not save. Storage may be blocked here.'); return false; } }
-async function quickVisit(id){ const l=LAKES[id]; const added=await logVisit(l); refreshLake(l); renderList(); updateJournal(); const st=lakeStats(l); const who=profById[activeProfile].name; toast(added?`Visit logged for ${who} \u00b7 ${l.name} now ${st.visits}`:`${l.name}: ${who} already logged today`); }
+async function logVisit(l,dateStr){
+  if(!me||!sb) return false;
+  dateStr=dateStr||todayStr();
+  if(visits.some(v=>v.lakeId===l.slug && v.date===dateStr && v.who===me.id)) return false;
+  const { data, error } = await sb.from('visits').insert({ user_id:me.id, lake_id:l.slug, lake_name:l.name, date:dateStr }).select().single();
+  if(error){ if(error.code!=='23505') toast('Visit did not sync'); return false; }
+  visits.push({ id:data.id, lakeId:l.slug, lakeName:l.name, who:me.id, date:dateStr }); rebuildIndex(); return true;
+}
+async function quickVisit(id){ const l=LAKES[id]; const added=await logVisit(l); refreshLake(l); renderList(); updateJournal(); const st=lakeStats(l); const who=(profById[activeProfile]||{}).name||'You'; toast(added?`Visit logged for ${who} \u00b7 ${l.name} now ${st.visits}`:`${l.name}: ${who} already logged today`); }
 
-let sheetMode='new', editingId=null, sheetLakeIdx=null, pendingPhoto=null, keptPhoto=null, prevUrl=null;
-function fillWho(){ el('catchWho').innerHTML=PROFILES.map(p=>`<option value="${p.id}">${p.name}</option>`).join(''); }
+let sheetMode='new', editingId=null, editingCatch=null, ownCatch=true, sheetLakeIdx=null, pendingPhoto=null, prevUrl=null;
 function fillSpecies(){ el('catchSpecies').innerHTML=SPECIES.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''); }
 function showSheet(){ el('sheet').classList.add('open'); el('sheetBg').classList.add('open'); }
 function hideSheet(){ el('sheet').classList.remove('open'); el('sheetBg').classList.remove('open'); }
-function resetPhoto(){ pendingPhoto=null; keptPhoto=null; if(prevUrl){ URL.revokeObjectURL(prevUrl); prevUrl=null; } el('catchPhoto').value=''; el('photoPrev').style.display='none'; el('photoPrev').removeAttribute('src'); el('photoBtn').textContent='Add photo'; }
-function openCatch(idx){ sheetMode='new'; editingId=null; sheetLakeIdx=idx; const l=LAKES[idx]; el('sheetTitle').textContent='Log a catch'; el('catchLake').textContent=l.name; el('catchWho').value=activeProfile; el('catchSpecies').value=lsGet('crappie-lastsp')||'crappie'; el('catchDate').value=todayStr(); el('catchLen').value=''; el('catchWt').value=''; el('catchQty').value='1'; el('catchNotes').value=''; resetPhoto(); el('catchDelete').style.display='none'; el('catchSave').textContent='Save catch'; showSheet(); }
-function openCatchView(c){ sheetMode='edit'; editingId=c.id; sheetLakeIdx=LAKES.findIndex(x=>x.slug===c.lakeId); const l=LAKES[sheetLakeIdx]; el('sheetTitle').textContent='Catch details'; el('catchLake').textContent=l?l.name:c.lakeName; el('catchWho').value=c.who||'serimon'; el('catchSpecies').value=c.species||'crappie'; el('catchDate').value=c.date||todayStr(); el('catchLen').value=c.length??''; el('catchWt').value=c.weight??''; el('catchQty').value=c.qty||1; el('catchNotes').value=c.notes||''; resetPhoto(); if(c.photo){ keptPhoto=c.photo; const u=photoUrl(c); el('photoPrev').src=u; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } el('catchDelete').style.display='inline-flex'; el('catchSave').textContent='Save changes'; showSheet(); }
+function resetPhoto(){ pendingPhoto=null; if(prevUrl){ URL.revokeObjectURL(prevUrl); prevUrl=null; } el('catchPhoto').value=''; el('photoPrev').style.display='none'; el('photoPrev').removeAttribute('src'); el('photoBtn').textContent='Add photo'; }
+function setSheetEditable(on){ ['catchSpecies','catchDate','catchLen','catchWt','catchQty','catchNotes'].forEach(id=>{ el(id).disabled=!on; }); el('photoBtn').style.display=on?'':'none'; }
+function openCatch(idx){ sheetMode='new'; editingId=null; editingCatch=null; ownCatch=true; sheetLakeIdx=idx; const l=LAKES[idx]; el('sheetTitle').textContent='Log a catch'; el('catchLake').textContent=l.name; el('catchWhoName').textContent= me?((profById[me.id]||{}).name||'You'):'You'; el('catchSpecies').value=lsGet('crappie-lastsp')||'crappie'; el('catchDate').value=todayStr(); el('catchLen').value=''; el('catchWt').value=''; el('catchQty').value='1'; el('catchNotes').value=''; resetPhoto(); setSheetEditable(true); el('catchDelete').style.display='none'; el('catchSave').style.display=''; el('catchSave').textContent='Save catch'; showSheet(); }
+function openCatchView(c){ sheetMode='edit'; editingId=c.id; editingCatch=c; ownCatch=(me && c.who===me.id); sheetLakeIdx=LAKES.findIndex(x=>x.slug===c.lakeId); const l=LAKES[sheetLakeIdx]; el('sheetTitle').textContent= ownCatch?'Catch details':('Catch by '+((profById[c.who]||{}).name||'angler')); el('catchLake').textContent=l?l.name:c.lakeName; el('catchWhoName').textContent=(profById[c.who]||{}).name||'Angler'; el('catchSpecies').value=c.species||'crappie'; el('catchDate').value=c.date||todayStr(); el('catchLen').value=c.length??''; el('catchWt').value=c.weight??''; el('catchQty').value=c.qty||1; el('catchNotes').value=c.notes||''; resetPhoto(); if(c.photoUrlStr){ el('photoPrev').src=c.photoUrlStr; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } setSheetEditable(ownCatch); el('catchDelete').style.display= ownCatch?'inline-flex':'none'; el('catchSave').style.display= ownCatch?'':'none'; el('catchSave').textContent='Save changes'; showSheet(); }
 async function saveCatch(){
+  if(!me||!sb) return;
   const l=LAKES[sheetLakeIdx]; if(!l){ hideSheet(); return; }
-  const o={ lakeId:l.slug, lakeName:l.name, who:el('catchWho').value, species:el('catchSpecies').value, date:el('catchDate').value||todayStr(), length:parseFloat(el('catchLen').value)||null, weight:parseFloat(el('catchWt').value)||null, qty:parseInt(el('catchQty').value)||1, notes:el('catchNotes').value.trim(), photo: pendingPhoto||keptPhoto||null, createdAt:Date.now() };
-  lsSet('crappie-lastsp', o.species);
-  try {
-    if(sheetMode==='edit' && editingId!=null){ o.id=editingId; await idbPut('catches',o); const i=catches.findIndex(c=>c.id===editingId); if(i>=0) catches[i]=o; if(photoUrls[editingId]){ URL.revokeObjectURL(photoUrls[editingId]); delete photoUrls[editingId]; } }
-    else { o.id=await idbAdd('catches',o); catches.push(o); }
-  } catch(e){ toast('Could not save. Storage may be blocked here.'); return; }
-  await logVisit(l,o.date,o.who); rebuildIndex(); refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast(sheetMode==='edit'?'Catch updated':`Catch logged at ${l.name}`);
+  el('catchSave').disabled=true;
+  let photo_path = (sheetMode==='edit' && editingCatch) ? (editingCatch.photo_path||null) : null;
+  if(pendingPhoto){
+    try{ const path=`${me.id}/${(crypto.randomUUID&&crypto.randomUUID())||Date.now()}.jpg`; const up=await sb.storage.from('catch-photos').upload(path, pendingPhoto, { contentType:'image/jpeg', upsert:false }); if(up.error) throw up.error; photo_path=up.data.path; }catch(e){ toast('Photo upload failed, saving without it'); }
+  }
+  const payload={ user_id:me.id, lake_id:l.slug, lake_name:l.name, species:el('catchSpecies').value, date:el('catchDate').value||todayStr(), length:parseFloat(el('catchLen').value)||null, weight:parseFloat(el('catchWt').value)||null, qty:parseInt(el('catchQty').value)||1, notes:el('catchNotes').value.trim(), photo_path };
+  lsSet('crappie-lastsp', payload.species);
+  try{
+    if(sheetMode==='edit' && editingId){ const { data, error }=await sb.from('catches').update(payload).eq('id',editingId).select().single(); if(error) throw error; const i=catches.findIndex(c=>c.id===editingId); if(i>=0) catches[i]=mapCatch(data); }
+    else { const { data, error }=await sb.from('catches').insert(payload).select().single(); if(error) throw error; catches.push(mapCatch(data)); }
+  }catch(e){ el('catchSave').disabled=false; toast('Catch did not save'); return; }
+  el('catchSave').disabled=false;
+  await logVisit(l, payload.date); rebuildIndex(); refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast(sheetMode==='edit'?'Catch updated':`Catch logged at ${l.name}`);
 }
-async function deleteCatch(){ if(editingId==null) return; try { await idbDel('catches',editingId); } catch(e){} catches=catches.filter(c=>c.id!==editingId); if(photoUrls[editingId]){ URL.revokeObjectURL(photoUrls[editingId]); delete photoUrls[editingId]; } const l=LAKES[sheetLakeIdx]; rebuildIndex(); if(l) refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast('Catch deleted'); }
+async function deleteCatch(){
+  if(editingId==null||!sb) return;
+  try{ await sb.from('catches').delete().eq('id',editingId); if(editingCatch && editingCatch.photo_path){ sb.storage.from('catch-photos').remove([editingCatch.photo_path]); } }catch(e){}
+  catches=catches.filter(c=>c.id!==editingId); const l=LAKES[sheetLakeIdx]; rebuildIndex(); if(l) refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast('Catch deleted');
+}
 
 // ===== journal =====
 function updateJournal(){ renderLeaderboard(); renderTotals(); renderJournalSpecies(); renderJournalList(); }
@@ -726,13 +819,16 @@ const panel=el('panel');
 function closePanel(){ panel.classList.remove('open'); }
 
 function setupUI(){
-  el('profiles').addEventListener('click',e=>{ const b=e.target.closest('.pill'); if(b){ setProfile(b.dataset.p); toast(`Logging as ${profById[activeProfile].name}`); } });
+  el('profiles').addEventListener('click',e=>{
+    if(e.target.closest('#logoutBtn')){ doLogout(); return; }
+    const mc=e.target.closest('#meChip'); if(mc && me){ const nn=prompt('Your angler name', (profById[me.id]||{}).name||''); if(nn && nn.trim()) updateProfileName(nn.trim()); }
+  });
   el('tabLakes').addEventListener('click',()=>setTab('lakes'));
   el('tabLog').addEventListener('click',()=>setTab('log'));
   document.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{ const f=ch.dataset.f; activeFilters[f]=!activeFilters[f]; ch.classList.toggle('active',activeFilters[f]); applyFilters(); }));
   el('toggle').addEventListener('click',()=>panel.classList.toggle('open'));
   el('photoBtn').addEventListener('click',()=>el('catchPhoto').click());
-  el('catchPhoto').addEventListener('change',async()=>{ const f=el('catchPhoto').files[0]; if(!f) return; try { pendingPhoto=await downscale(f); keptPhoto=null; if(prevUrl) URL.revokeObjectURL(prevUrl); prevUrl=URL.createObjectURL(pendingPhoto); el('photoPrev').src=prevUrl; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } catch(e){ toast('Could not read that image'); } });
+  el('catchPhoto').addEventListener('change',async()=>{ const f=el('catchPhoto').files[0]; if(!f) return; try { pendingPhoto=await downscale(f); if(prevUrl) URL.revokeObjectURL(prevUrl); prevUrl=URL.createObjectURL(pendingPhoto); el('photoPrev').src=prevUrl; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } catch(e){ toast('Could not read that image'); } });
   el('catchSave').addEventListener('click',saveCatch);
   el('catchDelete').addEventListener('click',deleteCatch);
   el('sheetX').addEventListener('click',hideSheet);
@@ -761,15 +857,16 @@ function renderLegend(){ el('legend').innerHTML = SPECIES.map(s=>`<span class="l
   el('stat-counties').textContent=counties.length;
   el('stat-species').textContent=SPECIES.length;
   el('total').textContent=LAKES.length;
-  fillWho();
   fillSpecies();
-  renderProfiles();
   renderLegend();
-  renderJournalFilter();
   setupUI();
   applyFilters();
   loadLaunches();
-  loadLog().then(()=>{ LAKES.forEach(refreshLake); applyFilters(); updateJournal(); });
+  if(!sb){ showGate('Login needs the live site. This in-app preview blocks the login service, so open your Vercel URL.'); return; }
+  el('gateSend').addEventListener('click', sendLink);
+  el('gateEmail').addEventListener('keydown',e=>{ if(e.key==='Enter') sendLink(); });
+  sb.auth.onAuthStateChange((_e,session)=>handleSession(session));
+  sb.auth.getSession().then(({data})=>handleSession(data.session)).catch(()=>showGate());
 })();
 </script>
 </body>
