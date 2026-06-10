@@ -177,6 +177,7 @@
 
   .leaflet-control-layers{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);color:var(--ink);overflow:hidden;}
   .leaflet-control-layers-expanded{padding:10px 13px 10px 11px;min-width:150px;}
+  .leaflet-control-layers-toggle{width:42px !important;height:42px !important;background-color:var(--panel);background-size:21px 21px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23eaa24c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2L2 7.5l10 5.5 10-5.5L12 2z'/><path d='M2 12.5l10 5.5 10-5.5'/><path d='M2 17.5L12 23l10-5.5'/></svg>");}
   .leaflet-control-layers label{display:flex;align-items:center;gap:8px;margin:5px 0;cursor:pointer;font-weight:500;font-size:13px;}
   .leaflet-control-layers-selector{accent-color:var(--amber);width:14px;height:14px;margin:0;}
   .leaflet-control-layers-separator{border-top:1px solid var(--line);margin:8px -2px;}
@@ -249,7 +250,7 @@
   .trip-stat{font-family:'Zilla Slab',serif;font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;}
   .trip-act{border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;background:var(--bg2);color:var(--ink);}
   .trip-act.log{background:linear-gradient(180deg,#46b877,#2f9159);color:#04220f;border:none;}
-  @media(max-width:760px){ .tripbtn{top:58px;left:10px;} }
+  @media(max-width:760px){ .tripbtn{top:58px;left:10px;z-index:1100;} }
   .insights{display:flex;flex-wrap:wrap;gap:8px;}
   .insight{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--muted);}
   .insight b{color:var(--ink);font-weight:600;}
@@ -335,9 +336,9 @@
 
   @media (max-width:760px){
     .app{grid-template-columns:1fr;}
-    .panel{position:absolute;inset:0;width:90%;max-width:374px;transform:translateX(-102%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);}
+    .panel{position:absolute;inset:0;width:90%;max-width:374px;transform:translateX(-102%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow);z-index:1150;}
     .panel.open{transform:translateX(0);}
-    .toggle{display:flex;}
+    .toggle{display:flex;z-index:1250;}
     .mapwrap{grid-column:1;grid-row:1;}
   }
 </style>
@@ -618,7 +619,7 @@ const launchLayer = L.layerGroup();
 const catchLayer = L.layerGroup();
 street.addTo(map);
 launchLayer.addTo(map);
-L.control.layers({ 'Street':street, 'Street (light)':cartoLight, 'Topographic':esriTopo, 'Satellite':esriImagery, 'Satellite + labels':hybrid, 'Terrain':openTopo }, { 'Boat launches':launchLayer, 'Crew catches':catchLayer }, { position:'topright', collapsed:false }).addTo(map);
+L.control.layers({ 'Street':street, 'Street (light)':cartoLight, 'Topographic':esriTopo, 'Satellite':esriImagery, 'Satellite + labels':hybrid, 'Terrain':openTopo }, { 'Boat launches':launchLayer, 'Crew catches':catchLayer }, { position:'topright', collapsed: window.matchMedia('(max-width:760px)').matches }).addTo(map);
 function refreshCatchLayer(){
   catchLayer.clearLayers();
   LAKES.forEach(l=>{ const st=lakeStats(l); if(st.catches>0){ const r=Math.min(22, 6+st.catches*2); L.circleMarker([l.lat,l.lng],{radius:r,color:'#eaa24c',weight:1.5,fillColor:'#eaa24c',fillOpacity:.32}).bindTooltip(`${l.name}: ${st.catches}`,{direction:'top'}).on('click',()=>openLakeSheet(l.id)).addTo(catchLayer); } });
