@@ -250,6 +250,44 @@
   .trip-act{border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer;background:var(--bg2);color:var(--ink);}
   .trip-act.log{background:linear-gradient(180deg,#46b877,#2f9159);color:#04220f;border:none;}
   @media(max-width:760px){ .tripbtn{top:58px;left:10px;} }
+  .insights{display:flex;flex-wrap:wrap;gap:8px;}
+  .insight{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:12px;color:var(--muted);}
+  .insight b{color:var(--ink);font-weight:600;}
+  .trips{display:flex;flex-direction:column;gap:8px;}
+  .trow{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px;cursor:pointer;}
+  .trow:hover{border-color:var(--water-deep);}
+  .tdot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--water);}
+  .tmain{min-width:0;flex:1;}
+  .tname{font-size:13.5px;font-weight:600;}
+  .tsub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .tbig{font-family:'Zilla Slab',serif;font-weight:700;font-size:15px;color:var(--ink);white-space:nowrap;}
+  .export{align-self:flex-start;}
+  .outbox{font-size:11.5px;color:var(--amber);background:rgba(234,162,76,.10);border:1px solid rgba(234,162,76,.3);border-radius:9px;padding:7px 10px;}
+  .lk-bg{position:fixed;inset:0;z-index:2600;background:rgba(3,10,9,.55);opacity:0;pointer-events:none;transition:opacity .2s;}
+  .lk-bg.open{opacity:1;pointer-events:auto;}
+  .lk-sheet{position:fixed;z-index:2700;left:50%;bottom:0;transform:translate(-50%,100%);width:min(560px,100%);max-height:90vh;display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--line);border-bottom:none;border-radius:18px 18px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.5);transition:transform .26s cubic-bezier(.2,.8,.2,1);}
+  .lk-sheet.open{transform:translate(-50%,0);}
+  .lk-h{display:flex;align-items:center;justify-content:space-between;padding:15px 18px 10px;border-bottom:1px solid var(--line-soft);}
+  .lk-title{font-family:'Zilla Slab',serif;font-weight:700;font-size:20px;color:var(--ink);}
+  .lk-body{overflow-y:auto;padding:14px 18px 26px;display:flex;flex-direction:column;gap:14px;}
+  .lk-facts{display:flex;flex-wrap:wrap;gap:8px;}
+  .lk-fact{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--muted);}
+  .lk-fact b{color:var(--ink);}
+  .lk-sec{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;}
+  .lk-fc{display:flex;gap:8px;}
+  .lk-fcd{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center;}
+  .lk-fcd .d{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .lk-fcd .s{font-family:'Zilla Slab',serif;font-weight:700;font-size:18px;margin-top:3px;}
+  .lk-fcd .m{font-size:11px;color:var(--muted);margin-top:2px;}
+  .lk-sol{font-size:12.5px;color:var(--ink);line-height:1.6;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px;}
+  .lk-sol b{color:var(--water);}
+  .lk-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .lk-btn{flex:1;min-width:120px;border:1px solid var(--line);border-radius:10px;padding:11px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;background:var(--panel);color:var(--ink);text-align:center;text-decoration:none;}
+  .lk-btn.amber{background:linear-gradient(180deg,var(--amber),var(--amber-deep));color:#241606;border:none;}
+  .lk-btn.green{background:linear-gradient(180deg,#46b877,#2f9159);color:#04220f;border:none;}
+  .lk-photos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .lk-photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;}
+  .lk-empty{font-size:12px;color:var(--faint);}
 
   .pill-out{flex:0 0 auto;color:var(--muted);}
 
@@ -377,12 +415,17 @@
       <div class="jfilter" id="jfilter"></div>
       <div class="jtotals" id="jtotals"></div>
       <div class="jspecies" id="jspecies"></div>
+      <div class="insights" id="insights"></div>
       <div class="jsec">Best months</div>
       <div class="heat" id="heat"></div>
       <div class="jsec">Records</div>
       <div class="records" id="records"></div>
+      <div class="jsec" id="tripsLabel">Trips</div>
+      <div class="trips" id="trips"></div>
       <div class="jsec">Catches</div>
       <div class="jlist" id="jlist"></div>
+      <button class="prefresh export" id="exportCsv">Export log to CSV</button>
+      <div class="outbox" id="outbox" style="display:none"></div>
       <div class="jnote">Synced live to your crew's shared log.</div>
     </div>
 
@@ -392,11 +435,12 @@
         <div class="dayrow" id="dayRow"></div>
       </div>
       <div class="plan-note" id="planNote">Open to load the 7-day bite forecast.</div>
+      <div class="lk-sol" id="planSol" style="display:none"></div>
       <div class="planlist" id="planList"></div>
     </div>
 
     <div class="foot">
-      Data: <a href="https://wdfw.wa.gov/fishing/locations/lowland-lakes" target="_blank" rel="noopener">WDFW lowland lakes</a>. Launches load live from WDFW.
+      Data: <a href="https://wdfw.wa.gov/fishing/locations/lowland-lakes" target="_blank" rel="noopener">WDFW lowland lakes</a>. Launches load live from WDFW. <span class="ver" id="ver"></span>
     </div>
   </aside>
 
@@ -440,7 +484,15 @@
       <label class="fld"><span>Weight (lb)</span><input type="number" inputmode="decimal" step="0.01" id="catchWt" placeholder="optional"></label>
       <label class="fld"><span>How many</span><input type="number" inputmode="numeric" min="1" id="catchQty" value="1"></label>
     </div>
-    <label class="fld"><span>Notes</span><textarea id="catchNotes" rows="2" placeholder="Bait, depth, structure, weather..."></textarea></label>
+    <div class="fld-row">
+      <label class="fld"><span>Depth (ft)</span><input type="number" inputmode="decimal" step="0.5" id="catchDepth" placeholder="optional"></label>
+      <label class="fld"><span>Water temp (F)</span><input type="number" inputmode="decimal" step="1" id="catchWtemp" placeholder="optional"></label>
+    </div>
+    <div class="fld-row">
+      <label class="fld"><span>Bait</span><input type="text" id="catchBait" placeholder="jig, minnow, tube..." autocomplete="off"></label>
+      <label class="fld"><span>Structure</span><input type="text" id="catchStruct" placeholder="brush, dock, weed line..." autocomplete="off"></label>
+    </div>
+    <label class="fld"><span>Notes</span><textarea id="catchNotes" rows="2" placeholder="Color, presentation, weather..."></textarea></label>
     <div class="fld"><span>Photo</span>
       <input type="file" id="catchPhoto" accept="image/*" capture="environment" hidden>
       <button type="button" class="photo-btn" id="photoBtn">Add photo</button>
@@ -453,11 +505,18 @@
   </div>
 </div>
 
+<div class="lk-bg" id="lkBg"></div>
+<div class="lk-sheet" id="lkSheet" role="dialog" aria-modal="true">
+  <div class="lk-h"><div class="lk-title" id="lkTitle">Lake</div><button class="sheet-x" id="lkX" aria-label="Close">&times;</button></div>
+  <div class="lk-body" id="lkBody"></div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const LAKES = [{"name":"Alder Lake","slug":"alder-lake","acres":2877.2,"elev":1198,"counties":["Pierce"],"lat":46.772031,"lng":-122.22727},{"name":"Angle Lake","slug":"angle-lake","acres":102.8,"elev":351,"counties":["King"],"lat":47.427512,"lng":-122.286785},{"name":"Antilon Lake (Lower)","slug":"antilon-lower","acres":35.5,"elev":2329,"counties":["Chelan"],"lat":47.967512,"lng":-120.157567},{"name":"Antilon Lake (Upper)","slug":"antilon-lake-upper","acres":33.6,"elev":2329,"counties":["Chelan"],"lat":47.97575,"lng":-120.160764},{"name":"Ballinger Lake","slug":"ballinger-lake","acres":100.7,"elev":282,"counties":["Snohomish"],"lat":47.782021,"lng":-122.326817},{"name":"Banks Lake","slug":"banks-lake","acres":26888.3,"elev":1574,"counties":["Grant","Douglas"],"lat":47.85385,"lng":-119.171805},{"name":"Bass Lake","slug":"bass-lake","acres":24.2,"elev":669,"counties":["King"],"lat":47.254853,"lng":-121.995621},{"name":"Battle Ground Lake","slug":"battle-ground-lake","acres":25.4,"elev":509,"counties":["Clark"],"lat":45.804756,"lng":-122.494045},{"name":"Beaver Lake (Skagit County)","slug":"beaver-lake-skagit","acres":72.3,"elev":32,"counties":["Skagit"],"lat":48.448756,"lng":-122.218729},{"name":"Big Lake","slug":"big-lake","acres":536.2,"elev":82,"counties":["Skagit"],"lat":48.381563,"lng":-122.229995},{"name":"Billy Clapp Lake","slug":"billy-clapp-lake","acres":973.6,"elev":1340,"counties":["Grant"],"lat":47.452846,"lng":-119.248485},{"name":"Black Lake (Thurston County)","slug":"black-lake-thurston","acres":573.7,"elev":134,"counties":["Thurston"],"lat":46.98279,"lng":-122.981409},{"name":"Blackmans Lake","slug":"blackmans-lake","acres":61.0,"elev":144,"counties":["Snohomish"],"lat":47.932269,"lng":-122.094003},{"name":"Bonnie Lake","slug":"bonnie-lake","acres":327.0,"elev":1793,"counties":["Spokane"],"lat":47.28183,"lng":-117.558588},{"name":"Boundary Reservoir","slug":"boundary-reservoir","acres":1579.3,"elev":1994,"counties":["Pend Oreille"],"lat":48.853316,"lng":-117.376241},{"name":"Box Canyon Reservoir","slug":"box-canyon-reservoir","acres":9317.0,"elev":2351,"counties":["Pend Oreille"],"lat":48.237329,"lng":-117.220776},{"name":"Carlisle Lake","slug":"carlisle-lake","acres":22.2,"elev":496,"counties":["Lewis"],"lat":46.579893,"lng":-122.727066},{"name":"Chain Lake","slug":"chain-lake","acres":21.3,"elev":397,"counties":["Snohomish"],"lat":47.903786,"lng":-121.970839},{"name":"Chapman Lake","slug":"chapman-lake","acres":128.3,"elev":2156,"counties":["Spokane"],"lat":47.363848,"lng":-117.567885},{"name":"Clark Pond","slug":"clark-pond","acres":37.8,"elev":758,"counties":["Franklin"],"lat":46.521249,"lng":-119.071278},{"name":"Clear Lake (Skagit County)","slug":"clear-lake-skagit","acres":220.4,"elev":36,"counties":["Skagit"],"lat":48.460153,"lng":-122.225178},{"name":"Clear Lake (Spokane County)","slug":"clear-lake-spokane","acres":315.9,"elev":2344,"counties":["Spokane"],"lat":47.527339,"lng":-117.694776},{"name":"Coffeepot Lake","slug":"coffeepot-lake","acres":310.6,"elev":1818,"counties":["Lincoln"],"lat":47.492847,"lng":-118.563408},{"name":"Coffin Lake","slug":"coffin-lake","acres":21.0,"elev":3101,"counties":["Stevens"],"lat":48.576514,"lng":-117.553742},{"name":"Columbia Park Pond","slug":"columbia-park-pond","acres":9.8,"elev":341,"counties":["Benton"],"lat":46.219021,"lng":-119.143921},{"name":"Cottage Lake","slug":"cottage-lake","acres":62.7,"elev":235,"counties":["King"],"lat":47.753212,"lng":-122.088289},{"name":"Cow Lake","slug":"cow-lake","acres":199.3,"elev":1753,"counties":["Adams"],"lat":47.132084,"lng":-118.158123},{"name":"Dalton Lake","slug":"dalton-lake","acres":45.1,"elev":443,"counties":["Franklin"],"lat":46.297145,"lng":-118.800111},{"name":"Davis Lake (Pend Oreille County)","slug":"davis-lake-pend-oreille","acres":147.8,"elev":2182,"counties":["Pend Oreille"],"lat":48.224248,"lng":-117.293831},{"name":"Deep Lake (King County)","slug":"deep-lake-king","acres":38.8,"elev":774,"counties":["King"],"lat":47.273605,"lng":-121.939852},{"name":"Deer Lake (Stevens County)","slug":"deer-lake-stevens","acres":1146.4,"elev":2482,"counties":["Stevens"],"lat":48.111757,"lng":-117.586634},{"name":"Deer Springs Lake","slug":"deer-springs-lake","acres":61.6,"elev":1742,"counties":["Lincoln"],"lat":47.473034,"lng":-118.617065},{"name":"Diamond Lake","slug":"diamond-lake","acres":754.4,"elev":2343,"counties":["Pend Oreille"],"lat":48.128095,"lng":-117.201151},{"name":"Downs Lake","slug":"downs-lake","acres":406.1,"elev":1961,"counties":["Spokane"],"lat":47.279381,"lng":-117.808298},{"name":"Dry Lake","slug":"dry-lake","acres":81.1,"elev":1167,"counties":["Chelan"],"lat":47.911558,"lng":-120.173843},{"name":"Duck Lake","slug":"duck-lake","acres":248.6,"elev":0,"counties":["Grays Harbor"],"lat":46.970909,"lng":-124.146038},{"name":"Eloika Lake","slug":"eloika-lake","acres":629.3,"elev":1909,"counties":["Spokane"],"lat":48.019451,"lng":-117.373205},{"name":"Emma Lake","slug":"emma-lake","acres":39.1,"elev":443,"counties":["Franklin"],"lat":46.328842,"lng":-118.77205},{"name":"Evergreen Lake","slug":"evergreen-lake","acres":247.5,"elev":1204,"counties":["Grant"],"lat":47.126565,"lng":-119.918593},{"name":"Fan Lake","slug":"fan-lake","acres":73.4,"elev":1925,"counties":["Pend Oreille"],"lat":48.055395,"lng":-117.405988},{"name":"Fiorito Lakes","slug":"fiorito-lakes","acres":null,"elev":1433,"counties":["Kittitas"],"lat":46.938561,"lng":-120.50463},{"name":"Frank's Pond","slug":"franks-pond","acres":0.62,"elev":720,"counties":["Chelan"],"lat":47.817759,"lng":-119.974055},{"name":"Franklin Roosevelt Lake (Lake Roosevelt)","slug":"franklin-roosevelt-lake","acres":77684.5,"elev":1293,"counties":["Stevens","Ferry","Lincoln","Okanogan","Grant"],"lat":47.901889,"lng":-118.172461},{"name":"Harts Lake","slug":"harts-lake","acres":111.6,"elev":351,"counties":["Pierce"],"lat":46.893296,"lng":-122.469339},{"name":"Heritage Lake","slug":"heritage-lake","acres":69.8,"elev":3153,"counties":["Stevens"],"lat":48.63295,"lng":-117.528244},{"name":"Hess Lake","slug":"hess-lake","acres":7.9,"elev":1399,"counties":["Okanogan"],"lat":48.505331,"lng":-119.641611},{"name":"Hicks Lake","slug":"hicks-lake","acres":162.3,"elev":182,"counties":["Thurston"],"lat":47.021219,"lng":-122.799698},{"name":"Horseshoe Lake (Cowlitz County)","slug":"horseshoe-lake-cowlitz","acres":83.3,"elev":13,"counties":["Cowlitz"],"lat":45.892717,"lng":-122.7432},{"name":"Horseshoe Lake (Pend Oreille County)","slug":"horseshoe-lake-pend-oreille","acres":135.6,"elev":1974,"counties":["Pend Oreille"],"lat":48.111488,"lng":-117.41657},{"name":"Horsethief Lake","slug":"horsethief-lake","acres":84.5,"elev":163,"counties":["Klickitat"],"lat":45.645527,"lng":-121.102979},{"name":"I-82 Pond 4","slug":"i-82-pond-4","acres":27.4,"elev":809,"counties":["Yakima"],"lat":46.437258,"lng":-120.347319},{"name":"I-82 Pond 5","slug":"i-82-pond-5","acres":36.5,"elev":804,"counties":["Yakima"],"lat":46.431928,"lng":-120.346199},{"name":"I-82 Pond 6 (Buena Pond)","slug":"i-82-pond-6","acres":27.7,"elev":773,"counties":["Yakima"],"lat":46.420253,"lng":-120.321726},{"name":"I-82 Pond 7","slug":"i-82-pond-7","acres":7.3,"elev":760,"counties":["Yakima"],"lat":46.411388,"lng":-120.295347},{"name":"Kellogg Lake","slug":"kellogg-lake","acres":13.8,"elev":654,"counties":["Snohomish"],"lat":47.902927,"lng":-121.76283},{"name":"Kress Lake","slug":"kress-lake","acres":24.6,"elev":18,"counties":["Cowlitz"],"lat":46.04705,"lng":-122.850953},{"name":"Lacamas Lake","slug":"lacamas-lake","acres":250.4,"elev":182,"counties":["Clark"],"lat":45.616843,"lng":-122.425798},{"name":"Lake Bradley","slug":"lake-bradley","acres":9.0,"elev":439,"counties":["Pierce"],"lat":47.161091,"lng":-122.284218},{"name":"Lake Campbell","slug":"lake-campbell","acres":390.8,"elev":49,"counties":["Skagit"],"lat":48.440314,"lng":-122.609411},{"name":"Lake Cassidy","slug":"cassidy-lake","acres":123.1,"elev":323,"counties":["Snohomish"],"lat":48.052035,"lng":-122.095196},{"name":"Lake Dolloff","slug":"lake-dolloff","acres":20.3,"elev":414,"counties":["King"],"lat":47.325218,"lng":-122.286404},{"name":"Lake Fenwick","slug":"lake-fenwick","acres":17.2,"elev":119,"counties":["King"],"lat":47.366238,"lng":-122.27125},{"name":"Lake Gillette","slug":"lake-gillette","acres":25.3,"elev":3151,"counties":["Stevens"],"lat":48.614229,"lng":-117.543014},{"name":"Lake Goodwin","slug":"lake-goodwin","acres":535.5,"elev":328,"counties":["Snohomish"],"lat":48.134687,"lng":-122.293759},{"name":"Lake Kapowsin","slug":"lake-kapowsin","acres":490.2,"elev":585,"counties":["Pierce"],"lat":46.972931,"lng":-122.227488},{"name":"Lake Leo","slug":"lake-leo","acres":32.2,"elev":3169,"counties":["Pend Oreille"],"lat":48.647901,"lng":-117.496481},{"name":"Lake Loma","slug":"lake-loma","acres":21.3,"elev":569,"counties":["Snohomish"],"lat":48.13432,"lng":-122.252195},{"name":"Lake Martha (Snohomish County)","slug":"martha-lake-snohomish","acres":59.8,"elev":190,"counties":["Snohomish"],"lat":48.16899,"lng":-122.341379},{"name":"Lake McMurray","slug":"lake-mcmurray","acres":155.4,"elev":230,"counties":["Skagit"],"lat":48.314316,"lng":-122.22616},{"name":"Lake Roesiger","slug":"lake-roesiger","acres":346.7,"elev":577,"counties":["Snohomish"],"lat":47.994672,"lng":-121.909154},{"name":"Lake Sacajawea","slug":"lake-sacajawea","acres":45.5,"elev":8,"counties":["Cowlitz"],"lat":46.13117,"lng":-122.949935},{"name":"Lake Sawyer","slug":"lake-sawyer","acres":285.7,"elev":498,"counties":["King"],"lat":47.333257,"lng":-122.037614},{"name":"Lake Sherry","slug":"lake-sherry","acres":26.1,"elev":3148,"counties":["Stevens"],"lat":48.609285,"lng":-117.543692},{"name":"Lake Shoecraft","slug":"lake-shoecraft","acres":131.7,"elev":328,"counties":["Snohomish"],"lat":48.129309,"lng":-122.303407},{"name":"Lake Spokane","slug":"lake-spokane","acres":4747.9,"elev":1538,"counties":["Stevens"],"lat":47.831469,"lng":-117.762552},{"name":"Lake St. Clair","slug":"st.-clair-lake","acres":233.1,"elev":77,"counties":["Thurston"],"lat":46.994559,"lng":-122.726246},{"name":"Lake Stevens","slug":"lake-stevens","acres":1003.4,"elev":214,"counties":["Snohomish"],"lat":48.00438,"lng":-122.084708},{"name":"Lake Tapps","slug":"lake-tapps","acres":2433.1,"elev":546,"counties":["Pierce"],"lat":47.214209,"lng":-122.169187},{"name":"Lake Thomas","slug":"lake-thomas","acres":162.6,"elev":3162,"counties":["Stevens"],"lat":48.62384,"lng":-117.540321},{"name":"Lake Umatilla","slug":"lake-umatilla","acres":48737.8,"elev":268,"counties":["Klickitat"],"lat":45.811665,"lng":-119.999705},{"name":"Lake Union","slug":"lake-union","acres":1030.5,"elev":17,"counties":["King"],"lat":47.646541,"lng":-122.343594},{"name":"Lake Wallula","slug":"lake-wallula","acres":26273.9,"elev":343,"counties":["Benton"],"lat":45.93606,"lng":-119.106598},{"name":"Lake Washington","slug":"lake-washington","acres":21933.6,"elev":17,"counties":["King"],"lat":47.601594,"lng":-122.275275},{"name":"Larsen Lake","slug":"larsen-lake","acres":9.8,"elev":253,"counties":["King"],"lat":47.605062,"lng":-122.140302},{"name":"Leader Lake","slug":"leader-lake","acres":155.0,"elev":2258,"counties":["Okanogan"],"lat":48.359905,"lng":-119.678267},{"name":"Leland Lake","slug":"leland-lake","acres":107.8,"elev":191,"counties":["Jefferson"],"lat":47.896676,"lng":-122.881788},{"name":"Liberty Lake","slug":"liberty-lake","acres":706.1,"elev":2053,"counties":["Spokane"],"lat":47.645159,"lng":-117.07807},{"name":"Long Lake (Grant County)","slug":"long-lake-grant","acres":73.5,"elev":1000,"counties":["Grant"],"lat":46.931177,"lng":-119.20702},{"name":"Long Lake (Kitsap County)","slug":"long-lake-kitsap","acres":320.9,"elev":122,"counties":["Kitsap"],"lat":47.483153,"lng":-122.589829},{"name":"Lost (Crappie) Lake","slug":"lost-crappie-lake","acres":9.0,"elev":622,"counties":["Snohomish"],"lat":47.828475,"lng":-121.791552},{"name":"Lower Goose Lake","slug":"lower-goose-lake","acres":65.4,"elev":862,"counties":["Grant"],"lat":46.923852,"lng":-119.288988},{"name":"Mesa Lake","slug":"mesa-lake","acres":47.8,"elev":749,"counties":["Franklin"],"lat":46.567828,"lng":-119.037891},{"name":"Mitchell Pond","slug":"mitchell-pond","acres":3.3,"elev":343,"counties":["Benton"],"lat":46.06271,"lng":-118.951675},{"name":"Moses Lake","slug":"moses-lake","acres":6727.9,"elev":1050,"counties":["Grant"],"lat":47.184562,"lng":-119.359089},{"name":"Mound Pond","slug":"mound-pond","acres":33.7,"elev":343,"counties":["Benton"],"lat":46.028572,"lng":-118.965528},{"name":"Munn Lake","slug":"munn-lake","acres":32.0,"elev":145,"counties":["Thurston"],"lat":46.985028,"lng":-122.879391},{"name":"Newman Lake","slug":"newman-lake","acres":1099.1,"elev":2130,"counties":["Spokane"],"lat":47.777189,"lng":-117.100543},{"name":"Ohop Lake","slug":"ohop-lake","acres":218.2,"elev":527,"counties":["Pierce"],"lat":46.905224,"lng":-122.273341},{"name":"Palmer Lake","slug":"palmer-lake","acres":2032.5,"elev":1150,"counties":["Okanogan"],"lat":48.893104,"lng":-119.618705},{"name":"Palmer Pond","slug":"palmer-pond","acres":4.9,"elev":344,"counties":["Benton"],"lat":46.004879,"lng":-118.996917},{"name":"Panther Lake (Snohomish County)","slug":"panther-lake-snohomish","acres":45.4,"elev":459,"counties":["Snohomish"],"lat":47.948629,"lng":-122.00585},{"name":"Patterson Lake","slug":"patterson-lake","acres":160.2,"elev":2391,"counties":["Okanogan"],"lat":48.456386,"lng":-120.245597},{"name":"Pattison Lake","slug":"pattison-lake","acres":254.6,"elev":162,"counties":["Thurston"],"lat":46.994751,"lng":-122.77742},{"name":"Phantom Lake","slug":"phantom-lake","acres":64.4,"elev":258,"counties":["King"],"lat":47.593301,"lng":-122.124654},{"name":"Pierre Lake","slug":"pierre-lake","acres":85.8,"elev":2009,"counties":["Stevens"],"lat":48.900554,"lng":-118.138693},{"name":"Potholes Reservoir","slug":"potholes-reservoir","acres":14281.5,"elev":1042,"counties":["Grant"],"lat":46.996189,"lng":-119.298678},{"name":"Powerline Lake","slug":"powerline-lake","acres":27.2,"elev":835,"counties":["Franklin"],"lat":46.640017,"lng":-119.065921},{"name":"Rapjohn Lake","slug":"rapjohn-lake","acres":59.1,"elev":636,"counties":["Pierce"],"lat":46.905177,"lng":-122.342204},{"name":"Riffe Lake","slug":"riffe-lake","acres":11325.9,"elev":774,"counties":["Lewis"],"lat":46.477388,"lng":-122.295061},{"name":"Rock Lake","slug":"rock-lake-whitman","acres":2189.6,"elev":1728,"counties":["Whitman"],"lat":47.181857,"lng":-117.679924},{"name":"Roses Lake","slug":"roses-lake","acres":178.2,"elev":1168,"counties":["Chelan"],"lat":47.904241,"lng":-120.154174},{"name":"Rowland Lake","slug":"rowland-lake","acres":71.3,"elev":77,"counties":["Klickitat"],"lat":45.708484,"lng":-121.381187},{"name":"Shiner Lake","slug":"shiner-lake","acres":81.1,"elev":713,"counties":["Adams"],"lat":46.878383,"lng":-119.300263},{"name":"Silver Lake (Cowlitz County)","slug":"silver-lake-cowlitz","acres":1424.2,"elev":489,"counties":["Cowlitz"],"lat":46.289715,"lng":-122.799487},{"name":"Silver Lake (Pierce County)","slug":"silver-lake-pierce","acres":133.2,"elev":607,"counties":["Pierce"],"lat":46.884852,"lng":-122.365583},{"name":"Silver Lake (Spokane County)","slug":"silver-lake-spokane","acres":418.1,"elev":2345,"counties":["Spokane"],"lat":47.544484,"lng":-117.653158},{"name":"Soda Lake","slug":"soda-lake","acres":154.1,"elev":1002,"counties":["Grant"],"lat":46.963,"lng":-119.238451},{"name":"South Lewis County Park Pond","slug":"south-lewis-county-park-pond","acres":14.1,"elev":93,"counties":["Lewis"],"lat":46.432923,"lng":-122.843539},{"name":"Sprague Lake","slug":"sprague-lake","acres":1760.1,"elev":1882,"counties":["Adams","Lincoln"],"lat":47.259702,"lng":-118.065938},{"name":"Stickney Lake","slug":"stickney-lake","acres":24.2,"elev":444,"counties":["Snohomish"],"lat":47.875195,"lng":-122.256048},{"name":"Switch Pond","slug":"switch-pond","acres":5.1,"elev":343,"counties":["Benton"],"lat":46.011968,"lng":-118.98798},{"name":"Tanwax Lake","slug":"tanwax-lake","acres":172.8,"elev":613,"counties":["Pierce"],"lat":46.950231,"lng":-122.266436},{"name":"Thompson Seep North","slug":"thompson-seep-north","acres":16.2,"elev":812,"counties":["Franklin"],"lat":46.688762,"lng":-119.260496},{"name":"Thompson Seep South","slug":"thompson-seep-south","acres":58.2,"elev":793,"counties":["Franklin"],"lat":46.675362,"lng":-119.272949},{"name":"Trout Lake","slug":"trout-lake-king-1","acres":15.8,"elev":329,"counties":["King"],"lat":47.266125,"lng":-122.27959},{"name":"Twin Lakes - Lower","slug":"twin-lakes-lower","acres":49.0,"elev":1877,"counties":["Lincoln"],"lat":47.525655,"lng":-118.516156},{"name":"Twin Lakes - Upper","slug":"twin-lakes-upper","acres":40.9,"elev":1881,"counties":["Lincoln"],"lat":47.532049,"lng":-118.499224},{"name":"Upper Goose Lake","slug":"upper-goose-lake","acres":130.4,"elev":865,"counties":["Grant"],"lat":46.941414,"lng":-119.278265},{"name":"Vancouver Lake","slug":"vancouver-lake","acres":2286.7,"elev":8,"counties":["Clark"],"lat":45.673665,"lng":-122.717972},{"name":"Wapato Lake","slug":"wapato-lake-chelan","acres":195.2,"elev":1232,"counties":["Chelan"],"lat":47.91805,"lng":-120.16372},{"name":"Washburn Island Pond","slug":"washburn-island-pond","acres":119.4,"elev":783,"counties":["Okanogan"],"lat":48.095985,"lng":-119.671127},{"name":"Waughop Lake","slug":"waughop-lake","acres":30.1,"elev":241,"counties":["Pierce"],"lat":47.170579,"lng":-122.564531},{"name":"Whitestone Lake","slug":"whitestone-lake","acres":147.2,"elev":1264,"counties":["Okanogan"],"lat":48.788793,"lng":-119.469055},{"name":"Yellepit Pond","slug":"yellepit-pond","acres":35.4,"elev":343,"counties":["Benton"],"lat":46.018868,"lng":-118.979441}];
+const APP_VERSION = '2.0';
 
 // ===== supabase =====
 const SB_URL='https://ptdsxxttsyfczoacyyqg.supabase.co';
@@ -486,7 +545,7 @@ function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 // ===== state =====
 let userLoc = null, originLabel = '', activeId = null, launchesLoaded = false;
 let filtered = LAKES.slice();
-let catches = [], visits = [];
+let catches = [], visits = [], trips = [];
 let journalWho = 'all';
 const markers = {}, logIndex = {}, photoUrls = {}, metaMap = {};
 const activeFilters = { fav:false, wish:false, ramp:false, motor:false, visited:false, caught:false };
@@ -522,7 +581,7 @@ async function setMeta(l,patch){
 }
 function pubUrl(path){ try { return path && sb ? sb.storage.from('catch-photos').getPublicUrl(path).data.publicUrl : null; } catch(e){ return null; } }
 function photoUrl(c){ return c.photoUrlStr || null; }
-function mapCatch(r){ return { id:r.id, lakeId:r.lake_id, lakeName:r.lake_name, who:r.user_id, species:r.species||'crappie', date:r.date, length:r.length, weight:r.weight, qty:r.qty||1, notes:r.notes||'', photo_path:r.photo_path||null, photoUrlStr: pubUrl(r.photo_path) }; }
+function mapCatch(r){ return { id:r.id, lakeId:r.lake_id, lakeName:r.lake_name, who:r.user_id, species:r.species||'crappie', date:r.date, length:r.length, weight:r.weight, qty:r.qty||1, depth:r.depth, bait:r.bait||'', structure:r.structure||'', water_temp:r.water_temp, notes:r.notes||'', created_at:r.created_at||null, photo_path:r.photo_path||null, photoUrlStr: pubUrl(r.photo_path) }; }
 async function loadProfiles(){
   const { data } = await sb.from('profiles').select('id,name,color').order('created_at');
   PROFILES.length=0; for(const k in profById) delete profById[k];
@@ -531,9 +590,10 @@ async function loadProfiles(){
   activeProfile = me ? me.id : (PROFILES[0] && PROFILES[0].id) || null;
 }
 async function loadData(){
-  const [c,v,t] = await Promise.all([ sb.from('catches').select('*'), sb.from('visits').select('*'), sb.from('lake_tags').select('*') ]);
+  const [c,v,t,tr] = await Promise.all([ sb.from('catches').select('*'), sb.from('visits').select('*'), sb.from('lake_tags').select('*'), sb.from('trips').select('*').order('started_at',{ascending:false}) ]);
   catches=(c.data||[]).map(mapCatch);
   visits=(v.data||[]).map(r=>({ id:r.id, lakeId:r.lake_id, lakeName:r.lake_name, who:r.user_id, date:r.date }));
+  trips=(tr.data||[]).map(r=>({ id:r.id, who:r.user_id, startedAt:r.started_at, endedAt:r.ended_at, durationMin:r.duration_min, distanceMi:r.distance_mi, track:r.track||[], lakes:r.lakes||[], catchIds:r.catch_ids||[], note:r.note||'' }));
   for(const k in metaMap) delete metaMap[k];
   (t.data||[]).forEach(r=>{ const k=metaKey(r.user_id,r.lake_id); metaMap[k]={k,who:r.user_id,lakeId:r.lake_id,fav:r.fav,wish:r.wish,color:r.color,cat:r.cat||''}; });
   rebuildIndex();
@@ -555,9 +615,14 @@ const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom:19, attribution:'&copy; OSM &copy; CARTO' });
 
 const launchLayer = L.layerGroup();
+const catchLayer = L.layerGroup();
 street.addTo(map);
 launchLayer.addTo(map);
-L.control.layers({ 'Street':street, 'Street (light)':cartoLight, 'Topographic':esriTopo, 'Satellite':esriImagery, 'Satellite + labels':hybrid, 'Terrain':openTopo }, { 'Boat launches':launchLayer }, { position:'topright', collapsed:false }).addTo(map);
+L.control.layers({ 'Street':street, 'Street (light)':cartoLight, 'Topographic':esriTopo, 'Satellite':esriImagery, 'Satellite + labels':hybrid, 'Terrain':openTopo }, { 'Boat launches':launchLayer, 'Crew catches':catchLayer }, { position:'topright', collapsed:false }).addTo(map);
+function refreshCatchLayer(){
+  catchLayer.clearLayers();
+  LAKES.forEach(l=>{ const st=lakeStats(l); if(st.catches>0){ const r=Math.min(22, 6+st.catches*2); L.circleMarker([l.lat,l.lng],{radius:r,color:'#eaa24c',weight:1.5,fillColor:'#eaa24c',fillOpacity:.32}).bindTooltip(`${l.name}: ${st.catches}`,{direction:'top'}).on('click',()=>openLakeSheet(l.id)).addTo(catchLayer); } });
+}
 
 const tileWarn = el('tileWarn');
 let tileErrs = 0;
@@ -599,7 +664,7 @@ function popupHtml(l){
     if (launchesLoaded) launchBlock = `<div class="pop-note">No WDFW boat launch matched nearby. May be shore access only. The WDFW page lists details.</div>`;
     actions = `<a class="btn primary" href="${dirUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Directions</a><div class="btn-row"><a class="btn ghost" href="${mapUrl(l)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>Map</a>${wdfwBtn}</div>`;
   }
-  const logbtns = `<div class="pop-logbtns"><button class="btn ghost lg-visit" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Log visit</button><button class="btn log lg-catch" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Log catch</button></div>`;
+  const logbtns = `<div class="pop-logbtns"><button class="btn ghost lg-visit" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Log visit</button><button class="btn log lg-catch" data-lake="${l.id}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Log catch</button></div><button class="btn ghost lg-detail" data-lake="${l.id}" style="width:100%;margin-top:7px;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg>Lake details</button>`;
   return `<div class="pop-nm">${esc(l.name)}</div><div class="pop-co">${counties}</div>${facts}${logline}${spLine}${dist}${launchBlock}<div class="pop-actions">${actions}</div>${logbtns}${tagRow}`;
 }
 
@@ -623,7 +688,7 @@ function applyFilters(){
     if (activeFilters.motor && !(l.launch && l.launch.motor)) return false;
     if (activeFilters.visited && st.visits<=0) return false;
     if (activeFilters.caught && st.catches<=0) return false;
-    if (sp && !st.sp[sp]) return false;
+    if (sp && sp!=='crappie' && !st.sp[sp]) return false;
     if (cat && m.cat!==cat) return false;
     return true;
   });
@@ -661,7 +726,7 @@ function renderList(){
 
 function setActive(id,fly){ activeId=id; document.querySelectorAll('.item').forEach(e=>e.classList.toggle('active',+e.dataset.id===id)); const e=document.querySelector(`.item[data-id="${id}"]`); if(e) e.scrollIntoView({block:'nearest',behavior:'smooth'}); if(fly){ const l=LAKES[id]; map.flyTo([l.lat,l.lng],Math.max(map.getZoom(),12),{duration:.7}); cluster.zoomToShowLayer(markers[id],()=>markers[id].openPopup()); } }
 
-$list.addEventListener('click',e=>{ const it=e.target.closest('.item'); if(it){ if(window.innerWidth<=760) closePanel(); setActive(+it.dataset.id,true); } });
+$list.addEventListener('click',e=>{ const it=e.target.closest('.item'); if(it){ openLakeSheet(+it.dataset.id); } });
 $search.addEventListener('input',()=>{ const q=$search.value.trim(); if(/^\d{5}$/.test(q)) resolveZip(q); applyFilters(); });
 $search.addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const q=$search.value.trim(); if(/^\d{5}$/.test(q)) resolveZip(q); else if(q.length>=3 && !/^\d+$/.test(q)) geocodePlace(q); });
 $county.addEventListener('change',applyFilters);
@@ -796,31 +861,59 @@ async function handleSession(session){
   if(session && session.user){
     if(entered && me && me.id===session.user.id) return;
     me={ id:session.user.id, email:session.user.email }; entered=true; await enterApp();
-  } else { entered=false; me=null; if(rtChan){ try{ sb.removeChannel(rtChan); }catch(e){} rtChan=null; } showGate(); }
+  } else { entered=false; me=null; clearAcctHint(); if(rtChan){ try{ sb.removeChannel(rtChan); }catch(e){} rtChan=null; } showGate(); }
 }
 async function enterApp(){
-  hideGate();
-  try { await loadProfiles(); await loadData(); } catch(e){}
-  renderProfiles(); renderJournalFilter(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); subscribeRealtime();
+  hideGate(); renderProfiles();
+  try { await loadProfiles(); } catch(e){}
+  renderProfiles(); setAcctHint();
+  try { await loadData(); } catch(e){}
+  renderJournalFilter(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); refreshCatchLayer(); subscribeRealtime(); flushOutbox();
   if(location.hash && location.hash.indexOf('access_token')>=0) history.replaceState(null,'',location.pathname);
 }
-async function doLogout(){ try{ await sb.auth.signOut(); }catch(e){} catches=[]; visits=[]; for(const k in metaMap) delete metaMap[k]; rebuildIndex(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); showGate(); }
+async function doLogout(){ try{ await sb.auth.signOut(); }catch(e){} clearAcctHint(); queueSet([]); catches=[]; visits=[]; trips=[]; for(const k in metaMap) delete metaMap[k]; rebuildIndex(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); refreshCatchLayer(); showGate(); }
+function acctHint(){ try{ return JSON.parse(localStorage.getItem('crappie-acct')||'null'); }catch(e){ return null; } }
+function setAcctHint(){ if(me){ const p=profById[me.id]||{}; lsSet('crappie-acct', JSON.stringify({id:me.id,email:me.email,name:p.name||'',color:p.color||'#eaa24c'})); } }
+function clearAcctHint(){ try{ localStorage.removeItem('crappie-acct'); }catch(e){} }
 function subscribeRealtime(){
   if(!sb || rtChan) return;
-  let t=null; const bump=()=>{ clearTimeout(t); t=setTimeout(async()=>{ try{ await loadData(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); }catch(e){} }, 600); };
+  let t=null; const bump=()=>{ clearTimeout(t); t=setTimeout(async()=>{ try{ await loadData(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); refreshCatchLayer(); }catch(e){} }, 600); };
   rtChan = sb.channel('crappie-sync')
     .on('postgres_changes',{event:'*',schema:'public',table:'catches'}, bump)
     .on('postgres_changes',{event:'*',schema:'public',table:'visits'}, bump)
+    .on('postgres_changes',{event:'*',schema:'public',table:'trips'}, bump)
     .subscribe();
 }
 
+// ===== offline outbox =====
+function queue(){ try{ return JSON.parse(localStorage.getItem('crappie-outbox')||'[]'); }catch(e){ return []; } }
+function queueSet(a){ lsSet('crappie-outbox', JSON.stringify(a)); }
+function queuePush(item){ const a=queue(); a.push(item); queueSet(a); updateOutboxNote(); }
+function updateOutboxNote(){ const n=queue().length; const e=el('outbox'); if(e){ e.style.display=n?'':'none'; e.textContent=n?`${n} change${n===1?'':'s'} waiting to sync`:''; } }
+async function flushOutbox(){
+  if(!sb||!me||!navigator.onLine) return;
+  const a=queue(); if(!a.length) return;
+  const rest=[];
+  for(const item of a){
+    try{
+      if(item.kind==='catch'){ const { error }=await sb.from('catches').insert(item.payload); if(error) throw error; }
+      else if(item.kind==='visit'){ const { error }=await sb.from('visits').insert(item.payload); if(error && error.code!=='23505') throw error; }
+      else if(item.kind==='trip'){ const { error }=await sb.from('trips').insert(item.payload); if(error) throw error; }
+    }catch(e){ rest.push(item); }
+  }
+  queueSet(rest); updateOutboxNote();
+  if(rest.length<a.length){ try{ await loadData(); LAKES.forEach(refreshLake); applyFilters(); updateJournal(); }catch(e){} if(!rest.length) toast('Offline log synced'); }
+}
+window.addEventListener('online', flushOutbox);
+
 // ===== visits + catch sheet =====
 async function logVisit(l,dateStr){
-  if(!me||!sb) return false;
+  if(!me) return false;
   dateStr=dateStr||todayStr();
   if(visits.some(v=>v.lakeId===l.slug && v.date===dateStr && v.who===me.id)) return false;
+  if(!navigator.onLine || !sb){ visits.push({ id:'local-'+Date.now(), lakeId:l.slug, lakeName:l.name, who:me.id, date:dateStr }); queuePush({kind:'visit', payload:{ user_id:me.id, lake_id:l.slug, lake_name:l.name, date:dateStr }}); rebuildIndex(); return true; }
   const { data, error } = await sb.from('visits').insert({ user_id:me.id, lake_id:l.slug, lake_name:l.name, date:dateStr }).select().single();
-  if(error){ if(error.code!=='23505') toast('Visit did not sync'); return false; }
+  if(error){ if(error.code==='23505') return false; visits.push({ id:'local-'+Date.now(), lakeId:l.slug, lakeName:l.name, who:me.id, date:dateStr }); queuePush({kind:'visit', payload:{ user_id:me.id, lake_id:l.slug, lake_name:l.name, date:dateStr }}); rebuildIndex(); return true; }
   visits.push({ id:data.id, lakeId:l.slug, lakeName:l.name, who:me.id, date:dateStr }); rebuildIndex(); return true;
 }
 async function quickVisit(id){ const l=LAKES[id]; const added=await logVisit(l); refreshLake(l); renderList(); updateJournal(); const st=lakeStats(l); const who=(profById[activeProfile]||{}).name||'You'; toast(added?`Visit logged for ${who} \u00b7 ${l.name} now ${st.visits}`:`${l.name}: ${who} already logged today`); }
@@ -830,23 +923,24 @@ function fillSpecies(){ el('catchSpecies').innerHTML=SPECIES.map(s=>`<option val
 function showSheet(){ el('sheet').classList.add('open'); el('sheetBg').classList.add('open'); }
 function hideSheet(){ el('sheet').classList.remove('open'); el('sheetBg').classList.remove('open'); }
 function resetPhoto(){ pendingPhoto=null; if(prevUrl){ URL.revokeObjectURL(prevUrl); prevUrl=null; } el('catchPhoto').value=''; el('photoPrev').style.display='none'; el('photoPrev').removeAttribute('src'); el('photoBtn').textContent='Add photo'; }
-function setSheetEditable(on){ ['catchSpecies','catchDate','catchLen','catchWt','catchQty','catchNotes'].forEach(id=>{ el(id).disabled=!on; }); el('photoBtn').style.display=on?'':'none'; }
-function openCatch(idx){ sheetMode='new'; editingId=null; editingCatch=null; ownCatch=true; sheetLakeIdx=idx; const l=LAKES[idx]; el('sheetTitle').textContent='Log a catch'; el('catchLake').textContent=l.name; el('catchWhoName').textContent= me?((profById[me.id]||{}).name||'You'):'You'; el('catchSpecies').value=lsGet('crappie-lastsp')||'crappie'; el('catchDate').value=todayStr(); el('catchLen').value=''; el('catchWt').value=''; el('catchQty').value='1'; el('catchNotes').value=''; resetPhoto(); setSheetEditable(true); el('catchDelete').style.display='none'; el('catchSave').style.display=''; el('catchSave').textContent='Save catch'; showSheet(); }
-function openCatchView(c){ sheetMode='edit'; editingId=c.id; editingCatch=c; ownCatch=(me && c.who===me.id); sheetLakeIdx=LAKES.findIndex(x=>x.slug===c.lakeId); const l=LAKES[sheetLakeIdx]; el('sheetTitle').textContent= ownCatch?'Catch details':('Catch by '+((profById[c.who]||{}).name||'angler')); el('catchLake').textContent=l?l.name:c.lakeName; el('catchWhoName').textContent=(profById[c.who]||{}).name||'Angler'; el('catchSpecies').value=c.species||'crappie'; el('catchDate').value=c.date||todayStr(); el('catchLen').value=c.length??''; el('catchWt').value=c.weight??''; el('catchQty').value=c.qty||1; el('catchNotes').value=c.notes||''; resetPhoto(); if(c.photoUrlStr){ el('photoPrev').src=c.photoUrlStr; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } setSheetEditable(ownCatch); el('catchDelete').style.display= ownCatch?'inline-flex':'none'; el('catchSave').style.display= ownCatch?'':'none'; el('catchSave').textContent='Save changes'; showSheet(); }
+function setSheetEditable(on){ ['catchSpecies','catchDate','catchLen','catchWt','catchQty','catchDepth','catchWtemp','catchBait','catchStruct','catchNotes'].forEach(id=>{ el(id).disabled=!on; }); el('photoBtn').style.display=on?'':'none'; }
+function openCatch(idx){ sheetMode='new'; editingId=null; editingCatch=null; ownCatch=true; sheetLakeIdx=idx; const l=LAKES[idx]; el('sheetTitle').textContent='Log a catch'; el('catchLake').textContent=l.name; el('catchWhoName').textContent= me?((profById[me.id]||{}).name||'You'):'You'; el('catchSpecies').value=lsGet('crappie-lastsp')||'crappie'; el('catchDate').value=todayStr(); el('catchLen').value=''; el('catchWt').value=''; el('catchQty').value='1'; el('catchDepth').value=''; el('catchWtemp').value=''; el('catchBait').value=lsGet('crappie-lastbait')||''; el('catchStruct').value=''; el('catchNotes').value=''; resetPhoto(); setSheetEditable(true); el('catchDelete').style.display='none'; el('catchSave').style.display=''; el('catchSave').textContent='Save catch'; showSheet(); }
+function openCatchView(c){ sheetMode='edit'; editingId=c.id; editingCatch=c; ownCatch=(me && c.who===me.id); sheetLakeIdx=LAKES.findIndex(x=>x.slug===c.lakeId); const l=LAKES[sheetLakeIdx]; el('sheetTitle').textContent= ownCatch?'Catch details':('Catch by '+((profById[c.who]||{}).name||'angler')); el('catchLake').textContent=l?l.name:c.lakeName; el('catchWhoName').textContent=(profById[c.who]||{}).name||'Angler'; el('catchSpecies').value=c.species||'crappie'; el('catchDate').value=c.date||todayStr(); el('catchLen').value=c.length??''; el('catchWt').value=c.weight??''; el('catchQty').value=c.qty||1; el('catchDepth').value=c.depth??''; el('catchWtemp').value=c.water_temp??''; el('catchBait').value=c.bait||''; el('catchStruct').value=c.structure||''; el('catchNotes').value=c.notes||''; resetPhoto(); if(c.photoUrlStr){ el('photoPrev').src=c.photoUrlStr; el('photoPrev').style.display='block'; el('photoBtn').textContent='Change photo'; } setSheetEditable(ownCatch); el('catchDelete').style.display= ownCatch?'inline-flex':'none'; el('catchSave').style.display= ownCatch?'':'none'; el('catchSave').textContent='Save changes'; showSheet(); }
 async function saveCatch(){
-  if(!me||!sb) return;
+  if(!me) return;
   const l=LAKES[sheetLakeIdx]; if(!l){ hideSheet(); return; }
   el('catchSave').disabled=true;
+  const base={ user_id:me.id, lake_id:l.slug, lake_name:l.name, species:el('catchSpecies').value, date:el('catchDate').value||todayStr(), length:parseFloat(el('catchLen').value)||null, weight:parseFloat(el('catchWt').value)||null, qty:parseInt(el('catchQty').value)||1, depth:parseFloat(el('catchDepth').value)||null, water_temp:parseFloat(el('catchWtemp').value)||null, bait:el('catchBait').value.trim()||null, structure:el('catchStruct').value.trim()||null, notes:el('catchNotes').value.trim() };
+  lsSet('crappie-lastsp', base.species); if(base.bait) lsSet('crappie-lastbait', base.bait);
+  function saveOffline(msg){ const tempId='local-'+Date.now(); catches.push(mapCatch(Object.assign({id:tempId, photo_path:null, created_at:new Date().toISOString()}, base))); queuePush({kind:'catch', payload:base}); if(!visits.some(v=>v.lakeId===l.slug && v.date===base.date && v.who===me.id)){ visits.push({id:'local-'+(Date.now()+1), lakeId:l.slug, lakeName:l.name, who:me.id, date:base.date}); queuePush({kind:'visit', payload:{ user_id:me.id, lake_id:l.slug, lake_name:l.name, date:base.date }}); } if(tripOn) tripCatchIds.push(tempId); el('catchSave').disabled=false; rebuildIndex(); refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast(msg); }
+  if(sheetMode==='new' && (!navigator.onLine || !sb)){ if(pendingPhoto) toast('Offline: photo will not be saved'); saveOffline('Saved offline, will sync when online'); return; }
   let photo_path = (sheetMode==='edit' && editingCatch) ? (editingCatch.photo_path||null) : null;
-  if(pendingPhoto){
-    try{ const path=`${me.id}/${(crypto.randomUUID&&crypto.randomUUID())||Date.now()}.jpg`; const up=await sb.storage.from('catch-photos').upload(path, pendingPhoto, { contentType:'image/jpeg', upsert:false }); if(up.error) throw up.error; photo_path=up.data.path; }catch(e){ toast('Photo upload failed, saving without it'); }
-  }
-  const payload={ user_id:me.id, lake_id:l.slug, lake_name:l.name, species:el('catchSpecies').value, date:el('catchDate').value||todayStr(), length:parseFloat(el('catchLen').value)||null, weight:parseFloat(el('catchWt').value)||null, qty:parseInt(el('catchQty').value)||1, notes:el('catchNotes').value.trim(), photo_path };
-  lsSet('crappie-lastsp', payload.species);
+  if(pendingPhoto){ try{ const path=`${me.id}/${(crypto.randomUUID&&crypto.randomUUID())||Date.now()}.jpg`; const up=await sb.storage.from('catch-photos').upload(path, pendingPhoto, { contentType:'image/jpeg', upsert:false }); if(up.error) throw up.error; photo_path=up.data.path; }catch(e){ toast('Photo upload failed, saving without it'); } }
+  const payload=Object.assign({}, base, { photo_path });
   try{
     if(sheetMode==='edit' && editingId){ const { data, error }=await sb.from('catches').update(payload).eq('id',editingId).select().single(); if(error) throw error; const i=catches.findIndex(c=>c.id===editingId); if(i>=0) catches[i]=mapCatch(data); }
-    else { const { data, error }=await sb.from('catches').insert(payload).select().single(); if(error) throw error; catches.push(mapCatch(data)); }
-  }catch(e){ el('catchSave').disabled=false; toast('Catch did not save'); return; }
+    else { const { data, error }=await sb.from('catches').insert(payload).select().single(); if(error) throw error; const nc=mapCatch(data); catches.push(nc); if(tripOn) tripCatchIds.push(nc.id); }
+  }catch(e){ if(sheetMode==='new'){ saveOffline('Network issue, saved offline to sync later'); return; } el('catchSave').disabled=false; toast('Catch did not save'); return; }
   el('catchSave').disabled=false;
   await logVisit(l, payload.date); rebuildIndex(); refreshLake(l); applyFilters(); updateJournal(); hideSheet(); toast(sheetMode==='edit'?'Catch updated':`Catch logged at ${l.name}`);
 }
@@ -857,8 +951,54 @@ async function deleteCatch(){
 }
 
 // ===== journal =====
-function updateJournal(){ renderJournalFilter(); renderLeaderboard(); renderTotals(); renderJournalSpecies(); renderHeatmap(); renderRecords(); renderJournalList(); }
+function updateJournal(){ renderJournalFilter(); renderLeaderboard(); renderTotals(); renderJournalSpecies(); renderInsights(); renderHeatmap(); renderRecords(); renderTrips(); renderJournalList(); updateOutboxNote(); }
 function journalRows(){ return journalWho==='all' ? catches : catches.filter(c=>c.who===journalWho); }
+function tripRows(){ return journalWho==='all' ? trips : trips.filter(t=>t.who===journalWho); }
+function renderInsights(){
+  const rows=journalRows(); const box=el('insights'); if(!box) return;
+  if(!rows.length){ box.innerHTML=''; return; }
+  const baitCt={}, depths=[]; let temps=[];
+  rows.forEach(c=>{ if(c.bait){ const b=c.bait.toLowerCase().trim(); baitCt[b]=(baitCt[b]||0)+(c.qty||1); } if(c.depth!=null) depths.push(c.depth); if(c.water_temp!=null) temps.push(c.water_temp); });
+  const bits=[];
+  const topBait=Object.entries(baitCt).sort((a,b)=>b[1]-a[1])[0];
+  if(topBait) bits.push(`<div class="insight">Top bait <b>${esc(topBait[0])}</b></div>`);
+  if(depths.length){ const avg=depths.reduce((a,b)=>a+b,0)/depths.length; bits.push(`<div class="insight">Avg depth <b>${avg.toFixed(0)} ft</b></div>`); }
+  if(temps.length){ const avg=temps.reduce((a,b)=>a+b,0)/temps.length; bits.push(`<div class="insight">Avg water <b>${avg.toFixed(0)}&deg;</b></div>`); }
+  box.innerHTML=bits.join('');
+}
+function renderTrips(){
+  const rows=tripRows(); const box=el('trips'); if(!box) return;
+  el('tripsLabel').style.display = rows.length?'':'none';
+  if(!rows.length){ box.innerHTML=''; return; }
+  box.innerHTML=rows.map(t=>{ const d=t.startedAt?new Date(t.startedAt):null; const dl=d?d.toLocaleDateString(undefined,{month:'short',day:'numeric'}):''; const who=(profById[t.who]||{}).name||''; const lk=(t.lakes&&t.lakes.length)?t.lakes.map(s=>{ const l=LAKES.find(x=>x.slug===s); return l?l.name:s; }).slice(0,2).join(', '):'no lake nearby'; const nc=(t.catchIds||[]).length; return `<div class="trow" data-tid="${t.id}"><div class="tdot"></div><div class="tmain"><div class="tname">${dl} \u00b7 ${esc(who)}</div><div class="tsub">${esc(lk)}${nc?` \u00b7 ${nc} catch${nc===1?'':'es'}`:''}</div></div><div class="tbig">${(t.distanceMi||0).toFixed(1)} mi \u00b7 ${t.durationMin||0}m</div></div>`; }).join('');
+}
+let replayLine=null;
+function replayTrip(id){ const t=trips.find(x=>x.id===id); if(!t||!t.track||!t.track.length){ toast('No track saved for this trip'); return; } if(window.innerWidth<=760) closePanel(); setTab('lakes'); if(replayLine) map.removeLayer(replayLine); replayLine=L.polyline(t.track,{color:'#c98bff',weight:4,opacity:.9,dashArray:'1,0'}).addTo(map); try{ map.fitBounds(replayLine.getBounds().pad(0.3)); }catch(e){} toast(`Trip replay \u00b7 ${(t.distanceMi||0).toFixed(1)} mi`); }
+
+// ===== solunar (estimated) =====
+function pad2(n){ return (n<10?'0':'')+n; }
+function fmtClock(d){ let h=d.getHours(), m=d.getMinutes(); const ap=h>=12?'PM':'AM'; h=h%12; if(h===0) h=12; return `${h}:${pad2(m)} ${ap}`; }
+function solunar(date){
+  const base=new Date(date.getFullYear(),date.getMonth(),date.getDate(),0,0,0);
+  const age=(((base.getTime()/86400000)-NEWMOON)%SYN+SYN)%SYN;
+  const overheadH=(12 + age*0.8067) % 24; // moon transit drifts ~48 min/day
+  function at(h){ const d=new Date(base); d.setHours(0,0,0,0); d.setMinutes(Math.round(h*60)); return d; }
+  const majors=[at(overheadH), at((overheadH+12)%24)].sort((a,b)=>a-b);
+  const minors=[at((overheadH+6)%24), at((overheadH+18)%24)].sort((a,b)=>a-b);
+  return { majors, minors, illum: Math.round((1-Math.cos(2*Math.PI*age/SYN))/2*100) };
+}
+function solunarText(date){ const s=solunar(date); return `Major bite near <b>${fmtClock(s.majors[0])}</b> and <b>${fmtClock(s.majors[1])}</b>. Minor near ${fmtClock(s.minors[0])} and ${fmtClock(s.minors[1])}. Moon ${s.illum}% lit. Times are estimates, local.`; }
+
+// ===== CSV export =====
+function exportCsv(){
+  const rows=journalRows().slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  if(!rows.length){ toast('Nothing to export yet'); return; }
+  const head=['date','angler','lake','species','length_in','weight_lb','qty','depth_ft','water_temp_f','bait','structure','notes'];
+  const esc2=v=>{ v=(v==null?'':String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const lines=[head.join(',')];
+  rows.forEach(c=>{ const who=(profById[c.who]||{}).name||''; const ln=LAKES.find(x=>x.slug===c.lakeId); lines.push([c.date,who,(ln?ln.name:c.lakeName),c.species,c.length,c.weight,c.qty,c.depth,c.water_temp,c.bait,c.structure,c.notes].map(esc2).join(',')); });
+  const blob=new Blob([lines.join('\n')],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='crappie-log-'+todayStr()+'.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000); toast(`Exported ${rows.length} catches`);
+}
 function renderJournalSpecies(){
   const rows = journalRows();
   const t={}; rows.forEach(c=>{ const s=c.species||'crappie'; t[s]=(t[s]||0)+(c.qty||1); });
@@ -914,7 +1054,55 @@ function renderJournalList(){
 }
 function setJournalWho(w){ journalWho=w; updateJournal(); }
 
-// ===== tabs + wiring =====
+// ===== lake detail sheet =====
+let lkIdx=null;
+function showLk(){ el('lkSheet').classList.add('open'); el('lkBg').classList.add('open'); }
+function hideLk(){ el('lkSheet').classList.remove('open'); el('lkBg').classList.remove('open'); }
+function lakeMiniHeat(slug){ const m=new Array(12).fill(0); catches.forEach(c=>{ if(c.lakeId===slug && c.date){ const mo=parseInt(c.date.slice(5,7),10)-1; if(mo>=0&&mo<12) m[mo]+=(c.qty||1); } }); const max=Math.max(1,...m); return m.map((n,i)=>{ const bg=n>0?`background:rgba(79,180,119,${(0.18+0.72*(n/max)).toFixed(2)});border-color:transparent`:''; return `<div class="hc" style="${bg}"><div class="hm">${MONTHS[i]}</div><div class="hn">${n}</div></div>`; }).join(''); }
+function openLakeSheet(idx){
+  lkIdx=idx; const l=LAKES[idx]; if(!l) return;
+  el('lkTitle').textContent=l.name;
+  const st=lakeStats(l), m=getMeta(l);
+  const facts=[ l.counties&&l.counties.length?`<div class="lk-fact"><b>${esc(l.counties.join(', '))}</b> County</div>`:'', l.acres!=null?`<div class="lk-fact"><b>${acreFmt(l.acres)}</b> acres</div>`:'', l.elev!=null?`<div class="lk-fact"><b>${l.elev.toLocaleString()}</b> ft elev</div>`:'', (userLoc&&l._d!=null)?`<div class="lk-fact"><b>${l._d.toFixed(0)}</b> mi away</div>`:'' ].join('');
+  const launch = l.launch ? `<div class="lk-fact">Launch: <b>${esc(l.launch.type||'yes')}</b>${l.launch.motor?' \u00b7 motor ok':''}</div>` : `<div class="lk-fact">No WDFW launch matched</div>`;
+  const fav=m.fav, wish=m.wish;
+  const crewCatches=catches.filter(c=>c.lakeId===l.slug);
+  const photos=crewCatches.filter(c=>c.photoUrlStr).slice(0,8).map(c=>`<img src="${c.photoUrlStr}" data-cid="${c.id}" alt="">`).join('');
+  const sol=solunarText(new Date());
+  el('lkBody').innerHTML=`
+    <div class="lk-facts">${facts}${launch}</div>
+    <div class="lk-btns">
+      <div class="lk-btn ${fav?'amber':''}" data-act="fav">${fav?'\u2605 Favorite':'\u2606 Favorite'}</div>
+      <div class="lk-btn ${wish?'amber':''}" data-act="wish">${wish?'\u2691 On list':'\u2690 Want to visit'}</div>
+    </div>
+    <div class="lk-sec">Forecast and bite</div>
+    <div class="lk-fc" id="lkFc"><div class="lk-fcd"><div class="d">Loading</div><div class="s">...</div></div></div>
+    <div class="lk-sol">${sol}</div>
+    <div class="lk-sec">Your crew here</div>
+    <div class="lk-facts"><div class="lk-fact"><b>${st.visits}</b> visits</div><div class="lk-fact"><b>${st.catches}</b> catches</div>${st.top&&spById[st.top]?`<div class="lk-fact">Top: <b>${spById[st.top].short}</b></div>`:''}</div>
+    ${crewCatches.length?`<div class="lk-sec">Best months here</div><div class="heat">${lakeMiniHeat(l.slug)}</div>`:''}
+    ${photos?`<div class="lk-sec">Photos</div><div class="lk-photos" id="lkPhotos">${photos}</div>`:''}
+    <div class="lk-btns">
+      <div class="lk-btn green" data-act="catch">Log catch</div>
+      <div class="lk-btn" data-act="visit">Log visit</div>
+    </div>
+    <div class="lk-btns">
+      <div class="lk-btn" data-act="map">Show on map</div>
+      <a class="lk-btn" href="${dirUrl(l)}" target="_blank" rel="noopener">Directions</a>
+    </div>`;
+  showLk();
+  loadLakeForecast(l);
+}
+async function loadLakeForecast(l){
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${l.lat}&longitude=${l.lng}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=3`;
+    const r=await fetch(url); const d=await r.json(); const fc=Array.isArray(d)?d[0]:d; if(!fc||!fc.daily) throw 0;
+    const box=el('lkFc'); if(!box) return;
+    box.innerHTML=fc.daily.time.map((t,i)=>{ const x=dayScore(fc,i); const dt=new Date(t+'T12:00:00'); const lab=i===0?'Today':dt.toLocaleDateString(undefined,{weekday:'short'}); const col=scoreColor(x.score); return `<div class="lk-fcd"><div class="d">${lab}</div><div class="s" style="color:${col}">${x.score}</div><div class="m">${x.t!=null?Math.round(x.t)+'\u00b0':''} ${x.w!=null?Math.round(x.w)+'mph':''}</div></div>`; }).join('');
+  }catch(e){ const box=el('lkFc'); if(box) box.innerHTML='<div class="lk-empty">Forecast unavailable offline.</div>'; }
+}
+
+
 // ===== bite-window planner =====
 let planLakes=[], planFc=null, planDay=0, planLoaded=false, planBusy=false;
 const SYN=29.530588853, NEWMOON=Date.UTC(2000,0,6,18,14)/86400000;
@@ -929,15 +1117,31 @@ function planCandidates(){ const set=[], seen={}; LAKES.forEach(l=>{ const m=get
 async function loadPlan(force){ if(planLoaded&&!force){ renderDayRow(); renderPlan(); return; } if(planBusy) return; planBusy=true; el('planNote').textContent='Loading 7-day forecast...'; planLakes=planCandidates(); try{ const lat=planLakes.map(l=>l.lat).join(','), lng=planLakes.map(l=>l.lng).join(','); const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7`; const r=await fetch(url); const d=await r.json(); planFc=Array.isArray(d)?d:[d]; planLoaded=true; renderDayRow(); renderPlan(); el('planNote').textContent='Guide from wind, sky, rain, temperature, and moon. Tap a lake to open it.'; }catch(e){ el('planNote').textContent='Could not load the forecast. Check your signal and tap Refresh.'; } planBusy=false; }
 function renderDayRow(){ const d=planFc&&planFc[0]&&planFc[0].daily; if(!d){ el('dayRow').innerHTML=''; return; } el('dayRow').innerHTML=d.time.map((t,i)=>{ const dt=new Date(t+'T12:00:00'); const lab= i===0?'Today': i===1?'Tomorrow': dt.toLocaleDateString(undefined,{weekday:'short'}); return `<button class="day${i===planDay?' active':''}" data-d="${i}">${lab}</button>`; }).join(''); }
 function scoreColor(s){ return s>=70?'#4fb477': s>=50?'#eaa24c':'#7a8a99'; }
-function renderPlan(){ if(!planFc){ el('planList').innerHTML=''; return; } const rows=planLakes.map((l,idx)=>({ l, s:dayScore(planFc[idx],planDay) })).filter(r=>r.s).sort((a,b)=>b.s.score-a.s.score); if(!rows.length){ el('planList').innerHTML='<div class="empty">No forecast data.</div>'; return; } el('planList').innerHTML=rows.map(r=>{ const x=r.s, col=scoreColor(x.score); const meta=[x.t!=null?Math.round(x.t)+'\u00b0':null, x.w!=null?Math.round(x.w)+' mph':null, x.p!=null?x.p+'% rain':null].filter(Boolean).join(' \u00b7 '); return `<div class="prow" data-idx="${r.l.id}"><div class="pscore" style="color:${col};border-color:${col}">${x.score}</div><div class="pbody"><div class="pname">${esc(r.l.name)}</div><div class="pwhy">${whyText(x)}</div><div class="pmeta">${meta}</div></div></div>`; }).join(''); }
+function renderPlan(){ if(!planFc){ el('planList').innerHTML=''; return; }
+  const dd=planFc[0]&&planFc[0].daily; const sol=el('planSol'); if(dd&&sol){ const ds=dd.time[planDay]; sol.style.display=''; sol.innerHTML=solunarText(new Date(ds+'T12:00:00')); }
+  const rows=planLakes.map((l,idx)=>({ l, s:dayScore(planFc[idx],planDay) })).filter(r=>r.s).sort((a,b)=>b.s.score-a.s.score); if(!rows.length){ el('planList').innerHTML='<div class="empty">No forecast data.</div>'; return; } el('planList').innerHTML=rows.map(r=>{ const x=r.s, col=scoreColor(x.score); const meta=[x.t!=null?Math.round(x.t)+'\u00b0':null, x.w!=null?Math.round(x.w)+' mph':null, x.p!=null?x.p+'% rain':null].filter(Boolean).join(' \u00b7 '); return `<div class="prow" data-idx="${r.l.id}"><div class="pscore" style="color:${col};border-color:${col}">${x.score}</div><div class="pbody"><div class="pname">${esc(r.l.name)}</div><div class="pwhy">${whyText(x)}</div><div class="pmeta">${meta}</div></div></div>`; }).join(''); }
 function setPlanDay(i){ planDay=i; renderDayRow(); renderPlan(); }
 
 // ===== trip mode (live session) =====
-let tripOn=false, tripWatch=null, tripLine=null, tripPts=[], tripStart=0, tripDist=0, tripTimer=null;
-function startTrip(){ if(!navigator.geolocation){ toast('Location is not available here.'); return; } tripOn=true; tripPts=[]; tripDist=0; tripStart=Date.now(); if(tripLine) map.removeLayer(tripLine); tripLine=L.polyline([],{color:'#52c9e2',weight:4,opacity:.85}).addTo(map); el('tripBtn').style.display='none'; el('tripHud').classList.add('show'); tripTimer=setInterval(updateTripStat,1000); updateTripStat(); tripWatch=navigator.geolocation.watchPosition(p=>{ const pt=[p.coords.latitude,p.coords.longitude]; if(tripPts.length){ const a=tripPts[tripPts.length-1]; tripDist+=haversine(a[0],a[1],pt[0],pt[1]); } tripPts.push(pt); tripLine.addLatLng(pt); if(tripPts.length===1) map.setView(pt,Math.max(map.getZoom(),14)); }, ()=>toast('Waiting for GPS...'), {enableHighAccuracy:true,maximumAge:5000,timeout:15000}); }
+let tripOn=false, tripWatch=null, tripLine=null, tripPts=[], tripStart=0, tripDist=0, tripTimer=null, tripCatchIds=[];
+function startTrip(){ if(!navigator.geolocation){ toast('Location is not available here.'); return; } tripOn=true; tripPts=[]; tripDist=0; tripStart=Date.now(); tripCatchIds=[]; if(tripLine) map.removeLayer(tripLine); tripLine=L.polyline([],{color:'#52c9e2',weight:4,opacity:.85}).addTo(map); el('tripBtn').style.display='none'; el('tripHud').classList.add('show'); tripTimer=setInterval(updateTripStat,1000); updateTripStat(); tripWatch=navigator.geolocation.watchPosition(p=>{ const pt=[p.coords.latitude,p.coords.longitude]; if(tripPts.length){ const a=tripPts[tripPts.length-1]; tripDist+=haversine(a[0],a[1],pt[0],pt[1]); } tripPts.push(pt); tripLine.addLatLng(pt); if(tripPts.length===1) map.setView(pt,Math.max(map.getZoom(),14)); }, ()=>toast('Waiting for GPS...'), {enableHighAccuracy:true,maximumAge:5000,timeout:15000}); }
 function updateTripStat(){ const mins=Math.floor((Date.now()-tripStart)/60000); el('tripStat').textContent=`${mins} min \u00b7 ${tripDist.toFixed(2)} mi`; }
 function tripLogHere(){ if(!tripPts.length){ toast('Waiting for GPS fix...'); return; } const [la,ln]=tripPts[tripPts.length-1]; let best=0,bd=1e9; LAKES.forEach((l,i)=>{ const d=haversine(la,ln,l.lat,l.lng); if(d<bd){ bd=d; best=i; } }); if(window.innerWidth<=760) closePanel(); openCatch(best); toast(`Nearest lake: ${LAKES[best].name}`); }
-function endTrip(){ tripOn=false; if(tripWatch!=null){ navigator.geolocation.clearWatch(tripWatch); tripWatch=null; } if(tripTimer){ clearInterval(tripTimer); tripTimer=null; } el('tripHud').classList.remove('show'); el('tripBtn').style.display=''; const mins=Math.floor((Date.now()-tripStart)/60000); toast(`Trip done \u00b7 ${mins} min \u00b7 ${tripDist.toFixed(2)} mi`); }
+function downsample(arr,maxN){ if(arr.length<=maxN) return arr.slice(); const step=arr.length/maxN; const out=[]; for(let i=0;i<arr.length;i+=step) out.push(arr[Math.floor(i)]); out.push(arr[arr.length-1]); return out; }
+async function endTrip(){
+  tripOn=false; if(tripWatch!=null){ navigator.geolocation.clearWatch(tripWatch); tripWatch=null; } if(tripTimer){ clearInterval(tripTimer); tripTimer=null; }
+  el('tripHud').classList.remove('show'); el('tripBtn').style.display='';
+  const mins=Math.max(0,Math.round((Date.now()-tripStart)/60000));
+  if(tripPts.length<2){ toast(`Trip ended \u00b7 ${mins} min, no track recorded`); return; }
+  const track=downsample(tripPts,400).map(p=>[+p[0].toFixed(5),+p[1].toFixed(5)]);
+  const samp=downsample(tripPts,60); const near={};
+  samp.forEach(([la,ln])=>{ LAKES.forEach(l=>{ if(haversine(la,ln,l.lat,l.lng)<0.45) near[l.slug]=1; }); });
+  const lakes=Object.keys(near);
+  const rec={ user_id:me.id, started_at:new Date(tripStart).toISOString(), ended_at:new Date().toISOString(), duration_min:mins, distance_mi:+tripDist.toFixed(2), track, lakes, catch_ids:tripCatchIds.slice() };
+  if(!navigator.onLine || !sb){ trips.unshift(Object.assign({id:'local-'+Date.now(), who:me.id, startedAt:rec.started_at, endedAt:rec.ended_at, durationMin:mins, distanceMi:rec.distance_mi, track, lakes, catchIds:rec.catch_ids, note:''})); queuePush({kind:'trip', payload:rec}); updateJournal(); toast(`Trip saved offline \u00b7 ${mins} min \u00b7 ${tripDist.toFixed(2)} mi`); return; }
+  try{ const { data, error }=await sb.from('trips').insert(rec).select().single(); if(error) throw error; trips.unshift({ id:data.id, who:me.id, startedAt:data.started_at, endedAt:data.ended_at, durationMin:data.duration_min, distanceMi:data.distance_mi, track:data.track||[], lakes:data.lakes||[], catchIds:data.catch_ids||[], note:'' }); updateJournal(); toast(`Trip saved \u00b7 ${mins} min \u00b7 ${tripDist.toFixed(2)} mi`); }
+  catch(e){ trips.unshift(Object.assign({id:'local-'+Date.now(), who:me.id, startedAt:rec.started_at, endedAt:rec.ended_at, durationMin:mins, distanceMi:rec.distance_mi, track, lakes, catchIds:rec.catch_ids, note:''})); queuePush({kind:'trip', payload:rec}); updateJournal(); toast(`Trip saved offline \u00b7 ${mins} min`); }
+}
 
 function setTab(t){ el('panel').setAttribute('data-tab',t); el('tabLakes').classList.toggle('active',t==='lakes'); el('tabLog').classList.toggle('active',t==='log'); el('tabPlan').classList.toggle('active',t==='plan'); if(t==='log') updateJournal(); if(t==='plan') loadPlan(false); }
 const panel=el('panel');
@@ -968,9 +1172,23 @@ function setupUI(){
   el('jfilter').addEventListener('click',e=>{ const b=e.target.closest('.jf'); if(b) setJournalWho(b.dataset.w); });
   el('jlist').addEventListener('click',e=>{ const card=e.target.closest('.jcard'); if(card){ const c=catches.find(x=>x.id==card.dataset.cid); if(c) openCatchView(c); } });
   el('records').addEventListener('click',e=>{ const r=e.target.closest('.rec'); if(r&&r.dataset.cid){ const c=catches.find(x=>x.id==r.dataset.cid); if(c) openCatchView(c); } });
+  el('trips').addEventListener('click',e=>{ const r=e.target.closest('.trow'); if(r) replayTrip(r.dataset.tid); });
+  el('exportCsv').addEventListener('click',exportCsv);
+  el('lkX').addEventListener('click',hideLk);
+  el('lkBg').addEventListener('click',hideLk);
+  el('lkBody').addEventListener('click',e=>{
+    const ph=e.target.closest('.lk-photos img'); if(ph){ const c=catches.find(x=>x.id==ph.dataset.cid); if(c){ hideLk(); openCatchView(c); } return; }
+    const b=e.target.closest('[data-act]'); if(!b||lkIdx==null) return; const l=LAKES[lkIdx]; const act=b.dataset.act;
+    if(act==='catch'){ hideLk(); openCatch(lkIdx); }
+    else if(act==='visit'){ quickVisit(lkIdx); openLakeSheet(lkIdx); }
+    else if(act==='fav'){ const nv=!getMeta(l).fav; setMeta(l,{fav:nv}); openLakeSheet(lkIdx); }
+    else if(act==='wish'){ const nv=!getMeta(l).wish; setMeta(l,{wish:nv}); openLakeSheet(lkIdx); }
+    else if(act==='map'){ hideLk(); if(window.innerWidth<=760) closePanel(); setActive(lkIdx,true); }
+  });
   document.addEventListener('click',e=>{
     const v=e.target.closest('.lg-visit'); if(v){ quickVisit(+v.dataset.lake); return; }
     const c=e.target.closest('.lg-catch'); if(c){ map.closePopup(); openCatch(+c.dataset.lake); return; }
+    const dt=e.target.closest('.lg-detail'); if(dt){ map.closePopup(); openLakeSheet(+dt.dataset.lake); return; }
     const f=e.target.closest('.lk-fav'); if(f){ const l=LAKES[+f.dataset.lake]; const nv=!getMeta(l).fav; setMeta(l,{fav:nv}); toast(nv?`${l.name} added to favorites`:`${l.name} removed from favorites`); return; }
     const w=e.target.closest('.lk-wish'); if(w){ const l=LAKES[+w.dataset.lake]; const nv=!getMeta(l).wish; setMeta(l,{wish:nv}); toast(nv?`${l.name} added to Want to visit`:`${l.name} removed from Want to visit`); return; }
     const sw=e.target.closest('.lk-color'); if(sw){ const l=LAKES[+sw.dataset.lake]; setMeta(l,{color:sw.dataset.color||null}); return; }
@@ -996,12 +1214,16 @@ function renderLegend(){ el('legend').innerHTML = SPECIES.map(s=>`<span class="l
   setupUI();
   applyFilters();
   loadLaunches();
+  const v=el('ver'); if(v) v.textContent='v'+APP_VERSION;
   if(!sb){ showGate('Login needs the live site. This in-app preview blocks the login service, so open your Vercel URL.'); return; }
   el('gateSignin').addEventListener('click', doSignin);
   el('gateSignup').addEventListener('click', doSignup);
   el('gatePass').addEventListener('keydown',e=>{ if(e.key==='Enter') doSignin(); });
-  sb.auth.onAuthStateChange((_e,session)=>handleSession(session));
-  sb.auth.getSession().then(({data})=>handleSession(data.session)).catch(()=>showGate());
+  // optimistic: paint the account bar instantly from a saved hint so refresh never blanks it
+  const h=acctHint();
+  if(h && h.id){ me={id:h.id,email:h.email}; if(!profById[h.id]){ profById[h.id]={id:h.id,name:h.name||(h.email||'You').split('@')[0],color:h.color||'#eaa24c'}; PROFILES.push(profById[h.id]); } activeProfile=h.id; hideGate(); renderProfiles(); }
+  sb.auth.onAuthStateChange((event,session)=>{ if(event==='INITIAL_SESSION') return; handleSession(session); });
+  sb.auth.getSession().then(({data})=>{ if(data.session && data.session.user){ handleSession(data.session); } else { clearAcctHint(); me=null; entered=false; showGate(); } }).catch(()=>{ /* offline: keep the optimistic bar */ });
 })();
 </script>
 </body>

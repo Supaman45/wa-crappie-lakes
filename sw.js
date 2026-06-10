@@ -1,5 +1,7 @@
-// Crappie Lakes offline worker. Caches the app shell and map tiles you have viewed.
-var CACHE = 'crappie-v1';
+// Crappie Lakes offline worker.
+// App shell: network-first (fresh builds show right away, cache is the offline fallback).
+// Map tiles: cache-first (areas you have viewed work without signal).
+var CACHE = 'crappie-v2';
 var TILE_HOSTS = ['tile.openstreetmap.org','basemaps.cartocdn.com','server.arcgisonline.com','tile.opentopomap.org'];
 var SHELL = [
   './',
@@ -33,7 +35,7 @@ self.addEventListener('fetch', function(e){
   if(e.request.method !== 'GET') return;
   var url = new URL(e.request.url);
 
-  // Map tiles: cache-first, store as you pan so areas you have seen work offline.
+  // Tiles: cache-first.
   if(isTile(url)){
     e.respondWith(caches.open(CACHE).then(function(c){
       return c.match(e.request).then(function(hit){
@@ -47,16 +49,20 @@ self.addEventListener('fetch', function(e){
     return;
   }
 
-  // App shell and same-origin: cache-first, fall back to network.
-  if(url.origin === self.location.origin || SHELL.indexOf(e.request.url) !== -1){
-    e.respondWith(caches.match(e.request).then(function(hit){
-      return hit || fetch(e.request).then(function(res){
-        if(res && res.ok && (url.origin===self.location.origin)){
-          var copy = res.clone(); caches.open(CACHE).then(function(c){ c.put(e.request, copy); });
-        }
+  // App shell and same-origin: network-first, cache as fallback.
+  if(url.origin === self.location.origin || e.request.mode === 'navigate'){
+    e.respondWith(
+      fetch(e.request).then(function(res){
+        if(res && res.ok){ var copy=res.clone(); caches.open(CACHE).then(function(c){ c.put(e.request, copy); }); }
         return res;
-      });
-    }));
+      }).catch(function(){ return caches.match(e.request).then(function(hit){ return hit || caches.match('./index.html'); }); })
+    );
+    return;
   }
-  // Everything else (Supabase API, ArcGIS launches, Open-Meteo, geocoders): network only.
+
+  // Versioned CDN libs in the shell: cache-first so the app opens offline.
+  if(SHELL.indexOf(e.request.url) !== -1){
+    e.respondWith(caches.match(e.request).then(function(hit){ return hit || fetch(e.request); }));
+  }
+  // Everything else (Supabase, ArcGIS, Open-Meteo, geocoders): network only.
 });
