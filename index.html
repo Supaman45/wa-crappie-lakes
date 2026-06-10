@@ -206,6 +206,20 @@
   .pop-tags select{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:inherit;font-size:13px;padding:8px 9px;outline:none;}
 
   .jspecies{display:flex;flex-wrap:wrap;gap:13px;justify-content:center;font-size:12px;color:var(--muted);}
+  .jsec{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:3px;}
+  .heat{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+  .heat .hc{border-radius:9px;background:var(--panel);border:1px solid var(--line-soft);padding:8px 3px;text-align:center;}
+  .heat .hm{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+  .heat .hn{font-family:'Zilla Slab',serif;font-weight:700;font-size:16px;line-height:1;margin-top:3px;color:var(--ink);}
+  .records{display:flex;flex-direction:column;gap:8px;}
+  .rec{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-left-width:3px;border-radius:11px;padding:9px;cursor:pointer;}
+  .rec:hover{border-color:var(--water-deep);}
+  .rthumb{width:46px;height:46px;border-radius:8px;overflow:hidden;background:var(--bg2);flex:none;display:flex;align-items:center;justify-content:center;}
+  .rthumb img{width:100%;height:100%;object-fit:cover;}
+  .rsp{font-size:11px;font-weight:700;}
+  .rbig{font-family:'Zilla Slab',serif;font-weight:700;font-size:17px;line-height:1.1;}
+  .rmeta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .rempty{font-size:12px;color:var(--faint);}
 
   .pill-out{flex:0 0 auto;color:var(--muted);}
 
@@ -329,11 +343,16 @@
 
     <div class="journal" id="journal">
       <div class="lboard" id="lboard"></div>
+      <div class="jfilter" id="jfilter"></div>
       <div class="jtotals" id="jtotals"></div>
       <div class="jspecies" id="jspecies"></div>
-      <div class="jfilter" id="jfilter"></div>
+      <div class="jsec">Best months</div>
+      <div class="heat" id="heat"></div>
+      <div class="jsec">Records</div>
+      <div class="records" id="records"></div>
+      <div class="jsec">Catches</div>
       <div class="jlist" id="jlist"></div>
-      <div class="jnote">Records are saved on this device, in this browser.</div>
+      <div class="jnote">Synced live to your crew's shared log.</div>
     </div>
 
     <div class="foot">
@@ -796,24 +815,47 @@ async function deleteCatch(){
 }
 
 // ===== journal =====
-function updateJournal(){ renderLeaderboard(); renderTotals(); renderJournalSpecies(); renderJournalList(); }
+function updateJournal(){ renderJournalFilter(); renderLeaderboard(); renderTotals(); renderJournalSpecies(); renderHeatmap(); renderRecords(); renderJournalList(); }
+function journalRows(){ return journalWho==='all' ? catches : catches.filter(c=>c.who===journalWho); }
 function renderJournalSpecies(){
-  const rows = journalWho==='all' ? catches : catches.filter(c=>c.who===journalWho);
+  const rows = journalRows();
   const t={}; rows.forEach(c=>{ const s=c.species||'crappie'; t[s]=(t[s]||0)+(c.qty||1); });
   el('jspecies').innerHTML = SPECIES.map(s=>`<span class="sp-tag"><span class="sp-dot" style="background:${s.color}"></span>${t[s.id]||0} ${s.short}</span>`).join('');
+}
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function renderHeatmap(){
+  const rows=journalRows(); const m=new Array(12).fill(0);
+  rows.forEach(c=>{ if(c.date){ const mo=parseInt(c.date.slice(5,7),10)-1; if(mo>=0&&mo<12) m[mo]+=(c.qty||1); } });
+  const max=Math.max(1,...m);
+  el('heat').innerHTML=m.map((n,i)=>{ const bg = n>0 ? `background:rgba(79,180,119,${(0.18+0.72*(n/max)).toFixed(2)});border-color:transparent` : ''; return `<div class="hc" style="${bg}"><div class="hm">${MONTHS[i]}</div><div class="hn">${n}</div></div>`; }).join('');
+}
+function recScore(c){ return (c.weight!=null?c.weight*1000:0) + (c.length!=null?c.length:0); }
+function renderRecords(){
+  const rows=journalRows();
+  el('records').innerHTML = SPECIES.map(s=>{
+    const pool=rows.filter(c=>(c.species||'crappie')===s.id && (c.weight!=null||c.length!=null));
+    if(!pool.length) return `<div class="rec" style="border-left-color:${s.color}"><div class="rthumb"><span class="sp-dot" style="background:${s.color}"></span></div><div><div class="rsp" style="color:${s.color}">${s.short}</div><div class="rempty">No measured catch yet</div></div></div>`;
+    pool.sort((a,b)=>recScore(b)-recScore(a));
+    const c=pool[0];
+    const size=[c.weight!=null?c.weight+' lb':null, c.length!=null?c.length+' in':null].filter(Boolean).join(' \u00b7 ');
+    const who=(profById[c.who]||{}).name||'';
+    const thumb=c.photoUrlStr?`<img src="${c.photoUrlStr}" alt="">`:`<span class="sp-dot" style="background:${s.color}"></span>`;
+    return `<div class="rec" data-cid="${c.id}" style="border-left-color:${s.color}"><div class="rthumb">${thumb}</div><div><div class="rsp" style="color:${s.color}">${s.short} record</div><div class="rbig">${size||'logged'}</div><div class="rmeta">${esc(who)}${c.date?' \u00b7 '+fmtDate(c.date):''}</div></div></div>`;
+  }).join('');
 }
 function renderLeaderboard(){
   const m={}; PROFILES.forEach(p=>m[p.id]={catches:0,visits:0});
   catches.forEach(c=>{ if(m[c.who]) m[c.who].catches+=(c.qty||1); });
   visits.forEach(v=>{ if(m[v.who]) m[v.who].visits++; });
-  el('lboard').innerHTML=PROFILES.map(p=>`<div class="lcard" style="border-top-color:${p.color}"><div class="lc" style="color:${p.color}">${p.name}</div><div class="ln">${m[p.id].catches}</div><div class="lv">${m[p.id].visits} visit${m[p.id].visits===1?'':'s'}</div></div>`).join('');
+  el('lboard').innerHTML=PROFILES.map(p=>`<div class="lcard" style="border-top-color:${p.color}"><div class="lc" style="color:${p.color}">${esc(p.name)}</div><div class="ln">${m[p.id].catches}</div><div class="lv">${m[p.id].visits} visit${m[p.id].visits===1?'':'s'}</div></div>`).join('');
 }
 function renderTotals(){
-  const tc=catches.reduce((a,c)=>a+(c.qty||1),0);
-  const lakesFished=new Set([].concat(visits.map(v=>v.lakeId),catches.map(c=>c.lakeId))).size;
-  el('jtotals').innerHTML=`<div class="jtot"><div class="n">${visits.length}</div><div class="l">Visits</div></div><div class="jtot"><div class="n">${tc}</div><div class="l">Catches</div></div><div class="jtot"><div class="n">${lakesFished}</div><div class="l">Lakes fished</div></div>`;
+  const cr=journalRows(); const vr = journalWho==='all' ? visits : visits.filter(v=>v.who===journalWho);
+  const tc=cr.reduce((a,c)=>a+(c.qty||1),0);
+  const lakesFished=new Set([].concat(vr.map(v=>v.lakeId),cr.map(c=>c.lakeId))).size;
+  el('jtotals').innerHTML=`<div class="jtot"><div class="n">${vr.length}</div><div class="l">Visits</div></div><div class="jtot"><div class="n">${tc}</div><div class="l">Catches</div></div><div class="jtot"><div class="n">${lakesFished}</div><div class="l">Lakes fished</div></div>`;
 }
-function renderJournalFilter(){ el('jfilter').innerHTML=`<button class="jf${journalWho==='all'?' active':''}" data-w="all">All</button>`+PROFILES.map(p=>`<button class="jf${journalWho===p.id?' active':''}" data-w="${p.id}">${p.name}</button>`).join(''); }
+function renderJournalFilter(){ el('jfilter').innerHTML=`<button class="jf${journalWho==='all'?' active':''}" data-w="all">All</button>`+PROFILES.map(p=>`<button class="jf${journalWho===p.id?' active':''}" data-w="${p.id}">${esc(p.name)}</button>`).join(''); }
 function renderJournalList(){
   const wrap=el('jlist');
   let rows=catches.slice();
@@ -828,7 +870,7 @@ function renderJournalList(){
     return `<div class="jcard" data-cid="${c.id}"><div class="jthumb">${thumb}</div><div class="jbody"><div class="jname">${esc(c.lakeName)}${qty}</div><div class="jmeta">${fmtDate(c.date)}${size?' · '+size:''}</div><div class="jwho"><span class="wd" style="background:${p.color}"></span>${p.name}<span class="wd" style="background:${sp.color};margin-left:8px"></span>${sp.short}</div>${c.notes?`<div class="jnotes">${esc(c.notes)}</div>`:''}</div></div>`;
   }).join('');
 }
-function setJournalWho(w){ journalWho=w; renderJournalFilter(); renderJournalList(); }
+function setJournalWho(w){ journalWho=w; updateJournal(); }
 
 // ===== tabs + wiring =====
 function setTab(t){ el('panel').setAttribute('data-tab',t); el('tabLakes').classList.toggle('active',t==='lakes'); el('tabLog').classList.toggle('active',t==='log'); if(t==='log') updateJournal(); }
@@ -852,6 +894,7 @@ function setupUI(){
   el('sheetBg').addEventListener('click',hideSheet);
   el('jfilter').addEventListener('click',e=>{ const b=e.target.closest('.jf'); if(b) setJournalWho(b.dataset.w); });
   el('jlist').addEventListener('click',e=>{ const card=e.target.closest('.jcard'); if(card){ const c=catches.find(x=>x.id==card.dataset.cid); if(c) openCatchView(c); } });
+  el('records').addEventListener('click',e=>{ const r=e.target.closest('.rec'); if(r&&r.dataset.cid){ const c=catches.find(x=>x.id==r.dataset.cid); if(c) openCatchView(c); } });
   document.addEventListener('click',e=>{
     const v=e.target.closest('.lg-visit'); if(v){ quickVisit(+v.dataset.lake); return; }
     const c=e.target.closest('.lg-catch'); if(c){ map.closePopup(); openCatch(+c.dataset.lake); return; }
