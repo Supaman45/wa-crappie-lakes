@@ -218,7 +218,10 @@
   .gate-sub{font-size:13.5px;color:var(--muted);line-height:1.5;margin:12px 0 18px;}
   .gate input{width:100%;padding:13px 14px;border-radius:11px;background:var(--bg2);border:1px solid var(--line);color:var(--ink);font-family:inherit;font-size:15px;outline:none;text-align:center;}
   .gate input:focus{border-color:var(--water-deep);}
+  .gate input + input{margin-top:9px;}
   .gate-btn{width:100%;margin-top:11px;padding:13px;border:none;border-radius:11px;background:linear-gradient(180deg,var(--amber),var(--amber-deep));color:#241606;font-family:inherit;font-weight:700;font-size:14.5px;cursor:pointer;}
+  .gate-btn + .gate-btn{margin-top:9px;}
+  .gate-alt{background:var(--bg2);color:var(--ink);border:1px solid var(--line);}
   .gate-btn:disabled{opacity:.6;cursor:default;}
   .gate-status{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:13px;min-height:18px;}
 
@@ -353,9 +356,11 @@
   <div class="gate-card">
     <div class="gate-kick">WDFW Lowland Lakes</div>
     <div class="gate-logo">Washington <span>Crappie</span> Lakes</div>
-    <p class="gate-sub">Sign in to sync your catches, visits, and photos with your crew. We email you a one-tap link, no password.</p>
+    <p class="gate-sub">Sign in to sync your catches, visits, and photos with your crew. New here? Set a password once with Create account.</p>
     <input id="gateEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com">
-    <button class="gate-btn" id="gateSend">Email me a magic link</button>
+    <input id="gatePass" type="password" autocomplete="current-password" placeholder="Password (6+ characters)">
+    <button class="gate-btn" id="gateSignin">Sign in</button>
+    <button class="gate-btn gate-alt" id="gateSignup">Create account</button>
     <div class="gate-status" id="gateStatus"></div>
   </div>
 </div>
@@ -705,14 +710,26 @@ async function updateProfileName(name){ if(!me) return; const { error }=await sb
 let entered=false, rtChan=null;
 function showGate(msg){ const g=el('gate'); if(g) g.classList.add('show'); if(msg) el('gateStatus').textContent=msg; }
 function hideGate(){ const g=el('gate'); if(g) g.classList.remove('show'); }
-async function sendLink(){
-  if(!sb) return;
-  const email=el('gateEmail').value.trim();
+function gateCreds(){ return { email:el('gateEmail').value.trim(), password:el('gatePass').value }; }
+function gateBusy(b){ el('gateSignin').disabled=b; el('gateSignup').disabled=b; }
+async function doSignin(){
+  if(!sb) return; const { email, password }=gateCreds();
   if(!/.+@.+\..+/.test(email)){ el('gateStatus').textContent='Enter a valid email address.'; return; }
-  el('gateSend').disabled=true; el('gateStatus').textContent='Sending the link...';
-  const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: location.origin + location.pathname } });
-  el('gateSend').disabled=false;
-  el('gateStatus').textContent = error ? ('Could not send: '+error.message) : 'Check your email and tap the link. You can open it on this device.';
+  if(!password){ el('gateStatus').textContent='Enter your password.'; return; }
+  gateBusy(true); el('gateStatus').textContent='Signing in...';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  gateBusy(false);
+  if(error) el('gateStatus').textContent = /invalid login/i.test(error.message) ? 'Wrong email or password. New here? Tap Create account.' : error.message;
+}
+async function doSignup(){
+  if(!sb) return; const { email, password }=gateCreds();
+  if(!/.+@.+\..+/.test(email)){ el('gateStatus').textContent='Enter a valid email address.'; return; }
+  if((password||'').length<6){ el('gateStatus').textContent='Pick a password of at least 6 characters.'; return; }
+  gateBusy(true); el('gateStatus').textContent='Creating your account...';
+  const { data, error } = await sb.auth.signUp({ email, password });
+  gateBusy(false);
+  if(error){ el('gateStatus').textContent=error.message; return; }
+  if(!data.session) el('gateStatus').textContent='Account made. If you are not signed in, turn off email confirmation in Supabase, then tap Sign in.';
 }
 async function handleSession(session){
   if(session && session.user){
@@ -863,8 +880,9 @@ function renderLegend(){ el('legend').innerHTML = SPECIES.map(s=>`<span class="l
   applyFilters();
   loadLaunches();
   if(!sb){ showGate('Login needs the live site. This in-app preview blocks the login service, so open your Vercel URL.'); return; }
-  el('gateSend').addEventListener('click', sendLink);
-  el('gateEmail').addEventListener('keydown',e=>{ if(e.key==='Enter') sendLink(); });
+  el('gateSignin').addEventListener('click', doSignin);
+  el('gateSignup').addEventListener('click', doSignup);
+  el('gatePass').addEventListener('keydown',e=>{ if(e.key==='Enter') doSignin(); });
   sb.auth.onAuthStateChange((_e,session)=>handleSession(session));
   sb.auth.getSession().then(({data})=>handleSession(data.session)).catch(()=>showGate());
 })();
