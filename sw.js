@@ -1,68 +1,86 @@
-// Crappie Lakes offline worker.
-// App shell: network-first (fresh builds show right away, cache is the offline fallback).
-// Map tiles: cache-first (areas you have viewed work without signal).
-var CACHE = 'crappie-v2';
-var TILE_HOSTS = ['tile.openstreetmap.org','basemaps.cartocdn.com','server.arcgisonline.com','tile.opentopomap.org'];
-var SHELL = [
-  './',
-  './index.html',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
-];
+/* WA Crappie Lakes service worker */
+const VERSION = 'crappie-v2.1.0';
+const SHELL_CACHE = 'shell-' + VERSION;
+const RUNTIME_CACHE = 'runtime-' + VERSION;
+const TILE_CACHE = 'tiles-v1';
+const TILE_MAX = 450;
 
-self.addEventListener('install', function(e){
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(function(c){
-    return Promise.all(SHELL.map(function(u){ return c.add(u).catch(function(){}); }));
-  }));
+const SHELL = ['/', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+
+const CDN_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+const TILE_HOSTS = ['tile.openstreetmap.org', 'basemaps.cartocdn.com', 'server.arcgisonline.com', 'tile.opentopomap.org'];
+// Live data that must never be served stale: Supabase, weather, WDFW launches, geocoders.
+const BYPASS_HOSTS = ['supabase.co', 'supabase.in', 'api.open-meteo.com', 'geodataservices.wdfw.wa.gov', 'api.zippopotam.us', 'nominatim.openstreetmap.org'];
+
+function hostMatch(hostname, list) {
+  return list.some(h => hostname === h || hostname.endsWith('.' + h));
+}
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(SHELL_CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
-self.addEventListener('activate', function(e){
+self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(function(keys){
-      return Promise.all(keys.filter(function(k){ return k!==CACHE; }).map(function(k){ return caches.delete(k); }));
-    }).then(function(){ return self.clients.claim(); })
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== SHELL_CACHE && k !== RUNTIME_CACHE && k !== TILE_CACHE).map(k => caches.delete(k))
+    )).then(() => self.clients.claim())
   );
 });
 
-function isTile(url){ return TILE_HOSTS.some(function(h){ return url.hostname.endsWith(h); }); }
+async function trimCache(name, max) {
+  const cache = await caches.open(name);
+  const keys = await cache.keys();
+  if (keys.length <= max) return;
+  for (let i = 0; i < keys.length - max; i++) await cache.delete(keys[i]);
+}
 
-self.addEventListener('fetch', function(e){
-  if(e.request.method !== 'GET') return;
-  var url = new URL(e.request.url);
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
 
-  // Tiles: cache-first.
-  if(isTile(url)){
-    e.respondWith(caches.open(CACHE).then(function(c){
-      return c.match(e.request).then(function(hit){
-        if(hit) return hit;
-        return fetch(e.request).then(function(res){
-          if(res && (res.ok || res.type==='opaque')) c.put(e.request, res.clone());
-          return res;
-        }).catch(function(){ return hit; });
-      });
-    }));
-    return;
-  }
+  if (hostMatch(url.hostname, BYPASS_HOSTS)) return; // always live
 
-  // App shell and same-origin: network-first, cache as fallback.
-  if(url.origin === self.location.origin || e.request.mode === 'navigate'){
+  // App shell: network first so deploys land immediately, cache fallback for offline.
+  if (req.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request).then(function(res){
-        if(res && res.ok){ var copy=res.clone(); caches.open(CACHE).then(function(c){ c.put(e.request, copy); }); }
+      fetch(req).then(res => {
+        const copy = res.clone();
+        caches.open(SHELL_CACHE).then(c => c.put('/', copy));
         return res;
-      }).catch(function(){ return caches.match(e.request).then(function(hit){ return hit || caches.match('./index.html'); }); })
+      }).catch(() => caches.match('/'))
     );
     return;
   }
 
-  // Versioned CDN libs in the shell: cache-first so the app opens offline.
-  if(SHELL.indexOf(e.request.url) !== -1){
-    e.respondWith(caches.match(e.request).then(function(hit){ return hit || fetch(e.request); }));
+  // Map tiles: cache first with a hard cap, so panned areas keep working offline.
+  if (hostMatch(url.hostname, TILE_HOSTS)) {
+    e.respondWith(
+      caches.match(req).then(hit => hit || fetch(req).then(res => {
+        if (res && (res.ok || res.type === 'opaque')) {
+          const copy = res.clone();
+          caches.open(TILE_CACHE).then(c => c.put(req, copy)).then(() => trimCache(TILE_CACHE, TILE_MAX));
+        }
+        return res;
+      }))
+    );
+    return;
   }
-  // Everything else (Supabase, ArcGIS, Open-Meteo, geocoders): network only.
+
+  // CDN libraries and fonts: cache first, refresh in the background.
+  if (hostMatch(url.hostname, CDN_HOSTS) || url.origin === self.location.origin) {
+    e.respondWith(
+      caches.match(req).then(hit => {
+        const net = fetch(req).then(res => {
+          if (res && (res.ok || res.type === 'opaque')) {
+            const copy = res.clone();
+            caches.open(RUNTIME_CACHE).then(c => c.put(req, copy));
+          }
+          return res;
+        }).catch(() => hit);
+        return hit || net;
+      })
+    );
+  }
 });
