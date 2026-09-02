@@ -8,6 +8,8 @@ import { useUI } from '@/store/ui';
 import { useData } from '@/store/data';
 import { currentUserId } from '@/store/data';
 import { tagKey } from '@/lib/db';
+import { useFeeds } from '@/store/feeds';
+import { plantsFor } from '@/api/feeds';
 
 export type SortKey = 'name' | 'acres' | 'dist' | 'catches' | 'visits';
 
@@ -17,7 +19,7 @@ interface LakesState {
   sort: SortKey;
   species: string;
   cat: string;
-  flags: { fav: boolean; wish: boolean; ramp: boolean; motor: boolean; visited: boolean; caught: boolean; crew: boolean };
+  flags: { fav: boolean; wish: boolean; ramp: boolean; motor: boolean; visited: boolean; caught: boolean; crew: boolean; stocked: boolean };
   launches: Record<string, Launch>;
   launchStatus: string;
   launchList: Launch[];
@@ -32,7 +34,7 @@ interface LakesState {
 
 export const useLakes = create<LakesState>((set, get) => ({
   q: '', county: '', sort: 'name', species: '', cat: '',
-  flags: { fav: false, wish: false, ramp: false, motor: false, visited: false, caught: false, crew: false },
+  flags: { fav: false, wish: false, ramp: false, motor: false, visited: false, caught: false, crew: false, stocked: false },
   launches: {}, launchStatus: 'Loading WDFW launches...', launchList: [],
   setQ: (q) => set({ q }),
   setCounty: (county) => set({ county }),
@@ -61,6 +63,7 @@ export function filterLakes(): Lake[] {
   const me = currentUserId();
   const origin = useUI.getState().origin;
   const q = s.q.trim().toLowerCase();
+  const plants = s.flags.stocked ? useFeeds.getState().plants : null;
   let out = LAKES.filter(l => {
     if (q && !l.name.toLowerCase().includes(q) && !l.counties.some(c => c.toLowerCase().includes(q))) return false;
     if (s.county && !l.counties.includes(s.county)) return false;
@@ -75,6 +78,7 @@ export function filterLakes(): Lake[] {
     if (f.visited && !(st?.visits)) return false;
     if (f.caught && !(st?.catches)) return false;
     if (f.crew && !Object.values(d.tags).some(t => t.lake_id === l.slug && t.user_id !== me && (t.fav || t.cat))) return false;
+    if (plants && !plantsFor(plants, l.name, l.counties).length) return false;
     return true;
   });
   const dist = (l: Lake) => origin ? haversine(origin.lat, origin.lng, l.lat, l.lng) : 1e9;

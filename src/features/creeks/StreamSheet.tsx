@@ -12,6 +12,9 @@ import { useData } from '@/store/data';
 import { useUI } from '@/store/ui';
 import { useCreeks } from '@/features/creeks/store';
 import { Sheet, Icon, Field, Score, Empty } from '@/components/ui';
+import { useFeeds } from '@/store/feeds';
+import { rulesFor } from '@/api/feeds';
+import { useFeedLoads, RulesList } from '@/features/feeds/FeedBits';
 
 const DOCUMENTED = /documented/i;
 const GAUGE_MAX_MI = 25;
@@ -45,6 +48,10 @@ export function StreamSheet({ pick }: { pick: StreamPick }) {
   const gauges = useCreeks(s => s.gauges);
   const barriers = useCreeks(s => s.barriers);
   const access = useCreeks(s => s.access);
+
+  useFeedLoads(['rules']);
+  const feedRules = useFeeds(s => s.rules);
+  const myRules = useMemo(() => rulesFor(feedRules, pick.name), [feedRules, pick.name]);
 
   const [rows, setRows] = useState<StreamSpeciesRow[]>(pick.species);
   const [rowsReady, setRowsReady] = useState(false);
@@ -195,6 +202,13 @@ export function StreamSheet({ pick }: { pick: StreamPick }) {
             </Field>
             <Field label="Notes" full><textarea className="input" value={notes} onChange={e => setNotes(e.target.value)} placeholder="How to get there, what to try" /></Field>
           </div>
+        </div>
+      )}
+
+      {myRules.length > 0 && (
+        <div className="section">
+          <h3>Emergency rules <small>{myRules.length} match</small></h3>
+          <RulesList rules={myRules} compact empty="" />
         </div>
       )}
 

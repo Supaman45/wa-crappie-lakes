@@ -11,6 +11,9 @@ import { lakeSub } from '@/domain/journal';
 import { dayScore, whyText, solunarSummary } from '@/domain/scoring';
 import { lakeForecast } from '@/api/openMeteo';
 import { Sheet, Icon, Score } from '@/components/ui';
+import { useFeeds } from '@/store/feeds';
+import { rulesFor, plantsFor } from '@/api/feeds';
+import { useFeedLoads, RulesList, PlantRow } from '@/features/feeds/FeedBits';
 
 type FcState = { status: 'loading' } | { status: 'ok'; fc: Forecast } | { status: 'err' };
 
@@ -48,6 +51,14 @@ export function LakeSheet({ lake }: { lake: Lake }) {
     [catches, lake.slug],
   );
   const sol = useMemo(() => solunarSummary(new Date()), []);
+
+  useFeedLoads(['rules', 'plants']);
+  const rules = useFeeds(s => s.rules);
+  const rulesStatus = useFeeds(s => s.rulesStatus);
+  const plants = useFeeds(s => s.plants);
+  const plantsStatus = useFeeds(s => s.plantsStatus);
+  const myRules = useMemo(() => rulesFor(rules, lake.name, lake.counties), [rules, lake.name, lake.counties]);
+  const myPlants = useMemo(() => plantsFor(plants, lake.name, lake.counties).slice(0, 6), [plants, lake.name, lake.counties]);
 
   const [fc, setFc] = useState<FcState>({ status: 'loading' });
   useEffect(() => {
@@ -105,6 +116,19 @@ export function LakeSheet({ lake }: { lake: Lake }) {
         ) : (
           <div className="note">No WDFW boat launch matched nearby. May be shore access only. The WDFW page lists details.</div>
         )}
+      </div>
+
+      {(myRules.length > 0 || rulesStatus === 'loading') && (
+        <div className="section">
+          <h3>Emergency rules <small>{myRules.length ? `${myRules.length} match` : 'checking'}</small></h3>
+          <RulesList rules={myRules} empty="Checking WDFW emergency rules" />
+        </div>
+      )}
+
+      <div className="section">
+        <h3>Trout plants <small>{plantsStatus === 'ok' ? (myPlants.length ? 'recent' : 'none recent') : plantsStatus === 'loading' ? 'loading' : ''}</small></h3>
+        {myPlants.length > 0 && <div className="list">{myPlants.map((p, i) => <PlantRow key={i} p={p} />)}</div>}
+        {myPlants.length === 0 && <div className="note">{plantsStatus === 'err' ? 'Could not load the WDFW stocking report.' : plantsStatus === 'loading' ? 'Loading the WDFW stocking report' : 'No trout plant listed for this lake in the recent WDFW report.'}</div>}
       </div>
 
       <div className="section">

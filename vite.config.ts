@@ -29,6 +29,7 @@ export default defineConfig({
         cacheId: `wff-${pkg.version}`,
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         runtimeCaching: [
           {
@@ -42,7 +43,7 @@ export default defineConfig({
             options: { cacheName: 'fonts-v1', expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 } },
           },
           {
-            urlPattern: ({ url }) => /(supabase\.co|open-meteo\.com|wdfw\.wa\.gov|usgs\.gov|noaa\.gov|zippopotam\.us|openstreetmap\.org\/search)/.test(url.href) && !/tile\.openstreetmap\.org/.test(url.hostname),
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/') || /(supabase\.co|open-meteo\.com|wdfw\.wa\.gov|usgs\.gov|noaa\.gov|zippopotam\.us|openstreetmap\.org\/search)/.test(url.href) && !/tile\.openstreetmap\.org/.test(url.hostname),
             handler: 'NetworkOnly',
           },
         ],

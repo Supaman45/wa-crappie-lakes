@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import type { Lake } from '@/lib/types';
 import { LAKES, COUNTIES } from '@/data/lakes';
 import { LAKE_SPECIES, CATS, speciesColor, speciesLabel } from '@/data/species';
@@ -7,6 +7,7 @@ import { toast } from '@/lib/toast';
 import { useData, currentUserId } from '@/store/data';
 import { useUI } from '@/store/ui';
 import { useLakes, filterLakes, type SortKey } from '@/features/lakes/store';
+import { useFeeds } from '@/store/feeds';
 import { lakeSub } from '@/domain/journal';
 import { haversine } from '@/lib/util';
 import { resolveZip, geocodePlace, locateMe } from '@/api/geocode';
@@ -20,6 +21,7 @@ const FLAG_CHIPS: { k: keyof ReturnType<typeof useLakes.getState>['flags']; labe
   { k: 'visited', label: 'Visited' },
   { k: 'caught', label: 'Caught here' },
   { k: 'crew', label: 'Crew picks' },
+  { k: 'stocked', label: 'Stocked lately' },
 ];
 
 function isMobile(): boolean { return typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches; }
@@ -53,7 +55,10 @@ export function LakesPanel() {
   const me = currentUserId();
 
   // filterLakes reads the stores directly; the deps make sure it re-runs when any input changes.
-  const lakes = useMemo(() => filterLakes(), [q, county, sort, species, cat, flags, launches, origin, tags, index]);
+  const plants = useFeeds(s => s.plants);
+  const loadPlants = useFeeds(s => s.loadPlants);
+  useEffect(() => { if (flags.stocked && useFeeds.getState().plantsStatus === 'idle') loadPlants(); }, [flags.stocked, loadPlants]);
+  const lakes = useMemo(() => filterLakes(), [q, county, sort, species, cat, flags, launches, origin, tags, index, plants]);
 
   const anyFilter = !!(q || county || species || cat || Object.values(flags).some(Boolean));
 

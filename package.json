@@ -1,7 +1,7 @@
 {
   "name": "wa-fish-finder",
   "private": true,
-  "version": "3.0.2",
+  "version": "3.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,6 +14,7 @@
     "dexie": "4.4.5",
     "leaflet": "1.9.4",
     "leaflet.markercluster": "1.5.3",
+    "pdfjs-dist": "4.10.38",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "zustand": "5.0.15"

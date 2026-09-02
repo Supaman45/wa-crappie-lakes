@@ -8,11 +8,41 @@ import { CREEK_SPECIES, speciesColor, speciesLabel } from '@/data/species';
 import { catchesCsv, visitsCsv, shareText } from '@/domain/journal';
 import { toast } from '@/lib/toast';
 import { Chip, Empty } from '@/components/ui';
+import { useFeeds } from '@/store/feeds';
+import { useFeedLoads, RulesList } from '@/features/feeds/FeedBits';
+
+type RuleWater = 'all' | 'river' | 'lake' | 'salt';
+
+function RulesSection() {
+  useFeedLoads(['rules']);
+  const rules = useFeeds(s => s.rules);
+  const status = useFeeds(s => s.rulesStatus);
+  const loadRules = useFeeds(s => s.loadRules);
+  const [water, setWater] = useState<RuleWater>('all');
+  const [showAll, setShowAll] = useState(false);
+  const list = useMemo(() => rules.filter(r => water === 'all' || r.water === water || (water === 'river' && r.water === 'other')), [rules, water]);
+  const shown = showAll ? list : list.slice(0, 8);
+  return (
+    <div className="section">
+      <h3>Emergency rules <small>{status === 'ok' ? `${rules.length} posted` : status === 'loading' ? 'loading' : status === 'err' ? 'offline' : ''}</small></h3>
+      <div className="chips" style={{ marginBottom: 8 }}>
+        {(['all', 'river', 'lake', 'salt'] as RuleWater[]).map(w => <Chip key={w} on={water === w} onClick={() => setWater(w)}>{w === 'all' ? 'All' : w === 'salt' ? 'Saltwater' : w === 'river' ? 'Rivers' : 'Lakes'}</Chip>)}
+      </div>
+      {status === 'err' && <div className="row" style={{ justifyContent: 'space-between', paddingBottom: 8 }}><div className="note">Could not load the WDFW feed.</div><button className="btn sm" onClick={loadRules}>Retry</button></div>}
+      <RulesList rules={shown} compact empty={status === 'loading' ? 'Loading WDFW emergency rules' : 'No rules in this group.'} />
+      {list.length > 8 && <button className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => setShowAll(v => !v)}>{showAll ? 'Show fewer' : `Show all ${list.length}`}</button>}
+      <div className="note" style={{ paddingTop: 8 }}>Newest first, from the WDFW emergency rules feed. Matching rules also show on lake, river, and stream sheets.</div>
+    </div>
+  );
+}
 
 const SOURCES = [
   'WDFW SWIFD (statewide integrated fish distribution)',
   'WDFW fish passage barriers',
   'WDFW water access sites',
+  'WDFW emergency fishing rules feed',
+  'WDFW trout stocking reports',
+  'WDFW weekly hatchery escapement report',
   'USGS stream gauges',
   'Open-Meteo weather, sun, and marine model',
   'NOAA CO-OPS tide predictions',
@@ -114,6 +144,8 @@ export function MorePanel() {
           <button className="btn" onClick={exportVisits}>Visits CSV</button>
         </div>
       </div>
+
+      <RulesSection />
 
       <div className="section">
         <h3>Creek finder settings</h3>

@@ -57,6 +57,22 @@ export async function gaugesInBox(bbox: [number, number, number, number], signal
   return out;
 }
 
+/** Live flow and temperature for a list of USGS site ids (up to 100 per request). */
+export async function gaugesBySites(ids: string[], signal?: AbortSignal): Promise<Record<string, Gauge>> {
+  const clean = Array.from(new Set(ids.filter(Boolean))).sort();
+  if (!clean.length) return {};
+  const key = `usgss:${clean.join(',')}`;
+  const cached = await kvGet<Record<string, Gauge>>(key, TTL);
+  if (cached) return cached;
+  const url = `${IV}?format=json&sites=${clean.join(',')}&parameterCd=00060,00010&siteStatus=all`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error('USGS ' + res.status);
+  const out: Record<string, Gauge> = {};
+  for (const g of parse(await res.json())) out[g.id] = g;
+  kvSet(key, out);
+  return out;
+}
+
 export interface GaugeHistory { dates: string[]; cfs: (number | null)[]; tempC: (number | null)[]; }
 
 /** 7-day daily means for one gauge (for trend and median context). */

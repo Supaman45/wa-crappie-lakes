@@ -11,8 +11,9 @@ import { dayScore, whyText, solunarSummary } from '@/domain/scoring';
 import { tideWindows, surfScore, dayIdx, type TideWindow, type SurfScore } from '@/domain/surf';
 import { pairSuggestions } from '@/domain/journal';
 import { Score, Empty } from '@/components/ui';
+import { RiversPlan } from '@/features/plan/RiversPlan';
 
-type Mode = 'lakes' | 'surf';
+type Mode = 'lakes' | 'rivers' | 'surf';
 
 const EMPTY_STATS: LogStats = { visits: 0, catches: 0, sp: {}, top: null, lastDate: null };
 
@@ -23,10 +24,11 @@ export function PlanPanel() {
       <div style={{ padding: '12px 0 4px' }}>
         <div className="modebar" style={{ boxShadow: 'none' }} role="tablist">
           <button type="button" role="tab" aria-selected={mode === 'lakes'} className={mode === 'lakes' ? 'on' : ''} onClick={() => setMode('lakes')}>Lakes</button>
+          <button type="button" role="tab" aria-selected={mode === 'rivers'} className={mode === 'rivers' ? 'on' : ''} onClick={() => setMode('rivers')}>Rivers</button>
           <button type="button" role="tab" aria-selected={mode === 'surf'} className={mode === 'surf' ? 'on' : ''} onClick={() => setMode('surf')}>Surf</button>
         </div>
       </div>
-      {mode === 'lakes' ? <LakesPlan /> : <SurfPlan />}
+      {mode === 'lakes' ? <LakesPlan /> : mode === 'rivers' ? <RiversPlan /> : <SurfPlan />}
     </div>
   );
 }
