@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/store/auth';
 import { useData } from '@/store/data';
 import { useUI, type Tab } from '@/store/ui';

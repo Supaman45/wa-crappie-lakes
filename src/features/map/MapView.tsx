@@ -10,9 +10,9 @@ import { useData, currentUserId } from '@/store/data';
 import { useLakes, filterLakes } from '@/features/lakes/store';
 import { useCreeks, CREEK_MIN_ZOOM } from '@/features/creeks/store';
 import { tagKey } from '@/lib/db';
-import { acreFmt, cToF, debounce, dirUrl, haversine } from '@/lib/util';
+import { acreFmt, cToF, debounce, dirUrl, normTrack } from '@/lib/util';
 import type { Lake } from '@/lib/types';
-import type { BBox, StreamSeg } from '@/api/wdfw';
+import type { StreamSeg } from '@/api/wdfw';
 import { Icon } from '@/components/ui';
 import { toast } from '@/lib/toast';
 
@@ -174,6 +174,7 @@ export function MapView() {
 
   // Saved spots
   useEffect(() => {
+    try {
     spotLayer.current.clearLayers();
     for (const s of spots) {
       const col = s.status === 'producing' ? '#3fae6b' : s.status === 'dead' ? '#5f7770' : s.status === 'scouted' ? '#eaa24c' : '#52c9e2';
@@ -182,18 +183,22 @@ export function MapView() {
       mk.on('click', () => openSheet({ kind: 'spot', spot: s }));
       spotLayer.current.addLayer(mk);
     }
+    } catch (e) { console.warn('spot layer', e); }
   }, [spots, openSheet]);
 
   // Trip tracks (last 10)
   useEffect(() => {
+    try {
     trackLayer.current.clearLayers();
     for (const t of trips.slice(0, 10)) {
-      if (!t.track || t.track.length < 2) continue;
-      const line = L.polyline(t.track.map(p => [p.lat, p.lng] as [number, number]), { color: '#eaa24c', weight: 3, opacity: .55, dashArray: '2 6' });
+      const pts = normTrack(t.track);
+      if (pts.length < 2) continue;
+      const line = L.polyline(pts.map(p => [p.lat, p.lng] as [number, number]), { color: '#eaa24c', weight: 3, opacity: .55, dashArray: '2 6' });
       line.bindTooltip(`Trip ${t.started_at ? new Date(t.started_at).toLocaleDateString() : ''} · ${t.distance_mi?.toFixed(1) ?? '?'} mi`);
       line.on('click', () => openSheet({ kind: 'trip', tripId: t.id }));
       trackLayer.current.addLayer(line);
     }
+    } catch (e) { console.warn('track layer', e); }
   }, [trips, openSheet]);
 
   // Creek layers on/off with mode

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { sb, fetchAll, PHOTO_BUCKET } from '@/lib/supabase';
 import { db, tagKey } from '@/lib/db';
-import { uuid, isOnline, todayStr, downscale } from '@/lib/util';
+import { uuid, isOnline, todayStr, downscale, normTrack } from '@/lib/util';
 import { toast } from '@/lib/toast';
 import type { Catch, Visit, Trip, LakeTag, Profile, Spot, OutboxItem } from '@/lib/types';
 
@@ -93,7 +93,7 @@ export const useData = create<DataState>((set, get) => ({
       const tagMap: Record<string, LakeTag> = {}; for (const t of tags) { const { key, ...rest } = t; tagMap[key] = rest; }
       const profMap: Record<string, Profile> = {}; for (const p of profiles) profMap[p.id] = p;
       if (catches.length || visits.length || spots.length) {
-        set({ catches, visits, trips, tags: tagMap, profiles: profMap, spots, loaded: true, index: buildIndex(catches, visits), outboxCount: outbox.length, stuckCount: outbox.filter(o => o.attempts >= 5).length });
+        set({ catches, visits, trips: trips.map(t => ({ ...t, track: normTrack(t.track) })), tags: tagMap, profiles: profMap, spots, loaded: true, index: buildIndex(catches, visits), outboxCount: outbox.length, stuckCount: outbox.filter(o => o.attempts >= 5).length });
       }
     } catch { /* no cache */ }
     // 2. network
@@ -129,7 +129,7 @@ export const useData = create<DataState>((set, get) => ({
       const merged = <T extends { id: string; _local?: boolean }>(remote: T[], local: T[]) => [...local.filter(l => l._local && pendIds.has(l.id) && !remote.some(r => r.id === l.id)), ...remote];
       const tags: Record<string, LakeTag> = {}; for (const t of tagRows) tags[tagKey(t.user_id, t.lake_id)] = t;
       const profiles: Record<string, Profile> = {}; for (const p of profRows) profiles[p.id] = p;
-      const next = { catches: merged(catches, cur.catches), visits: merged(visits, cur.visits), trips: merged(trips, cur.trips), tags, profiles, spots: merged(spots, cur.spots) };
+      const next = { catches: merged(catches, cur.catches), visits: merged(visits, cur.visits), trips: merged(trips, cur.trips).map(t => ({ ...t, track: normTrack(t.track) })), tags, profiles, spots: merged(spots, cur.spots) };
       set({ ...next, loaded: true, index: buildIndex(next.catches, next.visits), outboxCount: pending.length, stuckCount: pending.filter(o => o.attempts >= 5).length });
       cacheAll(next);
     } catch (e) {

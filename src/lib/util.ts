@@ -80,3 +80,16 @@ export function debounce<T extends (...a: any[]) => void>(fn: T, ms: number): T 
 export function clamp(n: number, lo: number, hi: number): number { return Math.max(lo, Math.min(hi, n)); }
 
 export function cToF(c: number): number { return c * 9 / 5 + 32; }
+
+/** Accept track points saved by v2.5 ([lat, lng] pairs) and v3 ({t, lat, lng}); drop anything malformed. */
+export function normTrack(track: unknown): { t: number; lat: number; lng: number }[] {
+  if (!Array.isArray(track)) return [];
+  const out: { t: number; lat: number; lng: number }[] = [];
+  for (const p of track) {
+    let lat: unknown, lng: unknown, t: unknown;
+    if (Array.isArray(p)) { lat = p[0]; lng = p[1]; t = p[2]; }
+    else if (p && typeof p === 'object') { const o = p as Record<string, unknown>; lat = o.lat; lng = o.lng; t = o.t; }
+    if (typeof lat === 'number' && typeof lng === 'number' && Number.isFinite(lat) && Number.isFinite(lng)) out.push({ t: typeof t === 'number' ? t : 0, lat, lng });
+  }
+  return out;
+}

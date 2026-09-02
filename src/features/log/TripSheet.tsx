@@ -4,7 +4,7 @@ import { useUI } from '@/store/ui';
 import { useData } from '@/store/data';
 import { LAKE_BY_SLUG } from '@/data/lakes';
 import { speciesColor, speciesLabel } from '@/data/species';
-import { fmtDate, fmtClock } from '@/lib/util';
+import { fmtDate, fmtClock, normTrack } from '@/lib/util';
 import type { Spot } from '@/lib/types';
 
 /** Local calendar date (YYYY-MM-DD) of an ISO timestamp, so trips show the day they happened here. */
@@ -50,12 +50,13 @@ export function TripSheet({ tripId }: { tripId: string }) {
   }
 
   const who = profiles[trip.user_id];
-  const hasTrack = !!(trip.track && trip.track.length);
+  const track = normTrack(trip.track);
+  const hasTrack = track.length > 0;
   const title = `Trip ${fmtDate(localDateStr(trip.started_at))}`.trim();
 
   const showOnMap = () => {
-    if (!trip.track || !trip.track.length) return;
-    const p = trip.track[0];
+    if (!track.length) return;
+    const p = track[0];
     closeSheet();
     fly(p.lat, p.lng, 12);
   };
@@ -72,7 +73,7 @@ export function TripSheet({ tripId }: { tripId: string }) {
         <div className="k">End</div><div className="v">{fmtStamp(trip.ended_at) || 'n/a'}</div>
         <div className="k">Duration</div><div className="v">{trip.duration_min != null ? `${trip.duration_min} min` : 'n/a'}</div>
         <div className="k">Distance</div><div className="v">{trip.distance_mi != null ? `${trip.distance_mi.toFixed(1)} mi` : 'n/a'}</div>
-        {hasTrack && <><div className="k">Track points</div><div className="v">{trip.track!.length}</div></>}
+        {hasTrack && <><div className="k">Track points</div><div className="v">{track.length}</div></>}
         {trip._local && <><div className="k">Sync</div><div className="v"><span className="badge warn">Not synced</span></div></>}
       </div>
 
