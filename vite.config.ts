@@ -32,7 +32,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => /(^|\.)(tile\.openstreetmap\.org|basemaps\.cartocdn\.com|server\.arcgisonline\.com|tile\.opentopomap\.org)$/.test(url.hostname),
+            urlPattern: ({ url }) => /(^|\.)(tile\.openstreetmap\.org|server\.arcgisonline\.com|tile\.opentopomap\.org)$/.test(url.hostname),
             handler: 'CacheFirst',
             options: { cacheName: 'tiles-v1', expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 30 } },
           },
