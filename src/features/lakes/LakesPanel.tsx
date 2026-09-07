@@ -8,6 +8,8 @@ import { useData, currentUserId } from '@/store/data';
 import { useUI } from '@/store/ui';
 import { useLakes, filterLakes, type SortKey, type SizeKey } from '@/features/lakes/store';
 import { useFeeds } from '@/store/feeds';
+import { boatFit } from '@/domain/boatFit';
+import { solunarSummary } from '@/domain/scoring';
 import { lakeSub } from '@/domain/journal';
 import { haversine } from '@/lib/util';
 import { resolveZip, geocodePlace, locateMe } from '@/api/geocode';
@@ -115,7 +117,7 @@ export function LakesPanel() {
 
   function pick(l: Lake) {
     useUI.getState().setActiveLake(l.id);
-    if (isMobile()) useUI.getState().setMobileView('map');
+    if (isMobile()) useUI.getState().openSheet({ kind: 'lake', lake: l });
   }
   function open(e: MouseEvent, l: Lake) {
     e.stopPropagation();
@@ -125,9 +127,15 @@ export function LakesPanel() {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(l); }
   }
 
+  const sol = useMemo(() => solunarSummary(new Date()), []);
+
   return (
     <>
-      <div className="controls">
+      <div className="readout">
+        <h2>Lakes</h2>
+        <div className="rd">Bite window<b>{sol.majors[0]}</b></div>
+      </div>
+      <div className="controls" style={{ paddingTop: 6 }}>
         <input className="input" type="search" placeholder="Search lake or county" value={q} onChange={e => setQ(e.target.value)} autoComplete="off" aria-label="Search lakes" />
         <div className="row filter-toggle">
           <button type="button" className={`btn sm${showFilters ? ' primary' : ''}`} onClick={() => setShowFilters(v => !v)} aria-expanded={showFilters}><Icon name="layers" size={14} />Filters{filterCount ? ` (${filterCount})` : ''}</button>
@@ -165,6 +173,12 @@ export function LakesPanel() {
         <div className="chips">
           {FLAG_CHIPS.map(f => <Chip key={f.k} on={flags[f.k]} onClick={() => toggleFlag(f.k)}>{f.label}</Chip>)}
         </div>
+        <div className="legend">
+        {CORE_LAKE_SPECIES.map(id => <span key={id}><i style={{ background: speciesColor(id) }} />{speciesLabel(id)}</span>)}
+        <span><i style={{ background: 'transparent', boxShadow: '0 0 0 2px var(--amber)' }} />Favorite</span>
+        <span><i style={{ background: 'transparent', boxShadow: '0 0 0 2px var(--water)' }} />Wish list</span>
+        <span><i className="line" style={{ background: '#b5652f' }} />Trail to a lake (zoom in)</span>
+      </div>
         </>)}
         <div className="row">
           <button type="button" className="btn" onClick={nearMe} disabled={locating}><Icon name="locate" />Near me</button>
@@ -187,12 +201,6 @@ export function LakesPanel() {
         )}
       </div>
 
-      <div className="legend">
-        {CORE_LAKE_SPECIES.map(id => <span key={id}><i style={{ background: speciesColor(id) }} />{speciesLabel(id)}</span>)}
-        <span><i style={{ background: 'transparent', boxShadow: '0 0 0 2px var(--amber)' }} />Favorite</span>
-        <span><i style={{ background: 'transparent', boxShadow: '0 0 0 2px var(--water)' }} />Wish list</span>
-        <span><i className="line" style={{ background: '#b5652f' }} />Trail to a lake (zoom in)</span>
-      </div>
 
       <div className="meta">
         <span>{lakes.length} of {LAKES.length}{lakes.length > LIST_CAP ? `, first ${LIST_CAP} listed` : ''}{anyFilter && <> · <button type="button" className="btn sm ghost" style={{ padding: '0 4px', fontSize: 12 }} onClick={resetFilters}>Reset</button></>}</span>
@@ -208,7 +216,6 @@ export function LakesPanel() {
           const color = pinColor(l);
           const ring = t?.fav ? 'var(--amber)' : t?.wish ? 'var(--water)' : null;
           let sub = lakeSub(l);
-          if (origin) sub += ` · ${haversine(origin.lat, origin.lng, l.lat, l.lng).toFixed(1)} mi`;
           if (launch) sub += ` · ${launch.type || 'ramp'}`; else if (l.ramp) sub += ' · ramp'; else if (l.kind === 'high') sub += ' · hike-in';
           return (
             <div
@@ -228,12 +235,8 @@ export function LakesPanel() {
                 <div className="sub">{sub}</div>
               </div>
               <div className="right">
-                {st && (st.catches > 0 || st.visits > 0) && (
-                  <><b>{st.catches} {st.catches === 1 ? 'catch' : 'catches'}</b>{st.visits} {st.visits === 1 ? 'visit' : 'visits'}</>
-                )}
-                <div style={{ marginTop: st ? 4 : 0 }}>
-                  <button type="button" className="btn sm ghost" onClick={e => open(e, l)} aria-label={`Open ${l.name}`}>Open</button>
-                </div>
+                {(() => { const d = origin ? haversine(origin.lat, origin.lng, l.lat, l.lng) : null; const fit = boatFit(l, launch); return (<><b>{d != null ? `${d < 10 ? d.toFixed(1) : Math.round(d)} mi` : l.acres ? `${Math.round(l.acres)} ac` : '-'}</b>{fit.label}{st && st.catches > 0 ? <><br />{st.catches} caught</> : null}</>); })()}
+                <div className="desk-only" style={{ marginTop: 4 }}><button type="button" className="btn sm ghost" onClick={e => open(e, l)} aria-label={`Open ${l.name}`}>Open</button></div>
               </div>
             </div>
           );

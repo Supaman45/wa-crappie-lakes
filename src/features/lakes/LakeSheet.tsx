@@ -11,6 +11,7 @@ import { lakeSub } from '@/domain/journal';
 import { dayScore, whyText, solunarSummary } from '@/domain/scoring';
 import { lakeForecast } from '@/api/openMeteo';
 import { Sheet, Icon, Score } from '@/components/ui';
+import { SonarStrip, Gauge } from '@/components/Sonar';
 import { useFeeds } from '@/store/feeds';
 import { rulesFor, plantsFor } from '@/api/feeds';
 import { useFeedLoads, RulesList, PlantRow } from '@/features/feeds/FeedBits';
@@ -256,28 +257,44 @@ export function LakeSheet({ lake }: { lake: Lake }) {
       </div>
 
       <div className="section">
-        <h3>3-day bite forecast</h3>
+        <h3>Bite forecast <small>{fc.status === 'ok' ? `${Math.min(7, fc.fc.daily.time.length)} days` : ''}</small></h3>
         {fc.status === 'loading' && <div className="note" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span className="spinner" />Loading forecast</div>}
         {fc.status === 'err' && <div className="note">Forecast unavailable right now. Check the connection and reopen the lake.</div>}
-        {fc.status === 'ok' && (
-          <div className="list">
-            {fc.fc.daily.time.slice(0, 3).map((t, i) => {
-              const x = dayScore(fc.fc, i);
-              if (!x) return null;
-              const bits = [x.t != null ? `${Math.round(x.t)}°` : null, x.w != null ? `${Math.round(x.w)} mph wind` : null, x.p != null ? `${Math.round(x.p)}% rain` : null].filter(Boolean).join(' · ');
-              return (
-                <div key={t} className="prow" style={{ cursor: 'default' }}>
-                  <Score n={x.score} />
-                  <div style={{ minWidth: 0 }}>
-                    <div className="pname">{dayLabel(t, i)}</div>
-                    <div className="pwhy">{whyText(x)}</div>
-                    <div className="pmeta">{bits}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {fc.status === 'ok' && (() => {
+          const days = fc.fc.daily.time.slice(0, 7);
+          const scores = days.map((_, i) => dayScore(fc.fc, i));
+          const vals = scores.map(x => x?.score ?? 0);
+          const best = vals.reduce((bi, v, i) => v > vals[bi] ? i : bi, 0);
+          const today = scores[0];
+          return (
+            <>
+              <SonarStrip values={vals} labels={days.map((t, i) => dayLabel(t, i).slice(0, 3))} activeIndex={0} leftLabel="Bite 7 days" rightLabel={`Peak ${dayLabel(days[best], best)} ${vals[best]}`} />
+              <div className="gauges" style={{ marginBottom: 10 }}>
+                <Gauge label="Bite" value={today ? String(today.score) : '-'} tone={today && today.score >= 70 ? 'g' : today && today.score >= 50 ? '' : 'o'} />
+                <Gauge label="Wind" value={today?.w != null ? `${Math.round(today.w)} mph` : '-'} tone="c" />
+                <Gauge label="Rain" value={today?.p != null ? `${Math.round(today.p)}%` : '-'} tone="c" />
+                <Gauge label="Boat" value={fit.fit === 'big' ? '17 ft' : fit.fit === 'small' ? 'Elec' : fit.fit === 'hike' ? 'Hike' : 'Shore'} tone="o" />
+              </div>
+              <div className="list">
+                {days.slice(0, 3).map((t, i) => {
+                  const x = scores[i];
+                  if (!x) return null;
+                  const bits = [x.t != null ? `${Math.round(x.t)}°` : null, x.w != null ? `${Math.round(x.w)} mph wind` : null, x.p != null ? `${Math.round(x.p)}% rain` : null].filter(Boolean).join(' · ');
+                  return (
+                    <div key={t} className="prow" style={{ cursor: 'default' }}>
+                      <Score n={x.score} />
+                      <div style={{ minWidth: 0 }}>
+                        <div className="pname">{dayLabel(t, i)}</div>
+                        <div className="pwhy">{whyText(x)}</div>
+                        <div className="pmeta">{bits}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       <div className="section">

@@ -46,7 +46,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       if (sess) {
         set({ status: 'signed_in', session: sess, userId: sess.user.id, email: sess.user.email ?? null });
         lsSet(HINT_KEY, JSON.stringify({ id: sess.user.id, email: sess.user.email }));
-      } else if (get().status !== 'booting') {
+      } else if (get().status !== 'booting' && (navigator.onLine || !lsGet(HINT_KEY))) {
+        // Offline with a remembered account: keep the optimistic session so cached data stays usable.
         set({ status: 'signed_out', session: null, userId: null, email: null });
       }
     });
