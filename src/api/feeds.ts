@@ -62,7 +62,19 @@ export interface Escapement {
   previous: { fileDate: string; reportDate: string | null; url: string } | null;
 }
 
+export interface RazorDig { text: string; copalis: boolean; mocrocks: boolean }
+export interface CoastNews { id: string; title: string; link: string; published: string | null; summary: string; north: boolean; razor: boolean }
+export interface CityNews { title: string; link: string; date: string | null; beach: boolean }
+export interface CityAlert { title: string; date: string | null; text: string; link: string; beach: boolean }
+export interface Coast {
+  fetched: string;
+  razor: { url: string; headline: string | null; posted: string | null; window: string | null; digs: RazorDig[]; allDigs: number; notes: string[]; error?: string };
+  news: CoastNews[];
+  oceanShores: { alert: CityAlert | null; news: CityNews[] };
+}
+
 const RULES_TTL = 30 * 60 * 1000;
+const COAST_TTL = 30 * 60 * 1000;
 const PLANTS_TTL = 60 * 60 * 1000;
 const ESC_TTL = 6 * 60 * 60 * 1000;
 
@@ -93,6 +105,11 @@ export async function fetchPlants(signal?: AbortSignal): Promise<Plant[]> {
 
 export async function fetchEscapement(signal?: AbortSignal): Promise<Escapement> {
   return getJson<Escapement>('/api/escapement', 'feed:escapement', ESC_TTL, signal);
+}
+
+/** Coast Watch: razor clam digs, WDFW coast news, Ocean Shores city notices. */
+export async function fetchCoast(signal?: AbortSignal): Promise<Coast> {
+  return getJson<Coast>('/api/coast', 'feed:coast', COAST_TTL, signal);
 }
 
 /* ---------- matching helpers ---------- */

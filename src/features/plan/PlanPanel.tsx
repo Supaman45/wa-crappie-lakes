@@ -13,6 +13,7 @@ import { pairSuggestions } from '@/domain/journal';
 import { Score, Empty } from '@/components/ui';
 import { RiversPlan } from '@/features/plan/RiversPlan';
 import { HikesPlan } from '@/features/plan/HikesPlan';
+import { CoastWatch } from '@/features/plan/CoastWatch';
 
 type Mode = 'lakes' | 'rivers' | 'hikes' | 'surf';
 
@@ -229,7 +230,8 @@ function SurfPlan() {
 
   return (
     <div>
-      <div className="section" style={{ marginTop: 8 }}>
+      <CoastWatch />
+      <div className="section">
         <h3>Surf perch <small>{SURF_SITE.name}</small></h3>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 8 }}>
           <div className="note">NOAA tides at Point Brown (station {SURF_SITE.station}), the Copalis reference. Incoming water only. The deeper the low tide drops, the better the push behind it. Prime is the last two hours into high slack.</div>

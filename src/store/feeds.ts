@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { fetchRules, fetchPlants, fetchEscapement, type Rule, type Plant, type Escapement } from '@/api/feeds';
+import { kvDel } from '@/lib/db';
+import { fetchRules, fetchPlants, fetchEscapement, fetchCoast, type Rule, type Plant, type Escapement, type Coast } from '@/api/feeds';
 
 type Status = 'idle' | 'loading' | 'ok' | 'err';
 
@@ -10,6 +11,9 @@ interface FeedsState {
   plantsStatus: Status;
   escapement: Escapement | null;
   escStatus: Status;
+  coast: Coast | null;
+  coastStatus: Status;
+  loadCoast: (force?: boolean) => Promise<void>;
   loadRules: () => Promise<void>;
   loadPlants: () => Promise<void>;
   loadEscapement: () => Promise<void>;
@@ -21,6 +25,13 @@ export const useFeeds = create<FeedsState>((set, get) => ({
   rules: [], rulesStatus: 'idle',
   plants: [], plantsStatus: 'idle',
   escapement: null, escStatus: 'idle',
+  coast: null, coastStatus: 'idle',
+  loadCoast: async (force) => {
+    if (get().coastStatus === 'loading') return;
+    if (force) await kvDel('feed:coast');
+    set({ coastStatus: 'loading' });
+    try { set({ coast: await fetchCoast(), coastStatus: 'ok' }); } catch { set({ coastStatus: 'err' }); }
+  },
   loadRules: async () => {
     if (get().rulesStatus === 'loading') return;
     set({ rulesStatus: 'loading' });

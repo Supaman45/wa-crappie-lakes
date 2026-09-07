@@ -45,4 +45,8 @@ export async function kvSet(key: string, value: unknown): Promise<void> {
   try { await db.kv.put({ key, value, at: Date.now() }); } catch { /* storage may be unavailable */ }
 }
 
+export async function kvDel(key: string): Promise<void> {
+  try { await db.kv.delete(key); } catch { /* ignore */ }
+}
+
 export function tagKey(userId: string, lakeId: string): string { return `${userId}:${lakeId}`; }

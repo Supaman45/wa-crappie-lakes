@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'push-sw.js'],
       manifest: {
         name: 'WA Fish Finder',
         short_name: 'Fish Finder',
@@ -28,6 +28,7 @@ export default defineConfig({
       },
       workbox: {
         cacheId: `wff-${pkg.version}`,
+        importScripts: ['push-sw.js'],
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],

@@ -39,6 +39,15 @@
       "includeFiles": "node_modules/pdfjs-dist/legacy/build/**",
       "maxDuration": 60,
       "memory": 1024
+    },
+    "api/watch.js": {
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/watch",
+      "schedule": "0 15 * * *"
+    }
+  ]
 }

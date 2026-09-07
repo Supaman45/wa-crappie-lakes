@@ -1,7 +1,7 @@
 {
   "name": "wa-fish-finder",
   "private": true,
-  "version": "3.5.1",
+  "version": "3.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,6 +17,7 @@
     "pdfjs-dist": "4.10.38",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "web-push": "3.6.7",
     "zustand": "5.0.15"
   },
   "devDependencies": {

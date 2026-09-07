@@ -11,6 +11,7 @@ import { Chip, Empty } from '@/components/ui';
 import { useFeeds } from '@/store/feeds';
 import { useFeedLoads, RulesList } from '@/features/feeds/FeedBits';
 import { InstallGuide } from '@/features/more/Install';
+import { AlertsSection } from '@/features/more/Alerts';
 
 type RuleWater = 'all' | 'river' | 'lake' | 'salt';
 
@@ -181,6 +182,8 @@ export function MorePanel() {
         <h3>Install on your phone</h3>
         <InstallGuide />
       </div>
+
+      <AlertsSection />
     </div>
   );
 }

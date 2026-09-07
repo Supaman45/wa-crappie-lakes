@@ -125,3 +125,26 @@ Install: new icons in the Sonar palette (public/icon-192.png, icon-512.png, appl
 ## v3.5.1: phone crash on ZIP, place, and Near me (Sept 7, 2026)
 
 Cause: on phones the map container is display:none while the list shows, so its size is 0 by 0. Setting a start point (ZIP, place, Near me on Lakes or Plan Hikes) made the map flyTo the origin on that hidden container; Leaflet computed NaN coordinates and threw "Invalid LatLng object: (NaN, NaN)", which the error boundary showed as "Something broke". Fix in MapView: every view change goes through goTo(), which animates when the map has a size and otherwise stores a pending view that the ResizeObserver applies the moment the map is shown; the viewport tracker, the active-lake popup, fly requests, and the origin marker are all guarded. Also: attribution bar restyled small and dark, zoom buttons hidden on phones (pinch to zoom) so they stop overlapping Start trip.
+
+## v3.6.0: Coast Watch and push alerts (Sept 7, 2026)
+
+Why: Seri fishes the drive-on beaches at Ocean Shores and Copalis and asked how to stay on top of changes there.
+
+Coast Watch card, top of Plan > Surf:
+- Beach driving status computed on the phone from WAC 352-37-060 (src/domain/coast.ts): seven North Beach segments, six closed to vehicles April 15 through the day after Labor Day, Benner Gap to the Copalis River closed all year. Shows open or closed today, the flip date, days left, the segment list (auto-collapsed when everything is open), and the strips you can drive all year. Works offline.
+- Emergency rules that name Marine Area 2, Grays Harbor, the North Beach towns, or Grays Harbor County rivers, from the existing /api/rules feed.
+- Razor clams: the latest WDFW release headline and date, the dig window note, Copalis and Mocrocks dig dates, and the season notes.
+- WDFW newsroom RSS filtered to coast items, North Beach first.
+- City of Ocean Shores top alert banner plus recent news flagged for beach, access, jetty, or closure words.
+- "N new since your last look": ids of everything shown are kept in localStorage (wff-coast-seen); anything not in that set gets a New badge and the readout counts them.
+- Links to WDFW email lists and the city alert sign-up.
+
+Server: api/coast.js (razor page parser keyed on the first h2 after the h1, newsroom RSS, osgov.com newslist JSON dataSource, top_alert_detail post block; debug=razor|os|alert|news), cached 30 min, IndexedDB key feed:coast.
+
+Push alerts (More > Coast alerts):
+- Supabase tables push_subscriptions (RLS: own rows) and watch_state (service role only). Migration push_alerts applied.
+- public/push-sw.js is pulled into the generated service worker with workbox importScripts; handles push and notificationclick (opens /#plan).
+- Client (src/features/more/Alerts.tsx): support check (iPhone needs the home-screen install), permission, pushManager.subscribe with the VAPID key from /api/push-key, row upsert through the user's own Supabase session, device list with remove, Send a test (POST /api/push-test with the Supabase access token).
+- api/watch.js runs daily by Vercel cron (0 15 UTC, 8am Pacific): collects the same items as the card, compares ids with watch_state, pushes "Coast Watch: N updates" with the top three, and beach driving alerts on April 15, the reopen day, and three days before each. First run only records state. ?dry=1 shows what it would send.
+- Env vars the user sets in Vercel: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET. /api/push-key reports which are missing and the Alerts section says so.
+- Note: Vercel deployment protection is "all except custom domains", so preview URLs need a share link.

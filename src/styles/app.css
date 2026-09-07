@@ -317,3 +317,6 @@ textarea.input { min-height: 72px; resize: vertical; }
 .sonar .lab.l { left: 8px; color: var(--water); } .sonar .lab.r { right: 8px; color: var(--amber); }
 .fill { height: 4px; background: var(--panel-raised); border-radius: 2px; overflow: hidden; margin-top: 6px; }
 .fill i { display: block; height: 100%; background: linear-gradient(90deg, var(--water), var(--green) 60%, var(--amber)); }
+
+/* inline text button */
+.linkbtn { background: none; border: 0; padding: 0; color: var(--water); font: inherit; text-decoration: underline; cursor: pointer; }
