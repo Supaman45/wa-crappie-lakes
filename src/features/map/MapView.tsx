@@ -20,6 +20,28 @@ import { toast } from '@/lib/toast';
 
 const WA_CENTER: L.LatLngExpression = [47.35, -121.9];
 
+/** True when the map container is laid out (on phones it is display:none while the list is showing). */
+function mapVisible(map: L.Map): boolean {
+  try { const sz = map.getSize(); return sz.x > 0 && sz.y > 0; } catch { return false; }
+}
+/** A view requested while the map was hidden (phone list view); applied the moment the container has a size. */
+let pendingView: { lat: number; lng: number; zoom: number } | null = null;
+/** Move the view without throwing on a hidden map: animate when visible, otherwise remember it for when the map shows. */
+function goTo(map: L.Map, lat: number, lng: number, zoom: number, animate = true) {
+  try {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (!mapVisible(map)) { pendingView = { lat, lng, zoom }; return; }
+    pendingView = null;
+    if (animate) map.flyTo([lat, lng], zoom, { duration: .8 });
+    else map.setView([lat, lng], zoom, { animate: false });
+  } catch (e) { console.warn('map move skipped', e); }
+}
+function applyPending(map: L.Map) {
+  if (!pendingView || !mapVisible(map)) return;
+  const v = pendingView; pendingView = null;
+  try { map.setView([v.lat, v.lng], v.zoom, { animate: false }); } catch (e) { console.warn('pending view skipped', e); }
+}
+
 function pinSvg(color: string, ring?: string | null): string {
   return `<svg width="26" height="34" viewBox="0 0 26 34"><path d="M13 33s11-11 11-20A11 11 0 0 0 2 13c0 9 11 20 11 20z" fill="${color}" stroke="${ring || '#0d1614'}" stroke-width="${ring ? 3 : 1.5}"/><circle cx="13" cy="13" r="4.5" fill="#0d1614" opacity=".85"/></svg>`;
 }
@@ -125,13 +147,17 @@ export function MapView() {
       markersRef.current[l.id] = m;
     }
     const onMove = debounce(() => {
-      const b = map.getBounds();
-      useCreeks.getState().setViewport([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], map.getZoom());
+      try {
+        if (!mapVisible(map)) return;
+        const b = map.getBounds();
+        if (![b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].every(Number.isFinite)) return;
+        useCreeks.getState().setViewport([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], map.getZoom());
+      } catch (e) { console.warn('viewport skipped', e); }
     }, 350);
     map.on('moveend zoomend', onMove);
     onMove();
     setTimeout(() => map.invalidateSize(), 50);
-    const ro = new ResizeObserver(() => map.invalidateSize());
+    const ro = new ResizeObserver(() => { try { map.invalidateSize(); applyPending(map); } catch { /* ignore */ } });
     ro.observe(divRef.current);
     return () => { ro.disconnect(); };
   }, [setActiveLake]);
@@ -168,15 +194,18 @@ export function MapView() {
   useEffect(() => {
     const map = mapRef.current, cluster = clusterRef.current; if (!map || !cluster || activeLakeId == null) return;
     const m = markersRef.current[activeLakeId]; if (!m) return;
-    if (cluster.hasLayer(m)) cluster.zoomToShowLayer(m, () => m.openPopup());
-    else { map.setView(m.getLatLng(), Math.max(map.getZoom(), 12)); }
+    try {
+      if (!mapVisible(map)) { const ll = m.getLatLng(); goTo(map, ll.lat, ll.lng, Math.max(map.getZoom(), 12), false); return; }
+      if (cluster.hasLayer(m)) cluster.zoomToShowLayer(m, () => m.openPopup());
+      else { const ll = m.getLatLng(); goTo(map, ll.lat, ll.lng, Math.max(map.getZoom(), 12), false); }
+    } catch (e) { console.warn('active lake skipped', e); }
   }, [activeLakeId]);
 
   // Fly requests
   useEffect(() => {
     const map = mapRef.current; if (!map || !flyTo) return;
-    map.flyTo([flyTo.lat, flyTo.lng], flyTo.zoom ?? Math.max(map.getZoom(), 12), { duration: .8 });
-    setTimeout(() => map.invalidateSize(), 100);
+    // fly() also switches the phone to the map view; the container may still be laying out, so jump after a tick.
+    setTimeout(() => { try { map.invalidateSize(); } catch { /* ignore */ } goTo(map, flyTo.lat, flyTo.lng, flyTo.zoom ?? Math.max(map.getZoom(), 12)); }, 120);
   }, [flyTo]);
 
   // Origin marker
@@ -184,8 +213,8 @@ export function MapView() {
     const map = mapRef.current; if (!map) return;
     if (originMarker.current) { originMarker.current.remove(); originMarker.current = null; }
     if (origin) {
-      originMarker.current = L.marker([origin.lat, origin.lng], { icon: dotIcon('#eaa24c', 16, '#fff'), zIndexOffset: 500 }).addTo(map).bindTooltip(origin.label);
-      map.flyTo([origin.lat, origin.lng], Math.max(map.getZoom(), 9), { duration: .8 });
+      try { originMarker.current = L.marker([origin.lat, origin.lng], { icon: dotIcon('#ffd24a', 16, '#06101a'), zIndexOffset: 500 }).addTo(map).bindTooltip(origin.label); } catch (e) { console.warn('origin marker', e); }
+      goTo(map, origin.lat, origin.lng, Math.max(map.getZoom(), 9));
     }
   }, [origin]);
 
