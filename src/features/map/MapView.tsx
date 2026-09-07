@@ -9,8 +9,10 @@ import { useUI } from '@/store/ui';
 import { useData, currentUserId } from '@/store/data';
 import { useLakes, filterLakes } from '@/features/lakes/store';
 import { useCreeks, CREEK_MIN_ZOOM } from '@/features/creeks/store';
+import { useHikes, TRAIL_MIN_ZOOM } from '@/features/hikes/store';
+import { sacLabel } from '@/api/trails';
 import { tagKey } from '@/lib/db';
-import { acreFmt, cToF, debounce, dirUrl, normTrack } from '@/lib/util';
+import { acreFmt, cToF, debounce, dirUrl, normTrack, lsGet, lsSet } from '@/lib/util';
 import type { Lake } from '@/lib/types';
 import type { StreamSeg } from '@/api/wdfw';
 import { Icon } from '@/components/ui';
@@ -62,6 +64,7 @@ export function MapView() {
   const accessLayer = useRef<L.LayerGroup>(L.layerGroup());
   const spotLayer = useRef<L.LayerGroup>(L.layerGroup());
   const trackLayer = useRef<L.LayerGroup>(L.layerGroup());
+  const trailLayer = useRef<L.LayerGroup>(L.layerGroup());
   const [tileFail, setTileFail] = useState(false);
 
   const mapMode = useUI(s => s.mapMode);
@@ -84,22 +87,36 @@ export function MapView() {
     if (!divRef.current || mapRef.current) return;
     const map = L.map(divRef.current, { center: WA_CENTER, zoom: 7, zoomControl: false, attributionControl: true, preferCanvas: true });
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    const base = {
-      'Dark': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri, HERE, Garmin, OpenStreetMap contributors', maxZoom: 16, maxNativeZoom: 16 }),
+    const esri = '© Esri, USGS, NOAA, OpenStreetMap contributors';
+    const base: Record<string, L.Layer> = {
+      'Topo': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { attribution: esri, maxZoom: 19 }),
+      'USGS Topo': L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}', { attribution: '© USGS The National Map', maxZoom: 16, maxNativeZoom: 16 }),
       'Streets': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', maxZoom: 19 }),
-      'Topo': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap, © OpenTopoMap', maxZoom: 17 }),
-      'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
+      'Terrain': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap, © OpenTopoMap', maxZoom: 17 }),
+      'Satellite': L.layerGroup([
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri, Maxar, Earthstar Geographics', maxZoom: 19 }),
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, pane: 'shadowPane' }),
+      ]),
+      'Dark': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { attribution: esri, maxZoom: 16, maxNativeZoom: 16 }),
     };
-    base['Dark'].addTo(map);
-    let failed = 0; base['Dark'].on('tileerror', () => { failed++; if (failed > 6) setTileFail(true); });
-    base['Dark'].on('tileload', () => setTileFail(false));
+    const savedBase = lsGet('wff-basemap');
+    const startBase = savedBase && base[savedBase] ? savedBase : 'Topo';
+    base[startBase].addTo(map);
+    map.on('baselayerchange', (e: L.LayersControlEvent) => { lsSet('wff-basemap', e.name); });
+    let failed = 0;
+    const firstTiles = base['Topo'] as L.TileLayer;
+    firstTiles.on('tileerror', () => { failed++; if (failed > 6) setTileFail(true); });
+    firstTiles.on('tileload', () => setTileFail(false));
     const cluster = L.markerClusterGroup({ maxClusterRadius: 38, showCoverageOnHover: false, spiderfyOnMaxZoom: true, disableClusteringAtZoom: 11 });
     clusterRef.current = cluster;
     map.addLayer(cluster);
     map.addLayer(launchLayer.current);
     map.addLayer(spotLayer.current);
     map.addLayer(trackLayer.current);
-    L.control.layers(base, { 'Boat launches': launchLayer.current, 'Saved spots': spotLayer.current, 'Trip tracks': trackLayer.current }, { position: 'topright', collapsed: true }).addTo(map);
+    L.control.layers(base, { 'Trails': trailLayer.current, 'Boat launches': launchLayer.current, 'Saved spots': spotLayer.current, 'Trip tracks': trackLayer.current }, { position: 'topright', collapsed: true }).addTo(map);
+    map.on('overlayadd', (e: L.LayersControlEvent) => { if (e.name === 'Trails') useHikes.getState().setShowTrails(true); });
+    map.on('overlayremove', (e: L.LayersControlEvent) => { if (e.name === 'Trails') useHikes.getState().setShowTrails(false); });
+    map.addLayer(trailLayer.current);
     mapRef.current = map;
 
     for (const l of LAKES) {
@@ -201,6 +218,40 @@ export function MapView() {
     } catch (e) { console.warn('track layer', e); }
   }, [trips, openSheet]);
 
+  // Trails: load for the viewport in Lakes mode once zoomed in, draw with lake matches in the popup
+  const showTrails = useHikes(s => s.showTrails);
+  const viewTrails = useHikes(s => s.viewTrails);
+  const viewHikes = useHikes(s => s.viewHikes);
+  const trailsLoading = useHikes(s => s.viewLoading);
+  const loadView = useHikes(s => s.loadView);
+  useEffect(() => {
+    if (mapMode !== 'lakes' || !showTrails || !creeks.bbox || creeks.zoom < TRAIL_MIN_ZOOM) return;
+    loadView(creeks.bbox);
+  }, [mapMode, showTrails, creeks.bbox, creeks.zoom, loadView]);
+  useEffect(() => {
+    try {
+      trailLayer.current.clearLayers();
+      if (mapMode !== 'lakes' || !showTrails || creeks.zoom < TRAIL_MIN_ZOOM) return;
+      for (const t of viewTrails) {
+        const reaches = viewHikes.filter(h => h.trail.id === t.id);
+        const line = L.polyline(t.lines, { color: reaches.length ? '#b5652f' : '#8a6a4a', weight: reaches.length ? 3.5 : 2, opacity: .9, dashArray: '6 5', interactive: true, bubblingMouseEvents: false });
+        line.bindPopup(() => {
+          const r = el('div', '');
+          r.appendChild(el('div', 'pop-nm', t.name));
+          r.appendChild(el('div', 'pop-co', `${t.miles} mi of trail here${t.sac ? ` · ${sacLabel(t.sac)}` : ''}`));
+          for (const h of reaches.slice(0, 3)) {
+            const d = el('div', 'note', `Reaches ${h.lake.name}${h.lake.acres ? ` (${Math.round(h.lake.acres)} ac)` : ''}${h.lake.sp.length ? ': ' + h.lake.sp.slice(0, 4).map(x => spById[x]?.short || x).join(', ') : ''}`);
+            d.style.cursor = 'pointer'; d.onclick = () => openSheet({ kind: 'lake', lake: h.lake });
+            r.appendChild(d);
+          }
+          if (reaches[0]) { const a = document.createElement('a'); a.className = 'btn primary sm'; a.style.marginTop = '8px'; a.href = dirUrl(reaches[0].trailhead.lat, reaches[0].trailhead.lng); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Directions to trailhead'; r.appendChild(a); }
+          return r;
+        }, { maxWidth: 260 });
+        trailLayer.current.addLayer(line);
+      }
+    } catch (e) { console.warn('trail layer', e); }
+  }, [mapMode, showTrails, creeks.zoom, viewTrails, viewHikes, openSheet]);
+
   // Creek layers on/off with mode
   useEffect(() => {
     const map = mapRef.current; if (!map) return;
@@ -281,6 +332,9 @@ export function MapView() {
           <button className={mapMode === 'creeks' ? 'on' : ''} onClick={() => setMapMode('creeks')}>Creeks</button>
         </div>
       </div>
+      {mapMode === 'lakes' && showTrails && creeks.zoom >= TRAIL_MIN_ZOOM && (trailsLoading || viewTrails.length > 0) && (
+        <div className="hud">{trailsLoading ? <><span className="spinner" /> loading trails</> : <>{viewTrails.length} trails · {viewHikes.length} reach a lake</>}</div>
+      )}
       {mapMode === 'creeks' && (
         <div className="hud">
           {creeks.loading ? <><span className="spinner" /> loading streams</> : needZoom ? <>Zoom in to load streams (zoom {creeks.zoom} of {CREEK_MIN_ZOOM})</> : creeks.error ? <span style={{ color: '#eaa24c' }}>{creeks.error}</span> : <>{creeks.streams.length} segments · {creeks.gauges.length} gauges · {creeks.barriers.length} barriers</>}

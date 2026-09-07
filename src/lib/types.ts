@@ -1,4 +1,4 @@
-export type SpeciesId = 'crappie' | 'largemouth' | 'smallmouth' | 'cutthroat' | 'rainbow' | 'coho' | 'steelhead' | 'chinook' | 'bull' | 'brook' | 'other';
+export type SpeciesId = 'crappie' | 'largemouth' | 'smallmouth' | 'cutthroat' | 'rainbow' | 'coho' | 'steelhead' | 'chinook' | 'bull' | 'brook' | 'brown' | 'tiger' | 'golden' | 'kokanee' | 'laker' | 'cutbow' | 'walleye' | 'muskie' | 'perch' | 'bluegill' | 'pumpkinseed' | 'bullhead' | 'other';
 
 export interface Lake {
   id: number;            // index in dataset (stable for the session)
@@ -10,6 +10,11 @@ export interface Lake {
   lat: number;
   lng: number;
   sp: SpeciesId[];
+  kind: 'lowland' | 'high';     // high = hike-in alpine lake from the WDFW high lakes program
+  ramp: boolean | null;         // WDFW BoatRampAvailable
+  shore: 'good' | 'none' | null; // WDFW ShorelineAccess
+  mgmt: string;                 // WDFW management emphasis, or high-lake program label
+  wdfw: number;                 // WDFW feature id (lowland OBJECTID or high lake FishWAid)
 }
 
 export interface Launch {

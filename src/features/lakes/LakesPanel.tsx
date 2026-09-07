@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import type { Lake } from '@/lib/types';
 import { LAKES, COUNTIES } from '@/data/lakes';
-import { LAKE_SPECIES, CATS, speciesColor, speciesLabel } from '@/data/species';
+import { LAKE_SPECIES, CORE_LAKE_SPECIES, CATS, speciesColor, speciesLabel } from '@/data/species';
 import { tagKey } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { useData, currentUserId } from '@/store/data';
 import { useUI } from '@/store/ui';
-import { useLakes, filterLakes, type SortKey } from '@/features/lakes/store';
+import { useLakes, filterLakes, type SortKey, type SizeKey } from '@/features/lakes/store';
 import { useFeeds } from '@/store/feeds';
 import { lakeSub } from '@/domain/journal';
 import { haversine } from '@/lib/util';
@@ -14,6 +14,9 @@ import { resolveZip, geocodePlace, locateMe } from '@/api/geocode';
 import { Chip, Icon, Empty } from '@/components/ui';
 
 const FLAG_CHIPS: { k: keyof ReturnType<typeof useLakes.getState>['flags']; label: string }[] = [
+  { k: 'bigBoat', label: '17 ft boat' },
+  { k: 'smallBoat', label: 'Electric boat' },
+  { k: 'high', label: 'Hike-in lakes' },
   { k: 'fav', label: 'Favorites' },
   { k: 'wish', label: 'Wish list' },
   { k: 'ramp', label: 'Has ramp' },
@@ -24,6 +27,8 @@ const FLAG_CHIPS: { k: keyof ReturnType<typeof useLakes.getState>['flags']; labe
   { k: 'stocked', label: 'Stocked lately' },
 ];
 
+const LIST_CAP = 300;
+
 function isMobile(): boolean { return typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches; }
 
 export function LakesPanel() {
@@ -32,6 +37,8 @@ export function LakesPanel() {
   const sort = useLakes(s => s.sort);
   const species = useLakes(s => s.species);
   const cat = useLakes(s => s.cat);
+  const size = useLakes(s => s.size);
+  const setSize = useLakes(s => s.setSize);
   const flags = useLakes(s => s.flags);
   const launches = useLakes(s => s.launches);
   const launchStatus = useLakes(s => s.launchStatus);
@@ -50,6 +57,7 @@ export function LakesPanel() {
   const index = useData(s => s.index);
 
   const [place, setPlace] = useState('');
+  const [showFilters, setShowFilters] = useState(() => !isMobile());
   const [locating, setLocating] = useState(false);
 
   const me = currentUserId();
@@ -58,9 +66,11 @@ export function LakesPanel() {
   const plants = useFeeds(s => s.plants);
   const loadPlants = useFeeds(s => s.loadPlants);
   useEffect(() => { if (flags.stocked && useFeeds.getState().plantsStatus === 'idle') loadPlants(); }, [flags.stocked, loadPlants]);
-  const lakes = useMemo(() => filterLakes(), [q, county, sort, species, cat, flags, launches, origin, tags, index, plants]);
+  const lakes = useMemo(() => filterLakes(), [q, county, sort, species, cat, size, flags, launches, origin, tags, index, plants]);
+  const shown = useMemo(() => lakes.slice(0, LIST_CAP), [lakes]);
 
-  const anyFilter = !!(q || county || species || cat || Object.values(flags).some(Boolean));
+  const anyFilter = !!(q || county || species || cat || size || Object.values(flags).some(Boolean));
+  const filterCount = [county, species, cat, size].filter(Boolean).length + Object.values(flags).filter(Boolean).length;
 
   function applyOrigin(o: { lat: number; lng: number; label: string }) {
     setOrigin(o);
@@ -91,7 +101,7 @@ export function LakesPanel() {
     finally { setLocating(false); }
   }
   function resetFilters() {
-    setQ(''); setCounty(''); setSpecies(''); setCat('');
+    setQ(''); setCounty(''); setSpecies(''); setCat(''); setSize('');
     (Object.keys(flags) as (keyof typeof flags)[]).forEach(k => { if (flags[k]) toggleFlag(k); });
   }
 
@@ -119,17 +129,27 @@ export function LakesPanel() {
     <>
       <div className="controls">
         <input className="input" type="search" placeholder="Search lake or county" value={q} onChange={e => setQ(e.target.value)} autoComplete="off" aria-label="Search lakes" />
-        <div className="row">
-          <select className="select" value={county} onChange={e => setCounty(e.target.value)} aria-label="County">
-            <option value="">All counties</option>
-            {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+        <div className="row filter-toggle">
+          <button type="button" className={`btn sm${showFilters ? ' primary' : ''}`} onClick={() => setShowFilters(v => !v)} aria-expanded={showFilters}><Icon name="layers" size={14} />Filters{filterCount ? ` (${filterCount})` : ''}</button>
           <select className="select" value={sort} onChange={e => setSort(e.target.value as SortKey)} aria-label="Sort">
             <option value="name">A to Z</option>
             <option value="acres">Largest first</option>
             <option value="dist" disabled={!origin}>Nearest first</option>
             <option value="catches">Most catches</option>
             <option value="visits">Most visits</option>
+          </select>
+        </div>
+        {showFilters && (<>
+        <div className="row">
+          <select className="select" value={county} onChange={e => setCounty(e.target.value)} aria-label="County">
+            <option value="">All counties</option>
+            {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select className="select" value={size} onChange={e => setSize(e.target.value as SizeKey)} aria-label="Size">
+            <option value="">Any size</option>
+            <option value="small">Small, under 25 ac</option>
+            <option value="mid">25 to 200 ac</option>
+            <option value="big">Big, 200 ac and up</option>
           </select>
         </div>
         <div className="row">
@@ -145,6 +165,7 @@ export function LakesPanel() {
         <div className="chips">
           {FLAG_CHIPS.map(f => <Chip key={f.k} on={flags[f.k]} onClick={() => toggleFlag(f.k)}>{f.label}</Chip>)}
         </div>
+        </>)}
         <div className="row">
           <button type="button" className="btn" onClick={nearMe} disabled={locating}><Icon name="locate" />Near me</button>
           <input
@@ -167,19 +188,20 @@ export function LakesPanel() {
       </div>
 
       <div className="legend">
-        {LAKE_SPECIES.map(id => <span key={id}><i style={{ background: speciesColor(id) }} />{speciesLabel(id)}</span>)}
+        {CORE_LAKE_SPECIES.map(id => <span key={id}><i style={{ background: speciesColor(id) }} />{speciesLabel(id)}</span>)}
         <span><i style={{ background: 'transparent', boxShadow: '0 0 0 2px var(--amber)' }} />Favorite</span>
         <span><i style={{ background: 'transparent', boxShadow: '0 0 0 2px var(--water)' }} />Wish list</span>
+        <span><i className="line" style={{ background: '#b5652f' }} />Trail to a lake (zoom in)</span>
       </div>
 
       <div className="meta">
-        <span>{lakes.length} of {LAKES.length} shown{anyFilter && <> · <button type="button" className="btn sm ghost" style={{ padding: '0 4px', fontSize: 12 }} onClick={resetFilters}>Reset</button></>}</span>
+        <span>{lakes.length} of {LAKES.length}{lakes.length > LIST_CAP ? `, first ${LIST_CAP} listed` : ''}{anyFilter && <> · <button type="button" className="btn sm ghost" style={{ padding: '0 4px', fontSize: 12 }} onClick={resetFilters}>Reset</button></>}</span>
         <small style={{ textAlign: 'right' }}>{launchStatus}</small>
       </div>
 
       <div className="list">
         {lakes.length === 0 && <Empty>No lakes match. Try clearing the filters.</Empty>}
-        {lakes.map(l => {
+        {shown.map(l => {
           const t = me ? tags[tagKey(me, l.slug)] : undefined;
           const st = index[l.slug];
           const launch = launches[l.slug];
@@ -187,7 +209,7 @@ export function LakesPanel() {
           const ring = t?.fav ? 'var(--amber)' : t?.wish ? 'var(--water)' : null;
           let sub = lakeSub(l);
           if (origin) sub += ` · ${haversine(origin.lat, origin.lng, l.lat, l.lng).toFixed(1)} mi`;
-          if (launch) sub += ` · ${launch.type || 'ramp'}`;
+          if (launch) sub += ` · ${launch.type || 'ramp'}`; else if (l.ramp) sub += ' · ramp'; else if (l.kind === 'high') sub += ' · hike-in';
           return (
             <div
               key={l.id}

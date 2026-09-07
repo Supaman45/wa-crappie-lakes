@@ -37,6 +37,7 @@ function RulesSection() {
 }
 
 const SOURCES = [
+  'WDFW FishWA lowland lakes (653) and high lakes (1,080) with species by lake',
   'WDFW SWIFD (statewide integrated fish distribution)',
   'WDFW fish passage barriers',
   'WDFW water access sites',
@@ -44,6 +45,8 @@ const SOURCES = [
   'WDFW trout stocking reports',
   'WDFW weekly hatchery escapement report',
   'USGS stream gauges',
+  'OpenStreetMap trails (Overpass) and USFS National Forest trails',
+  'Basemaps: Esri World Topo, USGS Topo, OpenStreetMap, OpenTopoMap, Esri imagery',
   'Open-Meteo weather, sun, and marine model',
   'NOAA CO-OPS tide predictions',
   'OpenStreetMap map tiles and data',

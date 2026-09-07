@@ -86,7 +86,23 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; font-weight: 600; }
   .tabs { display: none; }
   .hdr { padding-top: calc(12px + var(--safe-t)); }
   .hdr .mapbtn { display: inline-flex; }
+  /* Mobile first: thumb-size targets, no iOS zoom on focus, denser header */
+  .input, .select { font-size: 16px; padding: 11px 12px; }
+  .chip { padding: 9px 13px; font-size: 13px; min-height: 38px; }
+  .btn { min-height: 42px; }
+  .btn.sm { min-height: 36px; }
+  .item { min-height: 52px; }
+  .tab { min-height: 44px; }
+  .hdr h1 { font-size: 19px; }
+  .panel-scroll { padding: 0 12px 24px; }
+  .sheet-f .btn { flex: 1 1 45%; }
+  .modebar.wrap { display: flex; flex-wrap: wrap; border-radius: 14px; }
+  .modebar.wrap button { flex: 1 1 auto; }
+  .leaflet-control-layers-toggle { width: 40px !important; height: 40px !important; }
+  .leaflet-touch .leaflet-bar a { width: 40px; height: 40px; line-height: 40px; }
 }
+.filter-toggle .btn { flex: 0 0 auto; }
+.filter-toggle .select { flex: 1; }
 .bottomnav .tab { padding: 6px 2px; font-size: 11px; }
 
 /* Controls */

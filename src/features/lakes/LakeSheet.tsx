@@ -14,6 +14,10 @@ import { Sheet, Icon, Score } from '@/components/ui';
 import { useFeeds } from '@/store/feeds';
 import { rulesFor, plantsFor } from '@/api/feeds';
 import { useFeedLoads, RulesList, PlantRow } from '@/features/feeds/FeedBits';
+import { boatFit, mgmtLabel } from '@/domain/boatFit';
+import { trailsNear, sacLabel, type Trail } from '@/api/trails';
+import { pairHikes, type Hike } from '@/domain/hikes';
+import { useHikes } from '@/features/hikes/store';
 
 type FcState = { status: 'loading' } | { status: 'ok'; fc: Forecast } | { status: 'err' };
 
@@ -40,6 +44,22 @@ export function LakeSheet({ lake }: { lake: Lake }) {
   const logVisit = useData(s => s.logVisit);
 
   const launch = useLakes(s => s.launches[lake.slug]);
+  const fit = boatFit(lake, launch);
+  const fly = useUI(s => s.fly);
+  const setShowTrails = useHikes(s => s.setShowTrails);
+
+  // Trails that reach this lake (hike-in lakes and lakes without a ramp)
+  const wantTrails = lake.kind === 'high' || !lake.ramp;
+  const [trails, setTrails] = useState<{ status: 'idle' | 'loading' | 'ok' | 'err'; hikes: Hike[]; near: Trail[] }>({ status: 'idle', hikes: [], near: [] });
+  useEffect(() => {
+    if (!wantTrails) return;
+    const ac = new AbortController();
+    setTrails({ status: 'loading', hikes: [], near: [] });
+    trailsNear(lake.lat, lake.lng, 2, ac.signal)
+      .then(ts => { if (ac.signal.aborted) return; const hikes = pairHikes(ts, [lake]).sort((a, b) => a.miles - b.miles); setTrails({ status: 'ok', hikes, near: ts.slice().sort((a, b) => b.miles - a.miles).slice(0, 5) }); })
+      .catch(() => { if (!ac.signal.aborted) setTrails({ status: 'err', hikes: [], near: [] }); });
+    return () => ac.abort();
+  }, [lake, wantTrails]);
 
   const me = currentUserId();
   const mine = me ? tags[tagKey(me, lake.slug)] : undefined;
@@ -101,6 +121,44 @@ export function LakeSheet({ lake }: { lake: Lake }) {
         {lake.sp.map(id => <span key={id} className="badge" style={{ color: speciesColor(id) }}>{speciesLabel(id)}</span>)}
         {lake.sp.length === 0 && <span className="badge">No species listed</span>}
       </div>
+
+      <div className="section">
+        <h3>Your boats <small>{fit.label}</small></h3>
+        <div className="kv" style={{ marginBottom: 6 }}>
+          <span className="k">Best fit</span><span className="v">{fit.label}</span>
+          <span className="k">WDFW ramp</span><span className="v">{lake.ramp === true ? 'Yes' : lake.ramp === false ? 'No' : 'Unknown'}</span>
+          <span className="k">Shore access</span><span className="v">{lake.shore === 'good' ? 'Good' : lake.shore === 'none' ? 'None' : 'Unknown'}</span>
+          {lake.mgmt && <><span className="k">WDFW manages as</span><span className="v">{mgmtLabel(lake.mgmt)}</span></>}
+        </div>
+        <div className="note">{fit.detail}</div>
+      </div>
+
+      {wantTrails && (
+        <div className="section">
+          <h3>Trails <small>{trails.status === 'ok' ? (trails.hikes.length ? `${trails.hikes.length} reach the lake` : 'none reach the shore') : trails.status === 'loading' ? 'loading' : ''}</small></h3>
+          {trails.status === 'loading' && <div className="note" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span className="spinner" />Looking for trails within 2 km</div>}
+          {trails.status === 'err' && <div className="note">Trail data did not load. Check your signal.</div>}
+          {trails.status === 'ok' && trails.hikes.length > 0 && (
+            <div className="list">
+              {trails.hikes.slice(0, 5).map(h => (
+                <div key={h.id} className="item" style={{ cursor: 'default' }}>
+                  <span className="pin" style={{ background: h.effort === 'short' ? 'var(--green)' : h.effort === 'moderate' ? 'var(--amber)' : 'var(--muted)' }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="nm">{h.trail.name}</div>
+                    <div className="sub">{h.miles} mi of trail{h.trail.sac ? ` - ${sacLabel(h.trail.sac)}` : ''}{h.lakeGapMi > 0.02 ? ` - ends ${h.lakeGapMi} mi from the water` : ''}</div>
+                  </div>
+                  <a className="btn sm" href={dirUrl(h.trailhead.lat, h.trailhead.lng)} target="_blank" rel="noopener noreferrer">Trailhead</a>
+                </div>
+              ))}
+            </div>
+          )}
+          {trails.status === 'ok' && !trails.hikes.length && trails.near.length > 0 && <div className="note">Nearby named trails: {trails.near.map(t => `${t.name} (${t.miles} mi)`).join(', ')}. None come within a short walk of the shore in OpenStreetMap; the last stretch may be unmarked.</div>}
+          {trails.status === 'ok' && !trails.hikes.length && !trails.near.length && <div className="note">No named trail within 2 km in OpenStreetMap. Check a topo map for the route in.</div>}
+          <div className="row" style={{ marginTop: 8 }}>
+            <button type="button" className="btn sm" onClick={() => { setShowTrails(true); closeSheet(); fly(lake.lat, lake.lng, 14); }}><Icon name="map" />Trails on map</button>
+          </div>
+        </div>
+      )}
 
       <div className="section">
         <h3>Boat launch</h3>
