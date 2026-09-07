@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/store/auth';
 import { useData } from '@/store/data';
 import { useUI, type Tab } from '@/store/ui';
@@ -57,6 +57,25 @@ function Sheets() {
   }
 }
 
+function BootScreen() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setSlow(true), 4000); return () => clearTimeout(t); }, []);
+  return (
+    <div className="gate">
+      <div style={{ textAlign: 'center' }}>
+        <div className="spinner" style={{ width: 22, height: 22 }} />
+        <div className="note" style={{ marginTop: 12, letterSpacing: '.08em', textTransform: 'uppercase', fontSize: 11 }}>Starting</div>
+        {slow && (
+          <div style={{ marginTop: 16 }}>
+            <div className="note" style={{ marginBottom: 8 }}>Taking longer than usual.</div>
+            <button className="btn" onClick={async () => { try { const regs = await navigator.serviceWorker?.getRegistrations(); for (const r of regs || []) await r.unregister(); const keys = await caches.keys(); for (const k of keys) await caches.delete(k); } catch { /* ignore */ } location.reload(); }}>Clear cache and reload</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const status = useAuth(s => s.status);
   const userId = useAuth(s => s.userId);
@@ -72,7 +91,7 @@ export default function App() {
   useEffect(() => { init(); }, [init]);
   useEffect(() => { if (userId) { boot(userId); loadLaunches(); } return () => { if (userId) teardown(); }; }, [userId, boot, teardown, loadLaunches]);
 
-  if (status === 'booting') return <div className="gate"><div className="spinner" /></div>;
+  if (status === 'booting') return <BootScreen />;
   if (status === 'signed_out') return <><Gate /><Toasts /></>;
 
   return (

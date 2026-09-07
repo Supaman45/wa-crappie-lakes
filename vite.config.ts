@@ -9,12 +9,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'WA Fish Finder',
         short_name: 'Fish Finder',
         description: 'Washington lakes, creeks, and surf: where fish are, when to go, and what your crew caught.',
-        start_url: '/',
+        start_url: '/#lakes',
+        id: '/',
         scope: '/',
         display: 'standalone',
         background_color: '#06101a',

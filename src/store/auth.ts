@@ -32,13 +32,18 @@ export const useAuth = create<AuthState>((set, get) => ({
     const hint: AuthHint | null = hintRaw ? (() => { try { return JSON.parse(hintRaw); } catch { return null; } })() : null;
     if (hint && !navigator.onLine) set({ status: 'signed_in', userId: hint.id, email: hint.email });
 
-    const { data } = await sb.auth.getSession();
-    const s = data.session;
+    // getSession can stall on some phones (browser lock API, stale service worker). Never sit on a dark screen.
+    const timeout = new Promise<null>(res => setTimeout(() => res(null), 7000));
+    const got = await Promise.race([sb.auth.getSession().then(r => r.data.session).catch(() => null), timeout]);
+    const s = got;
     if (s) {
       set({ status: 'signed_in', session: s, userId: s.user.id, email: s.user.email ?? null });
       lsSet(HINT_KEY, JSON.stringify({ id: s.user.id, email: s.user.email }));
     } else if (hint && !navigator.onLine) {
       // keep optimistic offline state
+    } else if (hint && got === null) {
+      // Timed out or offline with a remembered account: open on cached data, a fresh session arrives via onAuthStateChange.
+      set({ status: 'signed_in', userId: hint.id, email: hint.email });
     } else {
       set({ status: 'signed_out', session: null, userId: null, email: null });
     }

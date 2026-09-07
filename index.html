@@ -9,14 +9,28 @@
 <meta name="apple-mobile-web-app-title" content="Fish Finder">
 <meta name="description" content="Washington lakes, creeks, and surf: where fish are, when to go, and what your crew caught.">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>WA Fish Finder</title>
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div id="boot-fallback" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#06101a;color:#6f8ea3;font:12px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:24px">Loading WA Fish Finder</div></div>
+<script>
+  // If the app has not taken over the page after 10 s, offer a cache reset instead of a blank screen.
+  setTimeout(function () {
+    var el = document.getElementById('boot-fallback');
+    if (!el || !document.body.contains(el)) return;
+    el.innerHTML = 'The app did not start.<br><br><button id="boot-reset" style="font:inherit;padding:10px 14px;border:1px solid #173147;border-radius:6px;background:#ff8a1f;color:#1a0d00;font-weight:700">Clear cache and reload</button>';
+    document.getElementById('boot-reset').onclick = function () {
+      var p = [];
+      if (navigator.serviceWorker) p.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+      if (window.caches) p.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+      Promise.all(p).catch(function () {}).then(function () { location.replace(location.pathname + '?r=' + Date.now()); });
+    };
+  }, 10000);
+</script>
 <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

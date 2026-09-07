@@ -10,6 +10,7 @@ import { toast } from '@/lib/toast';
 import { Chip, Empty } from '@/components/ui';
 import { useFeeds } from '@/store/feeds';
 import { useFeedLoads, RulesList } from '@/features/feeds/FeedBits';
+import { InstallGuide } from '@/features/more/Install';
 
 type RuleWater = 'all' | 'river' | 'lake' | 'salt';
 
@@ -177,8 +178,8 @@ export function MorePanel() {
       </div>
 
       <div className="section" style={{ marginBottom: 12 }}>
-        <h3>Install</h3>
-        <div className="note">On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, open the browser menu and tap Install app.</div>
+        <h3>Install on your phone</h3>
+        <InstallGuide />
       </div>
     </div>
   );

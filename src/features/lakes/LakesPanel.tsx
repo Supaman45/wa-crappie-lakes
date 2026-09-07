@@ -10,6 +10,7 @@ import { useLakes, filterLakes, type SortKey, type SizeKey } from '@/features/la
 import { useFeeds } from '@/store/feeds';
 import { boatFit } from '@/domain/boatFit';
 import { solunarSummary } from '@/domain/scoring';
+import { InstallBanner } from '@/features/more/Install';
 import { lakeSub } from '@/domain/journal';
 import { haversine } from '@/lib/util';
 import { resolveZip, geocodePlace, locateMe } from '@/api/geocode';
@@ -131,6 +132,7 @@ export function LakesPanel() {
 
   return (
     <>
+      <InstallBanner />
       <div className="readout">
         <h2>Lakes</h2>
         <div className="rd">Bite window<b>{sol.majors[0]}</b></div>
