@@ -109,3 +109,9 @@ Seri picked "Sonar" from eight theme mockups (two artifact pages: Fish Finder Fo
 Component changes: Lakes tab gets a readout header (LAKES plus the next solunar major as "bite window"); each lake row carries a readout (distance in miles when a start point is set, otherwise acres) with the boat fit under it, and a species color stripe instead of a dot; on phones tapping a row opens the lake sheet directly. The lake sheet gets a sonar-style seven-day bite strip (src/components/Sonar.tsx, a filled curve from yellow to orange to dark, peak day labeled) and four gauges (Bite, Wind, Rain, Boat) above the day rows. Legend moved inside the Filters block on phones, header shrinks on phones.
 
 Bug fixed on the way: with a remembered account and no signal, the app signed itself out on cold start because Supabase's initial null session event fired after the optimistic offline sign-in; the handler now keeps the session when offline and a hint exists.
+
+## v3.4.2: place and ZIP lookup, tab persistence (Sept 7, 2026)
+
+ZIP and place lookups now go through /api/geocode (Zippopotam for ZIPs, Nominatim bounded to Washington for places) so the request carries a proper User-Agent; installed PWAs and some phone browsers send no Referer and Nominatim refuses those with a 403, which showed in the app as a lookup error. The client falls back to the direct calls if the function is unreachable. The ZIP or place field is now a form with a Go button, so phone keyboards submit it and there is a tap target besides the return key. Error text names the problem (no such place in Washington, ZIP not found, location permission denied).
+
+The active tab is written to the URL hash (#lakes, #creeks, #plan, #log, #more), so a refresh, a bookmark, or the back button lands on the same tab. The Plan tab remembers its segment (Lakes, Rivers, Hikes, Surf) in localStorage.

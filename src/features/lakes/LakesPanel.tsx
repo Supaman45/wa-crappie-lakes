@@ -180,19 +180,21 @@ export function LakesPanel() {
         <span><i className="line" style={{ background: '#b5652f' }} />Trail to a lake (zoom in)</span>
       </div>
         </>)}
-        <div className="row">
+        <form className="row" onSubmit={e => { e.preventDefault(); findPlace(); }}>
           <button type="button" className="btn" onClick={nearMe} disabled={locating}><Icon name="locate" />Near me</button>
           <input
             className="input"
             type="text"
+            inputMode="search"
+            enterKeyHint="search"
             placeholder="ZIP or place"
             value={place}
             onChange={e => setPlace(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); findPlace(); } }}
             autoComplete="off"
             aria-label="ZIP or place"
           />
-        </div>
+          <button type="submit" className="btn primary" disabled={locating || !place.trim()} aria-label="Find place">{locating ? <span className="spinner" /> : 'Go'}</button>
+        </form>
         {origin && (
           <div className="row">
             <span className="note" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Distances from {origin.label}</span>

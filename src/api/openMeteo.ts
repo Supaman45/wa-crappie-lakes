@@ -6,10 +6,10 @@ const HOUR = 60 * 60 * 1000;
 
 /** 3-day forecast for a single point, cached one hour. */
 export async function lakeForecast(lat: number, lng: number, signal?: AbortSignal): Promise<Forecast> {
-  const key = `fc3:${lat.toFixed(3)},${lng.toFixed(3)}`;
+  const key = `fc7:${lat.toFixed(3)},${lng.toFixed(3)}`;
   const cached = await kvGet<Forecast>(key, HOUR);
   if (cached) return cached;
-  const url = `${BASE}?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=3`;
+  const url = `${BASE}?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,precipitation_probability_max,wind_speed_10m_max,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7`;
   const r = await fetch(url, { signal });
   if (!r.ok) throw new Error('forecast ' + r.status);
   const j = await r.json() as Forecast;

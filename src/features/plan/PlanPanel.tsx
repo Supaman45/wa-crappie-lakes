@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { Lake, Forecast, LakeTag, DailyForecast } from '@/lib/types';
-import { haversine, acreFmt, scoreColor } from '@/lib/util';
+import { haversine, acreFmt, scoreColor, lsGet, lsSet } from '@/lib/util';
 import { tagKey } from '@/lib/db';
 import { LAKES, LOWLAND_LAKES } from '@/data/lakes';
 import { useData, currentUserId, type LogStats } from '@/store/data';
@@ -19,7 +19,8 @@ type Mode = 'lakes' | 'rivers' | 'hikes' | 'surf';
 const EMPTY_STATS: LogStats = { visits: 0, catches: 0, sp: {}, top: null, lastDate: null };
 
 export function PlanPanel() {
-  const [mode, setMode] = useState<Mode>('lakes');
+  const [mode, setModeState] = useState<Mode>(() => { const m = lsGet('wff-plan-mode') as Mode | null; return m && ['lakes', 'rivers', 'hikes', 'surf'].includes(m) ? m : 'lakes'; });
+  const setMode = (m: Mode) => { lsSet('wff-plan-mode', m); setModeState(m); };
   return (
     <div>
       <div style={{ padding: '12px 0 4px' }}>
