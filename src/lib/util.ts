@@ -42,6 +42,8 @@ export function uuid(): string {
 }
 
 export function dirUrl(lat: number, lng: number): string { return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`; }
+/** Directions to a place by name, for spots with no reliable coordinates. */
+export function dirUrlQ(query: string): string { return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`; }
 export function mapUrl(lat: number, lng: number): string { return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`; }
 export function wdfwLakeUrl(slug: string): string { return `https://wdfw.wa.gov/fishing/locations/lowland-lakes/${slug}`; }
 

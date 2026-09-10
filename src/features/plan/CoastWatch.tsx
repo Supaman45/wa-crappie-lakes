@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Coast } from '@/api/feeds';
-import { fmtDate, lsGet, lsSet } from '@/lib/util';
+import { fmtDate, lsGet, lsSet, dirUrl, dirUrlQ } from '@/lib/util';
 import { useFeeds } from '@/store/feeds';
 import { useUI } from '@/store/ui';
-import { SEGMENTS, OPEN_STRIPS, driveStatus, segmentClosed, coastRules } from '@/domain/coast';
+import { SEGMENTS, OPEN_STRIPS, APPROACHES, driveStatus, segmentClosed, coastRules, approachWay } from '@/domain/coast';
 import { RuleCard, useFeedLoads } from '@/features/feeds/FeedBits';
 import { Icon } from '@/components/ui';
 
 const SEEN_KEY = 'wff-coast-seen';
+const APPROACH_KEY = 'wff-coast-approach';
 const WDFW_LISTS = 'https://public.govdelivery.com/accounts/WADFW/subscriber/new';
 const OS_ALERTS = 'https://portal.civicplus.com/WA-OceanShores/notifications?tab=alerts';
 
@@ -45,6 +46,8 @@ export function CoastWatch() {
   const [showAll, setShowAll] = useState(false);
   const [showOpen, setShowOpen] = useState(false);
   const [showSegs, setShowSegs] = useState<boolean | null>(null);
+  const [approachId, setApproachId] = useState(() => lsGet(APPROACH_KEY) || 'heath');
+  const approach = APPROACHES.find(a => a.id === approachId) || APPROACHES.find(a => a.id === 'heath')!;
 
   useEffect(() => { if (useFeeds.getState().coastStatus === 'idle') loadCoast(); }, [loadCoast]);
 
@@ -86,6 +89,23 @@ export function CoastWatch() {
         <div className="l">Beach driving <New on={isNew(driveKey)} /></div>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 600, marginTop: 4, color: st.closed ? 'var(--red)' : 'var(--green)' }}>{st.closed ? 'Seasonal segments closed' : 'Open to vehicles'}</div>
         <div style={{ fontSize: 13.5, marginTop: 4, lineHeight: 1.5 }}>{st.label} {st.daysLeft <= 14 && <b>{st.daysLeft} day{st.daysLeft === 1 ? '' : 's'}.</b>}</div>
+        {(() => { const n = approachWay(approach, 'north', st), so = approachWay(approach, 'south', st); return (
+          <div className="item" style={{ cursor: 'default', gridTemplateColumns: '1fr', marginTop: 10, borderColor: 'rgba(58,208,255,.35)' }}>
+            <div style={{ minWidth: 0 }}>
+              <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <div className="nm" style={{ fontSize: 13 }}>Your approach{approach.access === 'walk' && <span className="badge water" style={{ marginLeft: 6 }}>Walk-in</span>}</div>
+                <select value={approachId} onChange={e => { setApproachId(e.target.value); lsSet(APPROACH_KEY, e.target.value); }} style={{ fontSize: 12, padding: '4px 6px', minHeight: 30 }} aria-label="Beach approach">
+                  {APPROACHES.map(a => <option key={a.id} value={a.id}>{a.name}, {a.town}</option>)}
+                </select>
+              </div>
+              {approach.walkNote && <div className="sub" style={{ marginTop: 6, whiteSpace: 'normal' }}>{approach.walkNote}</div>}
+              <div className="sub" style={{ marginTop: 6, whiteSpace: 'normal' }}><span className={`badge ${n.closed ? 'hot' : 'ok'}`} style={{ marginRight: 6 }}>{approach.access === 'walk' ? 'Right' : 'North'}</span>{n.text}</div>
+              <div className="sub" style={{ marginTop: 4, whiteSpace: 'normal' }}><span className={`badge ${so.closed ? 'hot' : 'ok'}`} style={{ marginRight: 6 }}>{approach.access === 'walk' ? 'Left' : 'South'}</span>{so.text}</div>
+              <a className="btn sm" href={approach.lat != null && approach.lng != null ? dirUrl(approach.lat, approach.lng) : dirUrlQ(approach.place || `${approach.name}, ${approach.town}, WA`)} target="_blank" rel="noopener" style={{ marginTop: 8, textDecoration: 'none', display: 'inline-flex' }} onClick={e => e.stopPropagation()}><Icon name="nav" size={14} />Directions to {approach.access === 'walk' ? 'the parking' : 'the approach'}</a>
+              <div className="note" style={{ paddingTop: 6 }}>{approach.access === 'walk' ? 'Beach driving dates above do not gate you here. They close the sand to vehicles, not to people on foot.' : 'Drops you where the pavement meets the sand.'}</div>
+            </div>
+          </div>
+        ); })()}
         {!(showSegs ?? st.closed) && <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => setShowSegs(true)}>Show the {SEGMENTS.length} segments</button>}
         {(showSegs ?? st.closed) && <div className="list" style={{ marginTop: 8 }}>
           {SEGMENTS.map(s => {

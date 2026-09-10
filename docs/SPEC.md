@@ -148,3 +148,21 @@ Push alerts (More > Coast alerts):
 - api/watch.js runs daily by Vercel cron (0 15 UTC, 8am Pacific): collects the same items as the card, compares ids with watch_state, pushes "Coast Watch: N updates" with the top three, and beach driving alerts on April 15, the reopen day, and three days before each. First run only records state. ?dry=1 shows what it would send.
 - Env vars the user sets in Vercel: VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, SUPABASE_SERVICE_ROLE_KEY, CRON_SECRET. /api/push-key reports which are missing and the Alerts section says so.
 - Note: Vercel deployment protection is "all except custom domains", so preview URLs need a share link.
+
+## v3.6.1: your approach (Sept 10, 2026)
+
+Coast Watch gains a "Your approach" picker (12 North Beach approaches, Damon Rd to Moclips 2nd St, remembered in localStorage wff-coast-approach, default Heath Rd at Copalis Beach, Seri's usual spot). For the chosen approach it says what you hit driving north and south off the ramp: open all year, the seasonal segment with its reopen date, or the all-year closure. Data in src/domain/coast.ts APPROACHES and approachWay().
+
+## v3.6.2: approach coordinates and a Directions button (Sept 10, 2026)
+
+The v3.6.1 approach list carried no coordinates and a first attempt at name-based Google Maps links ("Heath Rd Beach Approach, Copalis Beach, WA") failed on the phone with "Can't seem to find a way there" — Google does not resolve those names. Fix: every approach now carries the lat/lng of the seaward end of its approach road, read from OpenStreetMap way geometry through Overpass (westernmost node of the named way). Heath Rd resolves to 47.111291, -124.179592, which Google renders as 29 Heath Rd, Copalis Beach, 1 hr 49 min from Lakewood, and sits 344 m inland of the OSM coastline, so the pin is where the asphalt ends and the sand starts.
+
+Coast Watch "Your approach" gains a Directions button that opens that point. Approaches with a verified pin: Marine View Dr, Taurus Blvd, Ocean Lake Approach, Pacific Blvd NW, Chance a la Mer (Ocean Shores); Heath Rd, Benner Rd (Copalis Beach); Roosevelt Beach Rd; Analyde Gap Rd (Pacific Beach); 2nd St (Moclips). The Ocean City access has no clean OSM road, so it falls back to the place name Ocean City State Park via the new dirUrlQ() helper. Butter Clam and Damon Rd were dropped rather than shipped with a guessed pin: OSM shows neither reaching the sand at the point the WAC describes.
+
+## v3.6.3: walk-in approaches (Sept 10, 2026)
+
+Heath Rd is not a drive-on. Street View and the OSM geometry both show the pavement barricaded at 47.1113, -124.1796 with a wooden boardwalk and a sand path running the last 150 yards to the beach, and Seri confirmed he parks there and walks in. Approach gains `access: 'drive' | 'walk'` plus `walkNote`, and Heath Rd is marked walk-in.
+
+Behavior for a walk-in approach: approachWay() stops applying the WAC segments, because those close the sand to motor vehicles and not to people on foot; the card labels the two directions Right and Left instead of North and South, since that is how you read them standing on the beach facing the water; the Directions button says "Directions to the parking"; and a line under it says the beach driving dates above do not gate you there.
+
+Heath Rd right-hand note carries the two distances worth knowing on foot, both measured from OSM geometry: Benner Gap is a quarter mile up the beach, and past it no vehicle is allowed all year for the 1.83 miles to the Copalis River mouth at 47.14085, -124.18541.

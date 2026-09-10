@@ -74,3 +74,45 @@ const COAST_RULE_RE = /razor clam|copalis|mocrocks|ocean shores|grays harbor|mar
 export function coastRules(rules: Rule[]): Rule[] {
   return rules.filter(r => COAST_RULE_RE.test(`${r.title} ${r.location} ${r.species}`) || r.counties.includes('Grays Harbor'));
 }
+
+/**
+ * Beach approaches, south to north. lat/lng is the seaward end of the approach road, taken from
+ * OpenStreetMap way geometry, so Directions drop you at the sand and not the middle of the street.
+ * north/south say what you hit driving that way off the ramp.
+ */
+export interface Approach {
+  id: string; name: string; town: string;
+  lat?: number; lng?: number; place?: string;
+  /** 'walk' means the road is gated and you leave the truck at the end of the pavement. */
+  access?: 'drive' | 'walk';
+  walkNote?: string;
+  north: string | 'open'; south: string | 'open'; northNote?: string; southNote?: string;
+}
+
+export const APPROACHES: Approach[] = [
+  { id: 'marineview', name: 'Marine View Dr', town: 'Ocean Shores', lat: 46.952570, lng: -124.170425, north: 'open', south: 'jetty', northNote: 'open to Pacific Blvd' },
+  { id: 'taurus', name: 'Taurus Blvd', town: 'Ocean Shores', lat: 46.972389, lng: -124.174045, north: 'open', south: 'open', northNote: 'open to Pacific Blvd', southNote: 'open to Marine View Dr' },
+  { id: 'oceanlake', name: 'Ocean Lake Approach', town: 'Ocean Shores', lat: 46.983640, lng: -124.173681, north: 'open', south: 'open', northNote: 'open to Pacific Blvd', southNote: 'open to Marine View Dr' },
+  { id: 'pacific', name: 'Pacific Blvd NW', town: 'Ocean Shores', lat: 46.993885, lng: -124.169514, north: 'pacific', south: 'open', southNote: 'open to Marine View Dr' },
+  { id: 'chance', name: 'Chance a la Mer', town: 'Ocean Shores', lat: 47.007164, lng: -124.168313, north: 'open', south: 'pacific', northNote: 'open to the Ocean City access' },
+  { id: 'oceancity', name: 'Ocean City access', town: 'Ocean City', place: 'Ocean City State Park, Ocean Shores, WA', north: 'oceancity', south: 'open', southNote: 'open to Chance a la Mer' },
+  { id: 'heath', name: 'Heath Rd', town: 'Copalis Beach', lat: 47.111291, lng: -124.179592, access: 'walk', walkNote: 'Road closed at the end of the pavement. Park there, cross the boardwalk and the sand path, about 150 yards to open beach.', north: 'open', south: 'open', northNote: 'Benner Gap is a quarter mile up, and past it no vehicle is allowed all year for the 1.8 miles to the Copalis River mouth', southNote: 'open sand toward the Ocean City stretch' },
+  { id: 'benner', name: 'Benner Rd', town: 'Copalis Beach', lat: 47.114199, lng: -124.180076, north: 'benner', south: 'open', southNote: 'open past Heath Rd' },
+  { id: 'roosevelt', name: 'Roosevelt Beach Rd', town: 'Roosevelt Beach', lat: 47.175415, lng: -124.196303, north: 'roosevelt', south: 'open', southNote: 'open to Boone Creek' },
+  { id: 'analyde', name: 'Analyde Gap Rd', town: 'Pacific Beach', lat: 47.219004, lng: -124.208335, north: 'open', south: 'roosevelt', northNote: 'open to the Moclips access' },
+  { id: 'moclips', name: '2nd St', town: 'Moclips', lat: 47.239103, lng: -124.217019, north: 'moclips', south: 'open', southNote: 'open to Analyde Gap' },
+];
+
+export function approachWay(a: Approach, dir: 'north' | 'south', st: DriveStatus): { closed: boolean; text: string } {
+  const ref = a[dir];
+  const note = dir === 'north' ? a.northNote : a.southNote;
+  // On foot the WAC segments do not apply: they close the beach to motor vehicles, not to people.
+  if (a.access === 'walk') return { closed: false, text: note || 'Open on foot' };
+  if (ref === 'open') return { closed: false, text: note ? `Open, ${note}` : 'Open' };
+  const seg = SEGMENTS.find(s => s.id === ref);
+  if (!seg) return { closed: false, text: 'Open' };
+  if (seg.allYear) return { closed: true, text: `Closed all year (${seg.name})` };
+  return segmentClosed(seg, st)
+    ? { closed: true, text: `Closed until ${st.until.toLocaleDateString([], { month: 'short', day: 'numeric' })} (${seg.name})` }
+    : { closed: false, text: `Open until April 15 (${seg.name})` };
+}
