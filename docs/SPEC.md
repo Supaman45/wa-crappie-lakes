@@ -166,3 +166,13 @@ Heath Rd is not a drive-on. Street View and the OSM geometry both show the pavem
 Behavior for a walk-in approach: approachWay() stops applying the WAC segments, because those close the sand to motor vehicles and not to people on foot; the card labels the two directions Right and Left instead of North and South, since that is how you read them standing on the beach facing the water; the Directions button says "Directions to the parking"; and a line under it says the beach driving dates above do not gate you there.
 
 Heath Rd right-hand note carries the two distances worth knowing on foot, both measured from OSM geometry: Benner Gap is a quarter mile up the beach, and past it no vehicle is allowed all year for the 1.83 miles to the Copalis River mouth at 47.14085, -124.18541.
+
+## v3.6.4: boat launch matching (Sept 14, 2026)
+
+Seri reported Fivemile Lake and Trout Lake, two different King County lakes, both showing "Lake Killarney" as their boat launch, 1.2 and 1.7 miles from the lake.
+
+Two bugs in matchLaunches, both from gates that ignored the size of the lake. The county-only rule scored any launch in the same county within 5 miles with no name check at all, so a small lake with no ramp of its own grabbed whatever ramp was nearest; that is the Killarney case. Separately the distance gate was bypassed entirely for a name match under 45 miles, and Washington repeats lake names, so Silver Lake in Pierce County was matched to a Silver Lake ramp 44.2 miles away, Fish Lake to Fish Lake E at 40.8, Cavanaugh Lake to Lake Cavanaugh at 39.2.
+
+Fix: a launch has to plausibly sit on the water. gate = max(0.4, r*2 + 0.2) where r is the radius of a circle of the lake's acreage; a launch named after the lake and in the right county gets nameGate = max(gate, min(0.75 + r*3, 3.5)) because long skinny lakes put the ramp well off the centroid. A first pass marks every launch that a lake claims by name, and the county-only path skips those, so Riffe Lake stops claiming Swofford Pond and Lake Tapps stops claiming Bonney Lake.
+
+Measured against the live WDFW launch layer (397 launches) across all 1,733 lakes: lakes showing a launch drop from 467 to 230, and matches further than a mile from their lake drop from 222 to 14. The 14 that remain are large waters where the ramp is genuinely on a distant arm (Banks Lake to Barker Canyon, Lake Pateros to Bridgeport Bar, Potholes to Medicare Beach). Verified that correct matches survive: American Lake, Ward Lake, Tanwax, Offutt, Black Lake, Clear Lake, Ohop, Silver Lake in Cowlitz. Both reported lakes now show no launch, which is right, since the WDFW layer has no launch on either.
