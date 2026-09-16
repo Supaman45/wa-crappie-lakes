@@ -138,7 +138,7 @@ export function MapView() {
     L.control.layers(base, { 'Trails': trailLayer.current, 'Boat launches': launchLayer.current, 'Saved spots': spotLayer.current, 'Trip tracks': trackLayer.current }, { position: 'topright', collapsed: true }).addTo(map);
     map.on('overlayadd', (e: L.LayersControlEvent) => { if (e.name === 'Trails') useHikes.getState().setShowTrails(true); });
     map.on('overlayremove', (e: L.LayersControlEvent) => { if (e.name === 'Trails') useHikes.getState().setShowTrails(false); });
-    map.addLayer(trailLayer.current);
+    if (useHikes.getState().showTrails) map.addLayer(trailLayer.current);
     mapRef.current = map;
 
     for (const l of LAKES) {

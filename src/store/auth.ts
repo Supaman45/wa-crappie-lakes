@@ -14,7 +14,8 @@ interface AuthState {
   email: string | null;
   init: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<string | null>;
-  signUp: (email: string, password: string) => Promise<string | null>;
+  signUp: (email: string, password: string, invite: string) => Promise<string | null>;
+  checkInvite: (code: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 }
 
@@ -62,11 +63,25 @@ export const useAuth = create<AuthState>((set, get) => ({
     const { error } = await sb.auth.signInWithPassword({ email, password });
     return error ? error.message : null;
   },
-  signUp: async (email, password) => {
-    const { error, data } = await sb.auth.signUp({ email, password });
-    if (error) return error.message;
+  /**
+   * The invite code rides in user metadata. A trigger on auth.users validates and consumes it
+   * inside the signup transaction, so the account cannot exist without a live code. The client
+   * check in the Gate is only there to give a decent error before the round trip.
+   */
+  signUp: async (email, password, invite) => {
+    const code = (invite || '').trim();
+    if (!code) return 'An invite code is required.';
+    const { error, data } = await sb.auth.signUp({ email, password, options: { data: { invite: code } } });
+    if (error) return /invite|42501|not valid|required/i.test(error.message)
+      ? 'That invite code is not valid, already used, or expired.'
+      : error.message;
     if (!data.session) return 'Check your email to confirm the account, then sign in.';
     return null;
+  },
+  /** UX only. The database decides. */
+  checkInvite: async (code) => {
+    const { data, error } = await sb.rpc('invite_is_valid', { p_code: code.trim() });
+    return error ? true : !!data;   // on a network error let the signup attempt be the judge
   },
   signOut: async () => {
     // Pending outbox rows are kept; they flush on the next sign-in by the same user.

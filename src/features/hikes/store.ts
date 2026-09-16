@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { trailsInBox, type Trail, type BBox } from '@/api/trails';
 import { LAKES } from '@/data/lakes';
 import { pairHikes, lakesInBox, type Hike } from '@/domain/hikes';
+import { lsGet, lsSet } from '@/lib/util';
+
+const TRAILS_KEY = 'wff-show-trails';
 
 export const TRAIL_MIN_ZOOM = 12;
 
@@ -26,10 +29,11 @@ let viewCtrl: AbortController | null = null;
 let areaCtrl: AbortController | null = null;
 
 export const useHikes = create<HikesState>((set, get) => ({
-  showTrails: true,
+  // Off by default. Trails hit the network, so they are opt-in and the choice sticks.
+  showTrails: lsGet(TRAILS_KEY) === '1',
   viewTrails: [], viewHikes: [], viewLoading: false, viewError: null,
   areaKey: null, areaHikes: [], areaLoading: false, areaError: null,
-  setShowTrails: (showTrails) => set({ showTrails }),
+  setShowTrails: (showTrails) => { lsSet(TRAILS_KEY, showTrails ? '1' : '0'); set({ showTrails }); },
   loadView: async (bbox) => {
     if (viewCtrl) viewCtrl.abort();
     viewCtrl = new AbortController();

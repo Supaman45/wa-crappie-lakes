@@ -8,6 +8,8 @@ import { useUI } from '@/store/ui';
 import { useFeeds } from '@/store/feeds';
 import { Chip, Icon, Empty } from '@/components/ui';
 import { useFeedLoads, RulesList, EscRow } from '@/features/feeds/FeedBits';
+import { RiverWatch } from '@/features/plan/RiverWatch';
+import { QuickCatch, TripBar, type QuickWater } from '@/features/log/QuickCatch';
 
 type RegionFilter = River['region'] | 'all';
 
@@ -94,6 +96,7 @@ export function RiversPlan() {
 
   return (
     <div>
+      <RiverWatch />
       <div className="section" style={{ marginTop: 8 }}>
         <h3>Rivers <small>{origin ? `nearest first from ${origin.label}` : 'set a start point on Lakes to sort by distance'}</small></h3>
         <div className="chips" style={{ marginBottom: 8 }}>
@@ -156,8 +159,13 @@ function RiverDetail({ r, g, escs, rules, onMap }: { r: River; g: Gauge | null; 
   const trend = last7.length >= 2 ? (last7[last7.length - 1] / (last7[0] || 1)) : null;
   const trendLabel = trend == null ? null : trend >= 1.15 ? 'rising' : trend <= 0.87 ? 'dropping' : 'steady';
 
+  // The gauge rides along, so a river fish carries the flow it was caught on.
+  const quickWater: QuickWater = { id: r.id, name: r.name, type: 'river', spotId: null, lat: r.lat, lng: r.lng, gauge: r.gauge, species: r.sp };
+
   return (
     <div style={{ marginTop: 10 }} onClick={e => e.stopPropagation()}>
+      <QuickCatch water={quickWater} />
+      <TripBar water={quickWater} />
       <div className="kv">
         <div className="k">Gauge</div><div className="v">{r.gauge ? r.gaugeName : 'none listed'}</div>
         <div className="k">Flow</div><div className="v">{g?.cfs != null ? `${Math.round(g.cfs).toLocaleString()} cfs` : '-'}{fl ? ` (${fl.label})` : ''}</div>

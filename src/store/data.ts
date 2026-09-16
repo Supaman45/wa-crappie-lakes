@@ -28,6 +28,7 @@ interface DataState {
   teardown: () => void;
 
   saveCatch: (c: Partial<Catch> & { lake_id: string }, photo?: Blob | null) => Promise<Catch>;
+  updateCatch: (id: string, patch: Partial<Catch>) => Promise<Catch | null>;
   deleteCatch: (id: string) => Promise<void>;
   logVisit: (lakeId: string, lakeName: string, waterType?: Catch['water_type'], spotId?: string | null, date?: string) => Promise<boolean>;
   setTag: (lakeId: string, patch: Partial<LakeTag>) => Promise<void>;
@@ -183,6 +184,9 @@ export const useData = create<DataState>((set, get) => ({
       length: input.length ?? null, weight: input.weight ?? null, qty: input.qty ?? 1, notes: input.notes ?? null, photo_path,
       depth: input.depth ?? null, bait: input.bait ?? null, structure: input.structure ?? null, water_temp: input.water_temp ?? null,
       water_type: input.water_type || 'lake', spot_id: input.spot_id ?? null, created_at: new Date().toISOString(),
+      trip_id: input.trip_id ?? null, caught_at: input.caught_at ?? new Date().toISOString(), cond: input.cond ?? null,
+      kept: input.kept ?? null, clipped: input.clipped ?? null, catch_area: input.catch_area ?? null,
+      lat: input.lat ?? null, lng: input.lng ?? null, share_spot: input.share_spot ?? false,
     };
     const { _local, ...payload } = { ...row, _local: undefined };
     let saved = false;
@@ -195,6 +199,27 @@ export const useData = create<DataState>((set, get) => ({
     set({ catches, index: buildIndex(catches, get().visits), outboxCount: saved ? get().outboxCount : get().outboxCount + 1 });
     db.catches.put(row).catch(() => {});
     if (saved) get().refresh();
+    return row;
+  },
+
+  updateCatch: async (id, patch) => {
+    const cur = get().catches.find(x => x.id === id);
+    if (!cur) return null;
+    const row: Catch = { ...cur, ...patch, id, user_id: cur.user_id };
+    const { _local, ...payload } = { ...row, _local: undefined };
+    set({ catches: get().catches.map(c => c.id === id ? row : c) });
+    db.catches.put(row).catch(() => {});
+    if (!cur._local && isOnline()) {
+      const { error } = await sb.from('catches').update(payload).eq('id', id);
+      if (error) { toast('Update failed: ' + error.message, 'err'); return row; }
+    } else if (cur._local) {
+      // Still in the outbox: rewrite the queued insert rather than queueing an update after it.
+      const q = await db.outbox.get(id);
+      if (q) await db.outbox.put({ ...q, payload });
+    } else {
+      toast('Go online to edit a synced catch', 'warn');
+    }
+    set({ index: buildIndex(get().catches, get().visits) });
     return row;
   },
 
@@ -248,7 +273,8 @@ export const useData = create<DataState>((set, get) => ({
   saveTrip: async (t) => {
     if (!me) throw new Error('Not signed in');
     const id = t.id || uuid();
-    const row: Trip = { id, user_id: me, started_at: t.started_at ?? null, ended_at: t.ended_at ?? null, duration_min: t.duration_min ?? null, distance_mi: t.distance_mi ?? null, track: t.track ?? null, lakes: t.lakes ?? null, catch_ids: t.catch_ids ?? null, note: t.note ?? null, created_at: new Date().toISOString() };
+    const row: Trip = { id, user_id: me, started_at: t.started_at ?? null, ended_at: t.ended_at ?? null, duration_min: t.duration_min ?? null, distance_mi: t.distance_mi ?? null, track: t.track ?? null, lakes: t.lakes ?? null, catch_ids: t.catch_ids ?? null, note: t.note ?? null, created_at: new Date().toISOString(),
+      water_id: t.water_id ?? null, water_name: t.water_name ?? null, water_type: t.water_type ?? null, spot_id: t.spot_id ?? null, cond: t.cond ?? null, open: t.open ?? false };
     let saved = false;
     if (isOnline()) { const { error } = await sb.from('trips').insert(row); if (!error) saved = true; else if (error.code === '23505') saved = true; }
     if (!saved) { await db.outbox.put({ id, kind: 'trip', payload: row as unknown as Record<string, unknown>, created_at: Date.now(), attempts: 0 }); row._local = true; toast('Trip saved offline, will sync', 'warn'); }

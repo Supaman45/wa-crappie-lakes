@@ -16,9 +16,11 @@ import { useFeeds } from '@/store/feeds';
 import { rulesFor, plantsFor } from '@/api/feeds';
 import { useFeedLoads, RulesList, PlantRow } from '@/features/feeds/FeedBits';
 import { boatFit, mgmtLabel } from '@/domain/boatFit';
+import { extraLaunches } from '@/data/launchesExtra';
 import { trailsNear, sacLabel, type Trail } from '@/api/trails';
 import { pairHikes, type Hike } from '@/domain/hikes';
 import { useHikes } from '@/features/hikes/store';
+import { QuickCatch, TripBar, type QuickWater } from '@/features/log/QuickCatch';
 
 type FcState = { status: 'loading' } | { status: 'ok'; fc: Forecast } | { status: 'err' };
 
@@ -44,23 +46,27 @@ export function LakeSheet({ lake }: { lake: Lake }) {
   const setTag = useData(s => s.setTag);
   const logVisit = useData(s => s.logVisit);
 
-  const launch = useLakes(s => s.launches[lake.slug]);
+  const wdfwLaunch = useLakes(s => s.launches[lake.slug]);
+  const extra = extraLaunches(lake.slug);
+  const launch = extra[0] || wdfwLaunch;
   const fit = boatFit(lake, launch);
   const fly = useUI(s => s.fly);
   const setShowTrails = useHikes(s => s.setShowTrails);
 
-  // Trails that reach this lake (hike-in lakes and lakes without a ramp)
+  // Trails only load when you ask for them. Opening a lake should not fire an Overpass query.
   const wantTrails = lake.kind === 'high' || !lake.ramp;
+  const [askedTrails, setAskedTrails] = useState(false);
   const [trails, setTrails] = useState<{ status: 'idle' | 'loading' | 'ok' | 'err'; hikes: Hike[]; near: Trail[] }>({ status: 'idle', hikes: [], near: [] });
+  useEffect(() => { setAskedTrails(false); setTrails({ status: 'idle', hikes: [], near: [] }); }, [lake.slug]);
   useEffect(() => {
-    if (!wantTrails) return;
+    if (!wantTrails || !askedTrails) return;
     const ac = new AbortController();
     setTrails({ status: 'loading', hikes: [], near: [] });
     trailsNear(lake.lat, lake.lng, 2, ac.signal)
       .then(ts => { if (ac.signal.aborted) return; const hikes = pairHikes(ts, [lake]).sort((a, b) => a.miles - b.miles); setTrails({ status: 'ok', hikes, near: ts.slice().sort((a, b) => b.miles - a.miles).slice(0, 5) }); })
       .catch(() => { if (!ac.signal.aborted) setTrails({ status: 'err', hikes: [], near: [] }); });
     return () => ac.abort();
-  }, [lake, wantTrails]);
+  }, [lake, wantTrails, askedTrails]);
 
   const me = currentUserId();
   const mine = me ? tags[tagKey(me, lake.slug)] : undefined;
@@ -100,6 +106,7 @@ export function LakeSheet({ lake }: { lake: Lake }) {
     toast(ok ? 'Visit logged' : 'Already logged today', ok ? 'info' : 'warn');
   }
   function onLogCatch() { openSheet({ kind: 'catch', lakeId: lake.slug, lakeName: lake.name, waterType: 'lake' }); }
+  const quickWater: QuickWater = { id: lake.slug, name: lake.name, type: 'lake', spotId: null, lat: lake.lat, lng: lake.lng, species: lake.sp };
   function onShowMap() {
     closeSheet();
     setActiveLake(lake.id);
@@ -109,7 +116,7 @@ export function LakeSheet({ lake }: { lake: Lake }) {
   const footer = (
     <>
       <button type="button" className="btn" onClick={onLogVisit}><Icon name="check" />Log visit</button>
-      <button type="button" className="btn primary" onClick={onLogCatch}><Icon name="plus" />Log catch</button>
+      <button type="button" className="btn" onClick={onLogCatch}><Icon name="plus" />Full form</button>
       <a className="btn" href={dirUrl(dest.lat, dest.lng)} target="_blank" rel="noopener noreferrer"><Icon name="nav" />Directions</a>
       <a className="btn ghost" href={wdfwLakeUrl(lake.slug)} target="_blank" rel="noopener noreferrer"><Icon name="external" />WDFW page</a>
       <button type="button" className="btn ghost" onClick={onShowMap}><Icon name="pin" />Show on map</button>
@@ -118,6 +125,8 @@ export function LakeSheet({ lake }: { lake: Lake }) {
 
   return (
     <Sheet title={lake.name} sub={lakeSub(lake) + (distFromOrigin != null ? ` · ${distFromOrigin.toFixed(1)} mi from ${origin?.label}` : '')} onClose={closeSheet} footer={footer}>
+      <QuickCatch water={quickWater} />
+      <TripBar water={quickWater} />
       <div className="pill-row">
         {lake.sp.map(id => <span key={id} className="badge" style={{ color: speciesColor(id) }}>{speciesLabel(id)}</span>)}
         {lake.sp.length === 0 && <span className="badge">No species listed</span>}
@@ -136,7 +145,15 @@ export function LakeSheet({ lake }: { lake: Lake }) {
 
       {wantTrails && (
         <div className="section">
-          <h3>Trails <small>{trails.status === 'ok' ? (trails.hikes.length ? `${trails.hikes.length} reach the lake` : 'none reach the shore') : trails.status === 'loading' ? 'loading' : ''}</small></h3>
+          <h3>Trails <small>{trails.status === 'ok' ? (trails.hikes.length ? `${trails.hikes.length} reach the lake` : 'none reach the shore') : trails.status === 'loading' ? 'loading' : 'off'}</small></h3>
+          {!askedTrails && (
+            <>
+              <div className="note">Trail data comes from OpenStreetMap over the network. It stays off until you ask.</div>
+              <div className="row" style={{ marginTop: 8 }}>
+                <button type="button" className="btn sm" onClick={() => setAskedTrails(true)}><Icon name="plan" size={14} />Look for trails to this lake</button>
+              </div>
+            </>
+          )}
           {trails.status === 'loading' && <div className="note" style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span className="spinner" />Looking for trails within 2 km</div>}
           {trails.status === 'err' && <div className="note">Trail data did not load. Check your signal.</div>}
           {trails.status === 'ok' && trails.hikes.length > 0 && (
@@ -162,18 +179,39 @@ export function LakeSheet({ lake }: { lake: Lake }) {
       )}
 
       <div className="section">
-        <h3>Boat launch</h3>
+        <h3>Boat launch{extra.length > 1 ? <small>{extra.length} ramps</small> : null}</h3>
         {launch ? (
-          <div className="kv">
-            <span className="k">Name</span><span className="v">{launch.name}</span>
-            <span className="k">Type</span><span className="v">{launch.type || 'n/a'}</span>
-            <span className="k">Motors</span><span className="v">{launch.motor ? 'OK' : 'No'}</span>
-            <span className="k">ADA</span><span className="v">{launch.ada ? 'Yes' : 'No'}</span>
-            {launch.hp && <><span className="k">HP limit</span><span className="v">{launch.hp}</span></>}
-            {launchDist != null && <><span className="k">From lake center</span><span className="v">{launchDist.toFixed(1)} mi</span></>}
-          </div>
+          <>
+            {(extra.length ? extra : [launch]).map((ln, i) => {
+              const d = ln.dist ?? haversine(lake.lat, lake.lng, ln.lat, ln.lng);
+              return (
+                <div key={ln.name + i} style={{ marginBottom: i < (extra.length ? extra.length : 1) - 1 ? 10 : 0 }}>
+                  <div className="kv">
+                    <span className="k">Name</span><span className="v">{ln.name}</span>
+                    <span className="k">Type</span><span className="v">{ln.type || 'n/a'}</span>
+                    <span className="k">Motors</span><span className="v">{ln.motor ? 'OK' : 'No'}</span>
+                    {ln.operator ? <><span className="k">Run by</span><span className="v">{ln.operator}</span></> : <><span className="k">ADA</span><span className="v">{ln.ada ? 'Yes' : 'No'}</span></>}
+                    {ln.hp && <><span className="k">HP limit</span><span className="v">{ln.hp}</span></>}
+                    <span className="k">From lake center</span><span className="v">{d.toFixed(1)} mi</span>
+                  </div>
+                  <div className="row" style={{ marginTop: 6, gap: 8, alignItems: 'center' }}>
+                    <a className="btn sm" href={dirUrl(ln.lat, ln.lng)} target="_blank" rel="noopener noreferrer"><Icon name="nav" size={14} />Directions to the ramp</a>
+                    {ln.note && <span className="note">{ln.note}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        ) : lake.ramp ? (
+          <>
+            <div className="note">WDFW lists a ramp on this lake but no site details, which usually means a city, county, or park ramp rather than a WDFW access site.</div>
+            <div className="row" style={{ marginTop: 8 }}>
+              <a className="btn sm" href={dirUrl(lake.lat, lake.lng)} target="_blank" rel="noopener noreferrer"><Icon name="nav" size={14} />Directions to the lake</a>
+              <a className="btn sm ghost" href={wdfwLakeUrl(lake.slug)} target="_blank" rel="noopener noreferrer"><Icon name="external" size={14} />WDFW page</a>
+            </div>
+          </>
         ) : (
-          <div className="note">No WDFW boat launch matched nearby. May be shore access only. The WDFW page lists details.</div>
+          <div className="note">No boat launch on record. Likely shore access only. The WDFW page lists details.</div>
         )}
       </div>
 

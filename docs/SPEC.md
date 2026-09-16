@@ -176,3 +176,180 @@ Two bugs in matchLaunches, both from gates that ignored the size of the lake. Th
 Fix: a launch has to plausibly sit on the water. gate = max(0.4, r*2 + 0.2) where r is the radius of a circle of the lake's acreage; a launch named after the lake and in the right county gets nameGate = max(gate, min(0.75 + r*3, 3.5)) because long skinny lakes put the ramp well off the centroid. A first pass marks every launch that a lake claims by name, and the county-only path skips those, so Riffe Lake stops claiming Swofford Pond and Lake Tapps stops claiming Bonney Lake.
 
 Measured against the live WDFW launch layer (397 launches) across all 1,733 lakes: lakes showing a launch drop from 467 to 230, and matches further than a mile from their lake drop from 222 to 14. The 14 that remain are large waters where the ramp is genuinely on a distant arm (Banks Lake to Barker Canyon, Lake Pateros to Bridgeport Bar, Potholes to Medicare Beach). Verified that correct matches survive: American Lake, Ward Lake, Tanwax, Offutt, Black Lake, Clear Lake, Ohop, Silver Lake in Cowlitz. Both reported lakes now show no launch, which is right, since the WDFW layer has no launch on either.
+
+## v3.6.5: non-WDFW ramps, trails on request (Sept 15, 2026)
+
+Alder Lake showed no boat launch. Cause: every launch in the app came from the WDFW Major_Fishing_Area layer, which only covers WDFW's own water access sites. Alder's ramps all belong to Tacoma Power, so WDFW lists none, and the FishWA Water Access Sites layer returns nothing in that box either. This predates the v3.6.4 matcher change; the old matcher found nothing on Alder as well.
+
+Two fixes. src/data/launchesExtra.ts holds ramps keyed by lake slug rather than matched by distance, because a long reservoir puts its ramp miles from the centroid: Alder Lake Park sits 4.0 miles out and Sunny Beach Point 3.1, both past any sane geometric gate. Keying by slug is an assertion that the ramp is on that lake, made by hand instead of by guess. Alder Lake Park (46.800368, -122.300309) and Sunny Beach Point (46.799404, -122.278613) are in, both Tacoma Power, both with the fee note. The lake sheet renders every curated ramp with its operator and its own Directions button.
+
+Second, when a lake has no launch record but WDFW's lake layer flags a ramp, the sheet now says so plainly and offers Directions to the lake and the WDFW page, instead of the old flat "no launch matched". That covers every city and county ramp statewide, not only the ones curated.
+
+Trails are opt-in. Opening a lake used to fire an Overpass query on any high lake or lake without a ramp; now the Trails section shows a "Look for trails to this lake" button and loads nothing until it is tapped, resetting per lake. The map's Trails overlay defaults off and remembers the choice in localStorage wff-show-trails, and the layer is no longer added to the map at startup. Verified with a phone-sized render: opening Alder Lake and Fivemile Lake makes zero trail requests.
+
+
+## v3.6.6 and v3.6.7: city and utility ramps statewide (Sept 15, 2026)
+
+v3.6.5 hand-entered Alder Lake only. This finishes the job for the whole state.
+
+Source: OpenStreetMap slipways (leisure=slipway and waterway=slipway) pulled across all of Washington through Overpass in bands, 1,662 points inside the state after dropping the Oregon side of the Columbia. Overpass shed load repeatedly during the pull and had to be retried with backoff; v3.6.6 shipped with only the southern and central bands, and v3.6.7 completes it with north Puget Sound, the Olympic Peninsula, the San Juans, northeast Washington and the southeast corner.
+
+Those points were matched against all 1,733 lakes with the same size-aware distance gates launchMatch uses, and the 141 lakes that matched are frozen into src/data/launchesExtra.ts keyed by slug. Freezing the match means no extra network call, no extra matching at runtime, and it works offline. Only the 122 points that matched a lake ship, so the file is 31 KB rather than the full 1,662.
+
+Measured across all 1,733 lakes: lakes with a boat launch go from 230 to 360. Lakes WDFW flags as having a ramp but that had no launch record drop from 119 to 60, and those 60 fall back to the honest "WDFW lists a ramp but no site details" card from v3.6.5.
+
+Alder Lake lists three ramps: the unnamed OSM ramp 0.4 miles off the centroid, which is the one actually on the water, plus Alder Lake Park and Sunny Beach Point, both Tacoma Power, both carrying the fee note.
+
+Known limits. A few adjacent small ponds share one nearby ramp (Fort Borst and Hayes, Hanson Upper Pond and Kiwanis), which is geometrically defensible but worth a look if either is ever wrong. Most OSM ramps carry no name and render as "Boat ramp". Sixty ramp-flagged lakes still have no coordinates.
+
+One bug caught during the work: the analysis script read the wrong property for lake acreage, so every lake got a flat 0.4 mile gate and the first measurement understated the gain. The shipped launchMatch was never affected.
+
+
+## v3.7.0: River Watch, the Puyallup (Sept 16, 2026)
+
+Seri fishes the Puyallup in Pierce County with friends. The river is co-managed with the Puyallup Tribe under the Boldt decision, the tribe nets the lower river on scheduled days, and the crew does not fish those days. Two calendars, and neither one is in the app. This card merges them.
+
+### What it answers
+
+One question, at the top of the Rivers tab: can I fish today, and are the nets in? The verdict is one of three.
+
+- `go` open to you, no nets in the section you picked
+- `nets` open to you, but the tribe is fishing the water you are standing in
+- `closed` the sport season is shut that day
+
+When the verdict is `nets`, the card names a section of the same river that is open and carries no nets, because on the Puyallup there always is one: nets are set only from the White River confluence down to the mouth, so everything above Sumner is clear.
+
+### Where the numbers come from
+
+Sport season, boundaries and limits are WAC 220-312-040, cross-checked line by line against the recreational rows of the 2026-2027 Co-Managers' List of Agreed Fisheries. Four sections, three sharing one calendar:
+
+- 11th St Bridge to Clarks Creek, Clarks Creek to East Main Bridge, East Main Bridge to the Carbon: Aug 19 to Sept 30 Wednesday through Saturday only, Oct 1 to 31 daily, closed after Oct 31.
+- Above the Carbon: Saturday before Memorial Day through Jan 15, selective gear.
+
+The Sunday-through-Tuesday closure through Sept 30 is the tribal net window, so through September the two calendars do not collide at all. October is when they do, on Oct 4 to 6 and Oct 11 to 13.
+
+Net windows come from Puyallup Tribe filing 12-2026/2027, "Puyallup River Coho 2nd", adopted Aug 20 and posted Sept 14: noon Sunday to noon Tuesday, five weeks, Sept 13 through Oct 13. Gear and catch area are in the same filing. The White River gillnet (Sunday through Friday, Aug 30 to Oct 11, confluence to R St Bridge) rides along as a side note.
+
+### Why the windows are curated rather than parsed
+
+The dates live inside PDFs, one per opening. Parsing those on Vercel means shipping a PDF text extractor and trusting it against a Word-generated file it has never seen, with silent garbage as the failure mode. Instead the windows ship as data in `src/domain/river.ts`, each tagged with the filing it was read from, and `/api/river` watches the page they came from.
+
+`api/river.js` parses the tribe's Harvest and Regulations page. The page is one `<dl class="accordion">`: a `<dt>` with the filing's title, then a `<dd>` with the PDF link and a "Posted on:" line. Every anchor reads "View and Download PDF", so the title has to come from the `<dt>`, not the link text. The site links its own uploads over http, so URLs are upgraded to https. Marine and shellfish filings are filed on the same page and are dropped.
+
+The page also keeps several seasons of archive, so `newFilings()` only counts a filing as news when it was posted on or after `readOn` (the day the windows were read by hand), or when it sits above every known filing in the page's reverse-chronological order. Without that rule, twelve 2025 filings would fire as new on first load.
+
+When a new filing appears, the card says the schedule may have moved and links straight to it rather than pretending to know the new dates. `api/watch.js` applies the same rule and pushes "River Watch: the Puyallup schedule may have moved", separately from the Coast Watch notification, and also watches emergency rules naming the Puyallup, White, Carbon or Pierce County.
+
+### Guards against going stale
+
+- `netState().stale` is true once every shipped window and pending note is behind us. The card then says "Open to you. Net schedule unknown." rather than implying clear water. Verified for Dec 2026, Jan 2027 and Aug 2027.
+- The above-Carbon opener is "the Saturday before Memorial Day", which moves. It is computed from the last Monday in May rather than hardcoded. Verified: 2026 opens May 23, 2027 opens May 29.
+- The co-managers' chum fisheries (test one day a week from the week of Oct 18, commercial one to three days a week from the week of Nov 1 to the week of Dec 27) ship as `pending` notes with no invented dates, since the tribe files those week by week.
+
+### Verification
+
+The `filings()` parser was run in-page against the live tribe site: 33 items, 30 dated, titles correct, marine filings excluded, all URLs https. The same parser was then run from the repo against a fixture built from that live markup, confirming zero false alarms today and exactly one alert when a hypothetical chum filing goes up.
+
+Domain logic was exercised at ten pinned timestamps covering the open, the nets, the overlap, the closed season and the year wrap. The card was rendered at 390x844 with the clock pinned twice: Sept 16 shows "Open, and the nets are out" with the next window flagged, and Oct 4 shows "Open, but nets are in your water" naming the upper section as the clear alternative.
+
+### Known limits
+
+- Net windows are hand-read from the filings and carry `readOn: '2026-09-16'`. Next season they need re-reading; the stale guard makes that visible rather than silent.
+- Only the Puyallup is modeled. `WATCH_RIVERS` takes more, and the card takes a `riverId`.
+- One pre-existing fragility surfaced while testing: `RiversPlan` reads `esc?.latest.species`, which throws if `/api/escapement` ever returns a body without `latest`. Not introduced here, not fixed here.
+
+
+## v3.8.0: the log, rebuilt around one tap (Sept 16, 2026)
+
+The old catch form asked for twelve fields. Nobody fills twelve fields standing in a river with a fish in one hand, so the log stayed empty and the app learned nothing from it. This rebuilds entry around the smallest thing that is still worth recording, and adds the two structures that make a log pay you back: trips, and a Catch Record Card.
+
+### One tap logs a fish
+
+`QuickCatch` renders species as chips. Tapping one saves a catch. Everything else the app already knows and fills silently: water, calendar day, clock time, the active trip, and a conditions snapshot. Length, weight, bait, depth, structure and photo are edits you make later from the couch through the existing form, which is still there behind a "Full form" button.
+
+Chip order is the whole trick. What you logged most recently comes first, then what WDFW lists for that water, then the rest behind a "More" button. Six fit above the fold on a phone. The lake sheet passes `lake.sp`, the river detail passes `r.sp`, so the Puyallup opens on Chinook, Coho and Steelhead rather than on crappie.
+
+Mounted in three places: the lake sheet, the river detail in Plan > Rivers, and the top of the Log tab while a trip is running.
+
+### Trips
+
+`src/store/trip.ts` holds the trip you are on right now, in localStorage rather than the database. A trip is worthless until it ends, the phone is usually out of signal while it runs, and a half-written row syncing to the crew mid-morning helps nobody. On End it goes through the normal `saveTrip` path so the offline outbox handles it like everything else.
+
+Catches logged during a trip carry its `trip_id`. A trip with no fish still saves, and says so ("Trip saved, no fish. That counts too."), because three hours on Ohop with nothing is exactly what you want to know next year and it only exists if the blank session gets recorded.
+
+A trip still open the next morning is stale. Rather than recording an eighteen hour session, the card says so and offers "End at last fish", using the timestamp of the last catch attached to it.
+
+### Conditions snapshot
+
+`src/api/conditions.ts` captures air temperature, wind speed and direction, surface pressure, the three hour pressure trend, cloud, precipitation and moon illumination at the moment of logging, plus flow and water temperature when the water has a USGS gauge.
+
+Stored on the row rather than looked up later. Forecasts get revised and archives cost money; a fish logged in 2026 has to still carry the barometer it was caught on in 2029 or the pattern work is built on sand. The call is warmed when the panel mounts and re-warmed after each save, so the tap itself never waits on the network, and every failure path returns a partial snapshot instead of throwing. No signal means a fish with no conditions, which is still a fish.
+
+### Catch Record Card
+
+WDFW requires a card for salmon, steelhead, sturgeon and halibut, and a retained fish must be recorded before you carry on fishing. `src/domain/crc.ts` and `CrcCard.tsx` mirror that card.
+
+This is a mirror, not a replacement, and the UI says so on the card itself. WDFW runs its own electronic card in the MyWDFW and Fish Washington apps as of the 2026-2027 license year, and a paper card is still legal and still due back April 30. What this adds is the same rows in the same order, so copying across takes seconds and a season's record survives a card left in a wet coat.
+
+- Only a KEPT fish of a card species appears. Released fish are excluded, which is the actual rule.
+- Logging a card species triggers the only extra prompt in the whole flow: kept clipped, kept wild, or released. It is a legal record, so the app asks rather than guesses.
+- Catch area codes are filled from a table of WDFW's three-digit freshwater codes for the waters the app points at: Puyallup 804, White/Stuck 808, Carbon 802, Nisqually 786, Green/Duwamish 746. An unknown water leaves the field blank and tappable rather than guessing a code onto a legal document.
+- Totals are counted on the license year, April 1 to March 31, not the calendar year, because that is how the card is filed.
+- "Write these in" lists fish from today and yesterday in card column order. "Needs an answer" lists card species logged without kept or released. The season total flags rows still missing an area code or a clip.
+- A due-date banner appears inside 45 days of April 30. CSV export for the whole year.
+
+### Schema
+
+One additive migration, `log_redesign_trips_crc_conditions`, applied to the live project. Every column is nullable or defaulted, so rows written by older clients stay valid and an older client still works against the new schema.
+
+`catches` gained `trip_id`, `caught_at`, `cond`, `kept`, `clipped`, `catch_area`, `lat`, `lng`, `share_spot`. `trips` gained `water_id`, `water_name`, `water_type`, `spot_id`, `cond`, `open`. Indexes on `catches(trip_id)`, `catches(user_id, date desc)` and a partial index on open trips.
+
+`share_spot` defaults to false, per Seri's call on privacy: the crew sees the water and the fish, not the pin, unless the person who caught it decides otherwise. The column ships now; the crew-facing read that honors it is the next piece of work.
+
+`updateCatch` was added to the data store so details can be added after the fact. It rewrites a queued insert rather than stacking an update behind it when the catch is still in the outbox.
+
+### Verification
+
+CRC logic tested against a hand-built set covering a kept fish, a released fish, a non-card species, a fish from the previous license year, and a fish on a water with no known area code: three rows on the card, correct totals, correct missing-field counts, license year rolling correctly in February, deadline window firing only inside 45 days.
+
+Rendered at 390x844 and driven end to end offline: open Plan > Rivers, open the Puyallup, tap Coho, the save goes to the outbox, the Catch Record Card prompt fires, answering "Kept, clipped" puts the fish on the card with area code 804 already filled in, and the Log tab shows it under "Write these in". No page errors.
+
+### Known limits
+
+- Patterns from the logged conditions are not built yet. The data is being captured now so that work has something to run on later.
+- The crew view still shows what it always showed; `share_spot` is stored but not yet read.
+- `RiversPlan` still reads `esc?.latest.species`, which throws if `/api/escapement` ever returns a body without `latest`. Noted in v3.7.0, still not fixed.
+
+
+## v3.9.0: a public domain and an invite gate (Sept 16, 2026)
+
+wafishfinder.app is live and pointed at the project. The Vercel project runs SSO protection at `all_except_custom_domains`, so the vercel.app URL stays behind Vercel's login and the custom domain does not. The app is now reachable by anyone with the link, which is the point, and which is why signup had to close the same day.
+
+### The gate
+
+Migration `invite_codes_gate`. A `public.invite_codes` table keyed by code, carrying a label, an expiry, a use count against `max_uses`, a revoked flag, and a `used_by` array for the audit trail. RLS gives the creator full access to their own rows and nobody else anything.
+
+Two layers, and only one of them counts:
+
+- `public.invite_is_valid(text)`, SECURITY DEFINER, granted to anon. The Gate calls it so a bad code fails in a second with a clear message instead of a round trip and a generic auth error. This is UX.
+- A BEFORE INSERT trigger on `auth.users` running `public.enforce_invite()`. It reads the code out of `raw_user_meta_data->>'invite'`, locks the row `FOR UPDATE`, rejects on missing, unknown, revoked, expired or used-up, and otherwise increments `uses` and appends the email to `used_by`. Because it runs inside the signup transaction, an account cannot come into existence without a live code regardless of what the client does.
+
+The client passes the code through `signUp(email, password, invite)` as `options.data.invite`.
+
+Verified against the live database: signup with no code rejected, signup with an unknown code rejected, neither leaving a row behind; a valid code accepted, consuming exactly one use and flipping the code invalid afterwards, then rolled back. `invite_is_valid` is case-insensitive and trims, so a code read off a text message works.
+
+### Handing codes out
+
+`src/features/more/Invites.tsx`, in the More tab. Name a friend, tap New code, and it generates something readable but unguessable (a word plus six characters from an alphabet with I, O, 0 and 1 removed, drawn from `crypto.getRandomValues`), defaults to one use and 90 days, and opens the share sheet with the link and the code already written out. The list shows uses left, days left, who redeemed it, and a Revoke button that kills a code that went astray.
+
+Two codes were seeded by hand to start: `ZAKI-PUYALLUP` for Zaki, one use, and `CREW-COPALIS`, three uses, both expiring in 90 days.
+
+### Also
+
+The Add to Home Screen card told people to open wa-crappie-lakes.vercel.app, which now lands on a Vercel login wall. It says wafishfinder.app.
+
+### Known limits
+
+- Rate limiting on `invite_is_valid` is whatever Supabase gives the anon role by default. The code space is large enough that this is not a practical concern at this scale, but it is not hardened against a determined attacker.
+- Revoking a code does not remove an account already created with it. Delete the user in Supabase for that.
+- The repo, the Vercel project and the Supabase project are all still named wa-crappie-lakes. Cosmetic, and renaming the Vercel project would change the vercel.app URL, so it was left alone.

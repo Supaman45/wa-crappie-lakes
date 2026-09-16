@@ -54,7 +54,7 @@ export function InstallGuide({ compact }: { compact?: boolean }) {
   if (isAndroid()) {
     return <div className="note" style={{ lineHeight: 1.6 }}>On Android, tap the browser menu (three dots) and choose <b>Install app</b> or <b>Add to Home screen</b>.</div>;
   }
-  return <div className="note" style={{ lineHeight: 1.6 }}>On a phone, open wa-crappie-lakes.vercel.app and use Add to Home Screen (iPhone Safari: Share, then Add to Home Screen. Android: browser menu, Install app). On a Mac or PC, Chrome shows an install icon at the right end of the address bar.</div>;
+  return <div className="note" style={{ lineHeight: 1.6 }}>On a phone, open wafishfinder.app and use Add to Home Screen (iPhone Safari: Share, then Add to Home Screen. Android: browser menu, Install app). On a Mac or PC, Chrome shows an install icon at the right end of the address bar.</div>;
 }
 
 /** One-time banner on phones that have not installed yet. */

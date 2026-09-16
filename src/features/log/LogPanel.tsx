@@ -8,6 +8,10 @@ import { photoUrl } from '@/lib/supabase';
 import { fmtDate, todayStr } from '@/lib/util';
 import { toast } from '@/lib/toast';
 import { localDateStr, waterName } from './TripSheet';
+import { QuickCatch, TripBar, type QuickWater } from './QuickCatch';
+import { CrcCard } from './CrcCard';
+import { useTrip } from '@/store/trip';
+import { currentUserId } from '@/store/data';
 
 const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -24,6 +28,13 @@ export function LogPanel() {
 
   const [who, setWho] = useState<string>('all');
   const [species, setSpecies] = useState<string | null>(null);
+  const active = useTrip(s => s.active);
+  const me = currentUserId();
+
+  // While a trip is running, the log opens on the thing you came here to do: log a fish.
+  const tripWater: QuickWater | null = active
+    ? { id: active.waterId, name: active.waterName, type: active.waterType, spotId: active.spotId }
+    : null;
 
   const crew = useMemo(() => Object.values(profiles).sort((a, b) => a.name.localeCompare(b.name)), [profiles]);
 
@@ -64,6 +75,13 @@ export function LogPanel() {
 
   return (
     <div>
+      {tripWater && (
+        <>
+          <TripBar water={tripWater} />
+          <QuickCatch water={tripWater} />
+        </>
+      )}
+      <CrcCard userId={who === 'all' ? me : who} />
       <div className="controls">
         <div className="pill-row">
           <button type="button" className={`profile-pill${who === 'all' ? ' on' : ''}`} onClick={() => setWho('all')} aria-pressed={who === 'all'}>All</button>

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { kvDel } from '@/lib/db';
-import { fetchRules, fetchPlants, fetchEscapement, fetchCoast, type Rule, type Plant, type Escapement, type Coast } from '@/api/feeds';
+import { fetchRules, fetchPlants, fetchEscapement, fetchCoast, fetchRiverFeed, type Rule, type Plant, type Escapement, type Coast, type RiverFeed } from '@/api/feeds';
 
 type Status = 'idle' | 'loading' | 'ok' | 'err';
 
@@ -13,7 +13,10 @@ interface FeedsState {
   escStatus: Status;
   coast: Coast | null;
   coastStatus: Status;
+  river: RiverFeed | null;
+  riverStatus: Status;
   loadCoast: (force?: boolean) => Promise<void>;
+  loadRiver: (force?: boolean) => Promise<void>;
   loadRules: () => Promise<void>;
   loadPlants: () => Promise<void>;
   loadEscapement: () => Promise<void>;
@@ -26,6 +29,13 @@ export const useFeeds = create<FeedsState>((set, get) => ({
   plants: [], plantsStatus: 'idle',
   escapement: null, escStatus: 'idle',
   coast: null, coastStatus: 'idle',
+  river: null, riverStatus: 'idle',
+  loadRiver: async (force) => {
+    if (get().riverStatus === 'loading') return;
+    if (force) await kvDel('feed:river');
+    set({ riverStatus: 'loading' });
+    try { set({ river: await fetchRiverFeed(), riverStatus: 'ok' }); } catch { set({ riverStatus: 'err' }); }
+  },
   loadCoast: async (force) => {
     if (get().coastStatus === 'loading') return;
     if (force) await kvDel('feed:coast');

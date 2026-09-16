@@ -12,6 +12,7 @@ import { useFeeds } from '@/store/feeds';
 import { useFeedLoads, RulesList } from '@/features/feeds/FeedBits';
 import { InstallGuide } from '@/features/more/Install';
 import { AlertsSection } from '@/features/more/Alerts';
+import { Invites } from '@/features/more/Invites';
 
 type RuleWater = 'all' | 'river' | 'lake' | 'salt';
 
@@ -183,6 +184,7 @@ export function MorePanel() {
         <InstallGuide />
       </div>
 
+      <Invites />
       <AlertsSection />
     </div>
   );

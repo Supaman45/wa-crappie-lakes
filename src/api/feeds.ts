@@ -66,6 +66,9 @@ export interface RazorDig { text: string; copalis: boolean; mocrocks: boolean }
 export interface CoastNews { id: string; title: string; link: string; published: string | null; summary: string; north: boolean; razor: boolean }
 export interface CityNews { title: string; link: string; date: string | null; beach: boolean }
 export interface CityAlert { title: string; date: string | null; text: string; link: string; beach: boolean }
+export interface Filing { file: string; url: string; title: string; posted: string | null; river: boolean; species: string | null }
+export interface RiverFeed { fetched: string; source: string; count: number; filings: Filing[]; error?: string }
+
 export interface Coast {
   fetched: string;
   razor: { url: string; headline: string | null; posted: string | null; window: string | null; digs: RazorDig[]; allDigs: number; notes: string[]; error?: string };
@@ -74,6 +77,7 @@ export interface Coast {
 }
 
 const RULES_TTL = 30 * 60 * 1000;
+const RIVER_TTL = 60 * 60 * 1000;
 const COAST_TTL = 30 * 60 * 1000;
 const PLANTS_TTL = 60 * 60 * 1000;
 const ESC_TTL = 6 * 60 * 60 * 1000;
@@ -110,6 +114,11 @@ export async function fetchEscapement(signal?: AbortSignal): Promise<Escapement>
 /** Coast Watch: razor clam digs, WDFW coast news, Ocean Shores city notices. */
 export async function fetchCoast(signal?: AbortSignal): Promise<Coast> {
   return getJson<Coast>('/api/coast', 'feed:coast', COAST_TTL, signal);
+}
+
+/** River Watch: the tribe's filings page, so the card can flag a filing it has not seen. */
+export async function fetchRiverFeed(signal?: AbortSignal): Promise<RiverFeed> {
+  return getJson<RiverFeed>('/api/river', 'feed:river', RIVER_TTL, signal);
 }
 
 /* ---------- matching helpers ---------- */

@@ -28,6 +28,9 @@ export interface Launch {
   lat: number;
   lng: number;
   dist?: number;
+  /** Set on curated ramps that WDFW does not list (city, county, state park, utility). */
+  operator?: string;
+  note?: string;
 }
 
 export interface Profile {
@@ -57,7 +60,40 @@ export interface Catch {
   water_type: WaterType;
   spot_id: string | null;
   created_at: string;
+  /** Trip this fish belongs to, when it was logged during a live trip. */
+  trip_id?: string | null;
+  /** Clock time of the catch. `date` stays the calendar day. */
+  caught_at?: string | null;
+  /** Conditions at the moment it was logged, so patterns survive forecast churn. */
+  cond?: Conditions | null;
+  /** Kept or released. Only kept salmon and steelhead go on a Catch Record Card. */
+  kept?: boolean | null;
+  /** Adipose clipped, meaning hatchery. Null when not checked or not applicable. */
+  clipped?: boolean | null;
+  /** WDFW catch area code written on the card. */
+  catch_area?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  /** Off by default: the crew sees the water, not the pin. */
+  share_spot?: boolean;
   _local?: boolean;
+}
+
+/** A snapshot of what the day was doing, taken when a fish or trip is logged. */
+export interface Conditions {
+  at: string;
+  airF?: number | null;
+  windMph?: number | null;
+  windDir?: number | null;
+  pressure?: number | null;
+  /** Pressure change over the last 3 hours, mb. The number that moves fish. */
+  pressureTrend?: number | null;
+  cloud?: number | null;
+  precip?: number | null;
+  moonIllum?: number | null;
+  /** cfs for a river, when the water has a gauge. */
+  cfs?: number | null;
+  waterF?: number | null;
 }
 
 export interface Visit {
@@ -96,6 +132,14 @@ export interface Trip {
   catch_ids: string[] | null;
   note: string | null;
   created_at: string | null;
+  /** The water fished, so a trip stands on its own without walking its catches. */
+  water_id?: string | null;
+  water_name?: string | null;
+  water_type?: WaterType | null;
+  spot_id?: string | null;
+  cond?: Conditions | null;
+  /** True while the trip is running on the phone. */
+  open?: boolean;
   _local?: boolean;
 }
 

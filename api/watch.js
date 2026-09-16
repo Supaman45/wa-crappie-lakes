@@ -1,5 +1,6 @@
 import { json, fail, getText } from './_util.js';
 import { collect } from './coast.js';
+import { collectRiver } from './river.js';
 import { parseRss } from './rules.js';
 import { pushReady, missingEnv, admin, sendToAll } from './_push.js';
 
@@ -10,6 +11,21 @@ import { pushReady, missingEnv, admin, sendToAll } from './_push.js';
  * day and three days ahead.
  */
 const RULES_RSS = 'https://wdfw.wa.gov/fishing/regulations/emergency-rules/rss';
+const RIVER_RULE_RE = /puyallup|white river|stuck river|carbon river/i;
+/** Filings the shipped net windows were read from. Keep in step with src/domain/river.ts. */
+const KNOWN_FILINGS = new Set(['Coho-2nd.pdf', 'Chinook-2nd-Opening.pdf', 'Chinook-1st-2026.pdf', '2026-2027-Annual-Fishing-Regulations.pdf']);
+const READ_ON = '2026-09-16';
+
+/**
+ * The filings page keeps several seasons of archive, so a filing is only news when it was posted
+ * on or after the day the shipped windows were read, or when it sits above every known filing in
+ * the page's reverse-chronological order.
+ */
+function newFilings(list) {
+  const idx = list.reduce((min, f, i) => (KNOWN_FILINGS.has(f.file) && i < min ? i : min), Number.MAX_SAFE_INTEGER);
+  return list.filter((f, i) => f.river && !KNOWN_FILINGS.has(f.file) && ((f.posted && f.posted >= READ_ON) || i < idx));
+}
+
 const COAST_RULE_RE = /razor clam|copalis|mocrocks|ocean shores|grays harbor|marine area 2\b|marine area 2-|north beach|ocean city|moclips|pacific beach|surf ?perch|westport|coastal|domoic|point brown|damon point|north jetty|humptulips|quinault|hoquiam|wynoochee|satsop|chehalis river/i;
 
 /** Today's date parts in Pacific time. */
@@ -54,9 +70,18 @@ export default async function handler(req, res) {
     if (secret && auth !== `Bearer ${secret}` && !dry) return fail(res, new Error('unauthorized'), 401);
     if (!pushReady()) return json(res, { ok: false, missing: missingEnv() }, 0);
 
-    const [coast, rulesXml] = await Promise.all([collect(), getText(RULES_RSS).catch(() => '')]);
-    const rules = parseRss(rulesXml).filter(r => COAST_RULE_RE.test(`${r.title} ${r.location} ${r.species}`) || r.counties.includes('Grays Harbor'));
-    const items = idsOf(coast, rules);
+    const [coast, rulesXml, river] = await Promise.all([
+      collect(),
+      getText(RULES_RSS).catch(() => ''),
+      collectRiver().catch(() => ({ filings: [] })),
+    ]);
+    const allRules = parseRss(rulesXml);
+    const rules = allRules.filter(r => COAST_RULE_RE.test(`${r.title} ${r.location} ${r.species}`) || r.counties.includes('Grays Harbor'));
+    const riverRules = allRules.filter(r => RIVER_RULE_RE.test(`${r.title} ${r.location}`) || r.counties.includes('Pierce'));
+    const freshFilings = newFilings(river.filings || []);
+    const items = idsOf(coast, rules)
+      .concat(freshFilings.map(f => ({ id: 'filing:' + f.file, title: f.title, kind: 'Puyallup Tribe filing' })))
+      .concat(riverRules.map(r => ({ id: 'rrule:' + r.id, title: r.title, kind: 'Emergency rule, Puyallup' })));
     const db = admin();
     const { data: prev } = await db.from('watch_state').select('*').eq('key', 'coast').maybeSingle();
     const seen = new Set(prev?.payload?.ids || []);
@@ -64,9 +89,15 @@ export default async function handler(req, res) {
     const drive = driveAlert();
 
     const notes = [];
-    if (fresh.length) {
-      const top = fresh.slice(0, 3).map(i => `${i.kind}: ${i.title}`).join('\n');
-      notes.push({ title: fresh.length === 1 ? 'Coast Watch: 1 update' : `Coast Watch: ${fresh.length} updates`, body: top, url: '/#plan', tag: 'wff-coast' });
+    const freshRiver = fresh.filter(i => i.id.startsWith('filing:') || i.id.startsWith('rrule:'));
+    const freshCoast = fresh.filter(i => !freshRiver.includes(i));
+    if (freshCoast.length) {
+      const top = freshCoast.slice(0, 3).map(i => `${i.kind}: ${i.title}`).join('\n');
+      notes.push({ title: freshCoast.length === 1 ? 'Coast Watch: 1 update' : `Coast Watch: ${freshCoast.length} updates`, body: top, url: '/#plan', tag: 'wff-coast' });
+    }
+    if (freshRiver.length) {
+      const top = freshRiver.slice(0, 3).map(i => `${i.kind}: ${i.title}`).join('\n');
+      notes.push({ title: 'River Watch: the Puyallup schedule may have moved', body: top, url: '/#plan', tag: 'wff-river' });
     }
     if (drive) notes.push({ ...drive, url: '/#plan', tag: 'wff-drive' });
 
@@ -80,6 +111,6 @@ export default async function handler(req, res) {
       const merged = Array.from(new Set([...(prev?.payload?.ids || []), ...items.map(i => i.id)])).slice(-600);
       await db.from('watch_state').upsert({ key: 'coast', hash: String(items.length), payload: { ids: merged, at: new Date().toISOString() }, updated_at: new Date().toISOString() });
     }
-    json(res, { ok: true, dry, firstRun: !prev, items: items.length, fresh: fresh.map(i => i.id), notes, sent }, 0);
+    json(res, { ok: true, dry, firstRun: !prev, items: items.length, filings: (river.filings || []).length, fresh: fresh.map(i => i.id), notes, sent }, 0);
   } catch (e) { fail(res, e); }
 }
