@@ -12,7 +12,7 @@ import { boatFit } from '@/domain/boatFit';
 import { solunarSummary } from '@/domain/scoring';
 import { InstallBanner } from '@/features/more/Install';
 import { lakeSub } from '@/domain/journal';
-import { haversine } from '@/lib/util';
+import { haversine, scoreColor } from '@/lib/util';
 import { resolveZip, geocodePlace, locateMe } from '@/api/geocode';
 import { Chip, Icon, Empty } from '@/components/ui';
 
@@ -62,6 +62,7 @@ export function LakesPanel() {
   const [place, setPlace] = useState('');
   const [showFilters, setShowFilters] = useState(() => !isMobile());
   const [locating, setLocating] = useState(false);
+  const [browse, setBrowse] = useState(false);
 
   const me = currentUserId();
 
@@ -130,6 +131,38 @@ export function LakesPanel() {
 
   const sol = useMemo(() => solunarSummary(new Date()), []);
 
+  const HOMEPT = { lat: 47.171, lng: -122.518 };
+  const picks = useMemo(() => {
+    const o = origin || HOMEPT;
+    const scored = LAKES
+      .filter(l => l.kind !== 'high')
+      .map(l => {
+        const t = me ? tags[tagKey(me, l.slug)] : undefined;
+        if (t?.cat === 'Skip' || t?.cat === 'Crowded') return null;
+        const st = index[l.slug];
+        const launch = launches[l.slug];
+        const d = haversine(o.lat, o.lng, l.lat, l.lng);
+        if (d > 80) return null;
+        let s = 38;
+        const why: string[] = [];
+        const c = st?.catches || 0;
+        if (c > 0) { s += Math.min(24, c * 4); why.push(`${c} crew catches`); }
+        if (t?.cat === 'Producer' || t?.cat === 'Honey hole') { s += 14; why.push(t.cat); }
+        else if (t?.wish) { s += 5; why.push('wish list'); }
+        const fit = boatFit(l, launch);
+        if (fit.fit === 'big') { s += 8; why.push('fits the 17 ft'); }
+        else if (launch || l.ramp) { s += 4; why.push('ramp'); }
+        s += Math.max(0, 22 - d * 0.55);
+        return { l, s: Math.min(97, Math.round(s)), why: why.slice(0, 2), d };
+      })
+      .filter((x): x is NonNullable<typeof x> => !!x)
+      .sort((a, b) => b.s - a.s || a.d - b.d);
+    return scored.slice(0, 6);
+  }, [origin, tags, index, launches, me]);
+
+  const homeMode = !browse && !anyFilter && picks.length > 0;
+  const heroDate = new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+
   return (
     <>
       <InstallBanner />
@@ -137,6 +170,38 @@ export function LakesPanel() {
         <h2>Lakes</h2>
         <div className="rd">Bite window<b>{sol.majors[0]}</b></div>
       </div>
+      {homeMode && (
+        <>
+          <div className="controls" style={{ paddingTop: 6, paddingBottom: 0 }}>
+            <input className="input" type="search" placeholder={`Search ${LAKES.length.toLocaleString()} lakes or a county`} value={q} onChange={e => setQ(e.target.value)} autoComplete="off" aria-label="Search lakes" />
+          </div>
+          <button type="button" className="hero" onClick={() => pick(picks[0].l)}>
+            <div className="hd">{heroDate} &middot; bite window {sol.majors[0]} &middot; moon {sol.illum}%</div>
+            <div className="hrow"><span className="hnm">Best shot: {picks[0].l.name}</span><span className="hsc">{picks[0].s}</span></div>
+            <div className="hm">{[picks[0].d < 100 ? `${picks[0].d < 10 ? picks[0].d.toFixed(1) : Math.round(picks[0].d)} mi` : '', ...picks[0].why, 'tap to open'].filter(Boolean).join(' · ')}</div>
+          </button>
+          <div className="homefive">
+            {picks.slice(1, 6).map(x => (
+              <button key={x.l.id} type="button" className="prow" onClick={() => pick(x.l)}>
+                <span className="pscore" style={{ color: scoreColor(x.s), borderColor: scoreColor(x.s) }}>{x.s}</span>
+                <span style={{ minWidth: 0 }}>
+                  <span className="pname" style={{ display: 'block' }}>{x.l.name}</span>
+                  <span className="pwhy" style={{ display: 'block' }}>{[`${x.d < 10 ? x.d.toFixed(1) : Math.round(x.d)} mi`, ...x.why].join(' · ')}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn browseall" onClick={() => setBrowse(true)}>Browse all lakes &middot; A to Z &middot; filters</button>
+          {!origin && <div className="note" style={{ marginTop: 8, textAlign: 'center' }}>Ranked from Lakewood. Set a start point in Browse for your day.</div>}
+        </>
+      )}
+      {!homeMode && (
+      <>
+      {!anyFilter && (
+        <div className="row" style={{ paddingTop: 8 }}>
+          <button type="button" className="btn sm ghost" onClick={() => setBrowse(false)}><Icon name="close" size={14} />Today view</button>
+        </div>
+      )}
       <div className="controls" style={{ paddingTop: 6 }}>
         <input className="input" type="search" placeholder="Search lake or county" value={q} onChange={e => setQ(e.target.value)} autoComplete="off" aria-label="Search lakes" />
         <div className="row filter-toggle">
@@ -246,6 +311,8 @@ export function LakesPanel() {
           );
         })}
       </div>
+      </>
+      )}
     </>
   );
 }

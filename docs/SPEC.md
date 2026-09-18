@@ -353,3 +353,15 @@ The Add to Home Screen card told people to open wa-crappie-lakes.vercel.app, whi
 - Rate limiting on `invite_is_valid` is whatever Supabase gives the anon role by default. The code space is large enough that this is not a practical concern at this scale, but it is not hardened against a determined attacker.
 - Revoking a code does not remove an account already created with it. Delete the user in Supabase for that.
 - The repo, the Vercel project and the Supabase project are all still named wa-crappie-lakes. Cosmetic, and renaming the Vercel project would change the vercel.app URL, so it was left alone.
+
+## v3.10.0: Harbor Light (Sept 18, 2026)
+
+Seri drove a design sprint from his phone through four artifact iterations and locked this package: the app leaves the dark Sonar skin for "Harbor Light", a daylight marine theme picked over Glass Bridge, Slate Console and Sand & Surf.
+
+- Tokens only where possible: src/styles/app.css :root swaps to light values (ground #EAF1F5, white panels, ink #0F2A3C, orange readouts #D97A00, action #F07300, hero gradient #0E5F82 to #0A7FA8), radius up to 14/10, card shadows on items and score rows, color-scheme light. Species colors darkened one step for white ground. Map canvas and Leaflet chrome lightened. The lake-sheet sonar strip stays dark on purpose: an instrument screen inside a daylight UI.
+- Island dock: the mobile bottom nav floats as a rounded bar with a raised orange center button that opens Log (one thumb from QuickCatch anywhere). Tabs around the island: Lakes, Creeks, Plan, More. Desktop tab rail unchanged.
+- Weather widget (src/components/Wx.tsx) top right of the header: condition icon, temperature, wind, barometer in inHg with a 4-hour trend arrow, from open-meteo current conditions at the origin (Lakewood fallback), refreshed every 30 minutes, hidden entirely on fetch failure. Tap opens Plan.
+- Top Five home: with no search or filter active the Lakes tab opens on a Today hero (date, solunar bite window, moon, the single best pick with score) and five ranked rows, each carrying its reasons (crew catches, Producer or Honey hole tag, fits the 17 ft, distance). Ranking is offline: crew history plus tags plus boat fit plus proximity, no network. Skip and Crowded tags exclude a lake, hike-ins excluded, 80 mi radius. "Browse all lakes" opens the full search, filters, and list exactly as before; any search or filter also lands there, and "Today view" returns.
+- Opening animation: cold-start splash on the hero gradient (fish logo draws, name rises, sonar ring pulses) then header, panel, and dock cascade in. Once per session via sessionStorage, skipped under prefers-reduced-motion.
+
+Known limits: home ranking is crew-data driven, so a fresh account sees proximity-ranked picks until catches and tags accumulate. The header widget shows origin weather, not per-lake weather (Plan keeps that).
