@@ -372,3 +372,15 @@ textarea.input { min-height: 72px; resize: vertical; }
   .splash { display: none; }
   .app.cascade .hdr, .app.cascade .tabs, .app.cascade .panel-scroll, .app.cascade .bottomnav, .app.cascade .mapwrap { opacity: 1; animation: none; }
 }
+
+/* ---- v3.11 Log a fish from the center button ---- */
+.logstart { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--card-shadow); padding: 13px 13px 12px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.ls-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ls-k { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--water); }
+.ls-w { font-family: var(--font-display); font-weight: 700; font-size: 19px; text-transform: uppercase; letter-spacing: .02em; line-height: 1.15; }
+.ls-row { display: flex; flex-wrap: wrap; gap: 7px; }
+.ls-chip { display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-raised); min-height: 44px; max-width: 100%; }
+.ls-chip b { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: .02em; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.ls-chip small { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+.ls-chip:active { border-color: var(--hot); background: rgba(240,115,0,.08); }
+.installbar .note { overflow-wrap: anywhere; }

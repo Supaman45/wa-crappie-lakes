@@ -10,6 +10,7 @@ import { toast } from '@/lib/toast';
 import { localDateStr, waterName } from './TripSheet';
 import { QuickCatch, TripBar, type QuickWater } from './QuickCatch';
 import { CrcCard } from './CrcCard';
+import { WaterPick } from './WaterPick';
 import { useTrip } from '@/store/trip';
 import { currentUserId } from '@/store/data';
 
@@ -75,13 +76,12 @@ export function LogPanel() {
 
   return (
     <div>
-      {tripWater && (
+      {tripWater ? (
         <>
           <TripBar water={tripWater} />
           <QuickCatch water={tripWater} />
         </>
-      )}
-      <CrcCard userId={who === 'all' ? me : who} />
+      ) : <WaterPick />}
       <div className="controls">
         <div className="pill-row">
           <button type="button" className={`profile-pill${who === 'all' ? ' on' : ''}`} onClick={() => setWho('all')} aria-pressed={who === 'all'}>All</button>
@@ -131,7 +131,7 @@ export function LogPanel() {
               );
             })}
           </div>
-        ) : <Empty>No catches yet. Open a lake or spot and tap Log a catch.</Empty>}
+        ) : <Empty>No catches yet. Pick your water above and tap the species.</Empty>}
       </div>
 
       <div className="section">
@@ -198,6 +198,10 @@ export function LogPanel() {
             })}
           </div>
         ) : <Empty>No trips yet. Tap Start trip on the map to record one.</Empty>}
+      </div>
+
+      <div className="section">
+        <CrcCard userId={who === 'all' ? me : who} />
       </div>
 
       <div className="section">

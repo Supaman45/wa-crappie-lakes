@@ -63,10 +63,10 @@ export function InstallBanner() {
   const [mobile] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches);
   if (hide || !mobile) return null;
   return (
-    <div className="item" style={{ gridTemplateColumns: '1fr auto', cursor: 'default', marginTop: 8, borderColor: 'rgba(255,138,31,.4)' }}>
-      <div>
+    <div className="item installbar" style={{ gridTemplateColumns: 'minmax(0, 1fr) auto', cursor: 'default', marginTop: 8, borderColor: 'rgba(240,115,0,.35)' }}>
+      <div style={{ minWidth: 0 }}>
         <div className="nm" style={{ fontSize: 14 }}>Put it on your home screen</div>
-        <div className="sub">One tap to open, full screen, works at the lake with no signal.</div>
+        <div className="sub" style={{ whiteSpace: 'normal' }}>One tap to open, full screen, works at the lake with no signal.</div>
         <div style={{ marginTop: 8 }}><InstallGuide compact /></div>
       </div>
       <button className="iconbtn" aria-label="Dismiss" onClick={() => { lsSet('wff-install-dismissed', '1'); setHide(true); }}><Icon name="close" /></button>

@@ -365,3 +365,27 @@ Seri drove a design sprint from his phone through four artifact iterations and l
 - Opening animation: cold-start splash on the hero gradient (fish logo draws, name rises, sonar ring pulses) then header, panel, and dock cascade in. Once per session via sessionStorage, skipped under prefers-reduced-motion.
 
 Known limits: home ranking is crew-data driven, so a fresh account sees proximity-ranked picks until catches and tags accumulate. The header widget shows origin weather, not per-lake weather (Plan keeps that).
+
+
+## v3.11.0: audit pass, log from anywhere, direct deploys (Nov 5, 2026)
+
+An audit of code, database and deploys, worked in three rounds. Usage data drove the priority: two months after v3.8.0 rebuilt logging around one tap, the database held 1 catch, 3 visits and 2 trips.
+
+Round 1, defects and security:
+- RiversPlan guarded against an escapement body with no latest block (open since v3.7.0).
+- Migration audit_nov2026_rls_perf_and_grants: API execute revoked on trigger-only functions enforce_invite and handle_new_user (invite gate re-verified firing on a bad code), 17 RLS policies rewritten to (select auth.uid()), indexes on catches, trips and visits spot_id, watch_state documented as service-role only.
+
+Round 2, organization, storage and performance:
+- .gitignore added. Nine stray root files and scripts/fetch-src.mjs removed. ensure-assets only verifies required files.
+- Tabs other than Lakes and every sheet except the lake sheet lazy-load. Vendor libraries split into react, supabase, map and storage chunks. Main chunk 1,219 KB to 435 KB; every chunk still precached for offline.
+- Manifest, theme-color and boot screen moved from Sonar black to Harbor blue so the phone status bar matches.
+- CLAUDE.md documents the workflow: Claude pushes to main, Vercel promotes only passing builds.
+
+Round 3, UX:
+- The center Log button opened on the Catch Record Card and offered no way to log a fish without a running trip. Log now opens on "Where are you?" (src/features/log/WaterPick.tsx): your recent waters, the five closest lakes to your start point (Lakewood fallback), Near me, and search. Pick a lake and the QuickCatch species chips appear with Start a trip here. Three taps from any screen: plus, lake, species.
+- Catch Record Card mirror moved below the stats.
+- Install banner no longer overflows the screen edge, so its dismiss button is reachable.
+
+Verified by rendering the production build at 390 by 844 with offline sign-in: Lakes, Log, picker to species flow, Plan and More, zero page errors.
+
+Known limits: rivers and creeks still log from their own sheets, not the picker. Leaked-password protection in Supabase Auth is off and needs the dashboard toggle.
