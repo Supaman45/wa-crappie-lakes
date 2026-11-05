@@ -4,6 +4,7 @@ import { fmtDate, lsGet, lsSet, dirUrl, dirUrlQ } from '@/lib/util';
 import { useFeeds } from '@/store/feeds';
 import { useUI } from '@/store/ui';
 import { SEGMENTS, OPEN_STRIPS, APPROACHES, driveStatus, segmentClosed, coastRules, approachWay } from '@/domain/coast';
+import { BeachMap } from './BeachMap';
 import { RuleCard, useFeedLoads } from '@/features/feeds/FeedBits';
 import { Icon } from '@/components/ui';
 
@@ -47,6 +48,8 @@ export function CoastWatch() {
   const [showOpen, setShowOpen] = useState(false);
   const [showSegs, setShowSegs] = useState<boolean | null>(null);
   const [approachId, setApproachId] = useState(() => lsGet(APPROACH_KEY) || 'heath');
+  const [showMap, setShowMap] = useState(() => lsGet('wff-coast-map') === '1');
+  const toggleMap = () => setShowMap(v => { lsSet('wff-coast-map', v ? '0' : '1'); return !v; });
   const approach = APPROACHES.find(a => a.id === approachId) || APPROACHES.find(a => a.id === 'heath')!;
 
   useEffect(() => { if (useFeeds.getState().coastStatus === 'idle') loadCoast(); }, [loadCoast]);
@@ -106,6 +109,8 @@ export function CoastWatch() {
             </div>
           </div>
         ); })()}
+        <button type="button" className={`btn sm${showMap ? ' primary' : ''}`} style={{ marginTop: 10 }} onClick={toggleMap} aria-expanded={showMap}><Icon name="map" size={14} />{showMap ? 'Hide beach map' : 'Beach map: open and closed sand'}</button>
+        {showMap && <BeachMap focus={approach.id} />}
         {!(showSegs ?? st.closed) && <button type="button" className="btn sm ghost" style={{ marginTop: 8 }} onClick={() => setShowSegs(true)}>Show the {SEGMENTS.length} segments</button>}
         {(showSegs ?? st.closed) && <div className="list" style={{ marginTop: 8 }}>
           {SEGMENTS.map(s => {

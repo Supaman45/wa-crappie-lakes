@@ -384,3 +384,30 @@ textarea.input { min-height: 72px; resize: vertical; }
 .ls-chip small { font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
 .ls-chip:active { border-color: var(--hot); background: rgba(240,115,0,.08); }
 .installbar .note { overflow-wrap: anywhere; }
+
+/* ---- v3.12 North Beach driving map ---- */
+.beachmap { margin-top: 10px; }
+.bm-map { height: 380px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); background: #dbe5ea; }
+@media (max-width: 760px) { .bm-map { height: 62vh; max-height: 520px; } }
+.bm-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 8px 0 4px; font-family: var(--font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.bm-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bm-legend i { width: 18px; height: 6px; border-radius: 3px; display: inline-block; }
+.bm-legend i.dash { background-image: repeating-linear-gradient(90deg, transparent 0 4px, #fff 4px 6px) !important; background-color: #64798a; }
+.bm-legend i.pin { width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2.5px #0e5f82; }
+.bm-pop { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-body); font-size: 13px; line-height: 1.4; }
+.bm-pop b { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .02em; font-size: 14px; }
+.bm-state { font-weight: 600; }
+.bm-state.drive { color: var(--green); } .bm-state.closed { color: var(--red); } .bm-state.foot { color: var(--muted); }
+.bm-note { color: var(--muted); font-size: 12px; }
+.bm-k { font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--water); margin-top: 2px; }
+.bm-ap { display: flex; flex-direction: column; gap: 4px; }
+.bm-ap > span { font-weight: 600; }
+.bm-nav { display: flex; gap: 6px; }
+.bm-btn { flex: 1; text-align: center; padding: 8px 10px; border-radius: 8px; background: var(--panel-raised); border: 1px solid var(--line); color: var(--ink) !important; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; text-decoration: none; min-height: 36px; }
+.bm-btn.waze { background: #33ccff; border-color: #33ccff; color: #0b2230 !important; }
+.beachmap .seg { display: flex; gap: 4px; padding: 3px; background: var(--panel-raised); border: 1px solid var(--line); border-radius: 999px; margin-bottom: 8px; }
+.beachmap .seg button { flex: 1; padding: 8px 6px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); min-height: 36px; }
+.beachmap .seg button.on { background: var(--water-deep); color: #fff; }
+.leaflet-tooltip.bm-label { background: rgba(255,255,255,.92); border: 0; box-shadow: 0 1px 4px rgba(15,42,60,.25); color: #0f2a3c; font: 600 10.5px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .03em; padding: 3px 6px; border-radius: 6px; }
+.leaflet-tooltip.bm-label::before { display: none; }
+.bm-far .leaflet-tooltip.bm-label { display: none; }

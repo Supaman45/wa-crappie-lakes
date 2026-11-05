@@ -389,3 +389,16 @@ Round 3, UX:
 Verified by rendering the production build at 390 by 844 with offline sign-in: Lakes, Log, picker to species flow, Plan and More, zero page errors.
 
 Known limits: rivers and creeks still log from their own sheets, not the picker. Leaked-password protection in Supabase Auth is off and needs the dashboard toggle.
+
+
+## v3.12.0: North Beach driving map (Nov 5, 2026)
+
+The build scoped in September: Coast Watch gains a "Beach map: open and closed sand" button that opens a satellite map of North Beach, Ocean Shores to the Quinault line, with every WAC 352-37-060 stretch drawn as a band on the sand.
+
+- Green: drive today. Red: closed to vehicles this season. Grey dashed: closed to vehicles all year, walk in (Benner Gap to the Copalis River, Griffiths-Priday). Colors come from the same driveStatus() as the card, so the map recolors on April 15 and the morning after the day after Labor Day, offline, with no deploy. Checked across six dates through the 2027 season.
+- Tap a band: its name, what it means today, when it flips, and the approaches on either side with Waze and Google Maps buttons. Tap an approach pin for the same buttons. Approach names show from zoom 13 in so they do not pile up at whole-beach zoom.
+- Opens on your chosen approach (Heath Rd by default) with a Your approach / Whole beach switch. The open-or-closed choice is remembered per device (wff-coast-map).
+- Geometry in src/domain/coastMap.ts: 13 bands that tile 21.8 miles of beach edge to edge. Boundaries are the rule text, re-read from the current WAC on Nov 5. Points: approach ends from OSM moved about 350 m seaward to the sand; North Jetty, Copalis Rock and the Boone Creek mouth from USGS GNIS; the Copalis River mouth from OSM. Two independent checks: the Ocean City stretch measures 1.80 mi against the rule's 1.8, and Griffiths-Priday 1.84 mi against the 1.83 measured in v3.6.3.
+- Popups are built as DOM nodes, never innerHTML.
+
+Known limits: the Ocean City approach and the Quinault line are approximate (no surveyed point; the popup says so and points to the posted signs). The band follows a smoothed beach line, not the tide line. Satellite tiles need signal the first time an area is viewed; the bands, colors and links work without it.
