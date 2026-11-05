@@ -18,8 +18,8 @@ export default defineConfig({
         id: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#06101a',
-        theme_color: '#06101a',
+        background_color: '#eaf1f5',
+        theme_color: '#0e5f82',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -54,5 +54,20 @@ export default defineConfig({
   ],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-  build: { target: 'es2022', sourcemap: false },
+  build: {
+    target: 'es2022',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Libraries change rarely, so they get their own long-cached chunks
+        // and a deploy only re-downloads the app code that changed.
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+          map: ['leaflet', 'leaflet.markercluster'],
+          storage: ['dexie', 'zustand'],
+        },
+      },
+    },
+  },
 });

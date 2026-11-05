@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuth } from '@/store/auth';
 import { useData } from '@/store/data';
 import { useUI, type Tab } from '@/store/ui';
@@ -10,17 +10,22 @@ import { Gate } from '@/features/auth/Gate';
 import { MapView } from '@/features/map/MapView';
 import { TripControl } from '@/features/trip/TripControl';
 import { LakesPanel } from '@/features/lakes/LakesPanel';
-import { CreeksPanel } from '@/features/creeks/CreeksPanel';
-import { PlanPanel } from '@/features/plan/PlanPanel';
-import { LogPanel } from '@/features/log/LogPanel';
-import { MorePanel } from '@/features/more/MorePanel';
 import { LakeSheet } from '@/features/lakes/LakeSheet';
-import { CatchSheet } from '@/features/log/CatchSheet';
-import { CatchView } from '@/features/log/CatchView';
-import { TripSheet } from '@/features/log/TripSheet';
-import { StreamSheet } from '@/features/creeks/StreamSheet';
-import { SpotSheet } from '@/features/creeks/SpotSheet';
-import { ProfileSheet } from '@/features/more/ProfileSheet';
+
+// Tabs and sheets beyond the Lakes home load on first use, so a cold start
+// only parses what the first screen needs.
+const CreeksPanel = lazy(() => import('@/features/creeks/CreeksPanel').then(m => ({ default: m.CreeksPanel })));
+const PlanPanel = lazy(() => import('@/features/plan/PlanPanel').then(m => ({ default: m.PlanPanel })));
+const LogPanel = lazy(() => import('@/features/log/LogPanel').then(m => ({ default: m.LogPanel })));
+const MorePanel = lazy(() => import('@/features/more/MorePanel').then(m => ({ default: m.MorePanel })));
+const CatchSheet = lazy(() => import('@/features/log/CatchSheet').then(m => ({ default: m.CatchSheet })));
+const CatchView = lazy(() => import('@/features/log/CatchView').then(m => ({ default: m.CatchView })));
+const TripSheet = lazy(() => import('@/features/log/TripSheet').then(m => ({ default: m.TripSheet })));
+const StreamSheet = lazy(() => import('@/features/creeks/StreamSheet').then(m => ({ default: m.StreamSheet })));
+const SpotSheet = lazy(() => import('@/features/creeks/SpotSheet').then(m => ({ default: m.SpotSheet })));
+const ProfileSheet = lazy(() => import('@/features/more/ProfileSheet').then(m => ({ default: m.ProfileSheet })));
+
+const PaneLoading = () => <div className="empty"><span className="spinner" /></div>;
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'lakes', label: 'Lakes', icon: 'map' },
@@ -75,6 +80,10 @@ function Splash() {
 function Sheets() {
   const sheet = useUI(s => s.sheet);
   if (!sheet) return null;
+  return <Suspense fallback={null}>{sheetFor(sheet)}</Suspense>;
+}
+
+function sheetFor(sheet: NonNullable<ReturnType<typeof useUI.getState>['sheet']>) {
   switch (sheet.kind) {
     case 'lake': return <LakeSheet lake={sheet.lake} />;
     case 'catch': return <CatchSheet lakeId={sheet.lakeId} lakeName={sheet.lakeName} waterType={sheet.waterType} spotId={sheet.spotId ?? null} />;
@@ -143,10 +152,12 @@ export default function App() {
         <TabBar className="tabs" />
         <div className="panel-scroll">
           {tab === 'lakes' && <LakesPanel />}
-          {tab === 'creeks' && <CreeksPanel />}
-          {tab === 'plan' && <PlanPanel />}
-          {tab === 'log' && <LogPanel />}
-          {tab === 'more' && <MorePanel />}
+          <Suspense fallback={<PaneLoading />}>
+            {tab === 'creeks' && <CreeksPanel />}
+            {tab === 'plan' && <PlanPanel />}
+            {tab === 'log' && <LogPanel />}
+            {tab === 'more' && <MorePanel />}
+          </Suspense>
         </div>
       </aside>
       <div className="mapwrap">
