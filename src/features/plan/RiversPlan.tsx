@@ -69,7 +69,7 @@ export function RiversPlan() {
 
   const escByFacility = useMemo(() => {
     const m: Record<string, { species: string; row: EscapementRow }[]> = {};
-    for (const s of esc?.latest.species || []) for (const r of s.rows) (m[r.facility] ||= []).push({ species: s.species, row: r });
+    for (const s of esc?.latest?.species || []) for (const r of s.rows || []) (m[r.facility] ||= []).push({ species: s.species, row: r });
     return m;
   }, [esc]);
 
@@ -109,7 +109,7 @@ export function RiversPlan() {
           {escStatus === 'err' && <> Hatchery report did not load.</>}
           {rulesStatus === 'err' && <> Emergency rules did not load.</>}
         </div>
-        {esc?.latest.reportDate && <div className="meta"><span>Hatchery report for week of {esc.latest.reportDate}</span><a href={esc.latest.url} target="_blank" rel="noopener">PDF</a></div>}
+        {esc?.latest?.reportDate && <div className="meta"><span>Hatchery report for week of {esc.latest.reportDate}</span><a href={esc.latest.url} target="_blank" rel="noopener">PDF</a></div>}
         {!list.length && <Empty>No rivers in this region.</Empty>}
         <div className="list">
           {list.map(({ r, g, d, escs, rules: rr }) => {
