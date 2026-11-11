@@ -12,7 +12,7 @@ import { boatFit } from '@/domain/boatFit';
 import { solunarSummary } from '@/domain/scoring';
 import { InstallBanner } from '@/features/more/Install';
 import { lakeSub } from '@/domain/journal';
-import { haversine, scoreColor } from '@/lib/util';
+import { haversine, scoreColor, inWashington } from '@/lib/util';
 import { resolveZip, geocodePlace, locateMe } from '@/api/geocode';
 import { Chip, Icon, Empty } from '@/components/ui';
 
@@ -133,7 +133,7 @@ export function LakesPanel() {
 
   const HOMEPT = { lat: 47.171, lng: -122.518 };
   const picks = useMemo(() => {
-    const o = origin || HOMEPT;
+    const o = origin && inWashington(origin) ? origin : HOMEPT;
     const scored = LAKES
       .filter(l => l.kind !== 'high')
       .map(l => {
@@ -192,7 +192,7 @@ export function LakesPanel() {
             ))}
           </div>
           <button type="button" className="btn browseall" onClick={() => setBrowse(true)}>Browse all lakes &middot; A to Z &middot; filters</button>
-          {!origin && <div className="note" style={{ marginTop: 8, textAlign: 'center' }}>Ranked from Lakewood. Set a start point in Browse for your day.</div>}
+          {(!origin || !inWashington(origin)) && <div className="note" style={{ marginTop: 8, textAlign: 'center' }}>{origin ? 'You are out of state, so these rank from Lakewood.' : 'Ranked from Lakewood. Set a start point in Browse for your day.'}</div>}
         </>
       )}
       {!homeMode && (

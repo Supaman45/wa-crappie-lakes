@@ -402,3 +402,12 @@ The build scoped in September: Coast Watch gains a "Beach map: open and closed s
 - Popups are built as DOM nodes, never innerHTML.
 
 Known limits: the Ocean City approach and the Quinault line are approximate (no surveyed point; the popup says so and points to the posted signs). The band follows a smoothed beach line, not the tide line. Satellite tiles need signal the first time an area is viewed; the bands, colors and links work without it.
+
+
+## v3.12.1: a way back to Washington (Nov 11, 2026)
+
+Seri found it traveling: out of state, Locate me flies the map to wherever you are and nothing brings it back but a long pan. The same out-of-state start point also emptied the Top Five home, since every lake sat past the 80 mile radius.
+
+- New toggle button beside Locate me on the map. Anywhere outside Washington it reads WA and fits the whole state. On Washington, with a start point outside the state, it reads Me and flies back to you. Tested with GPS set to Phoenix: WA, Me, WA, in that order.
+- An out-of-state start point no longer drives the Top Five home or the Log picker's nearby lakes. Both rank from Lakewood and say so ("You are out of state, so these rank from Lakewood."). Distances in Browse still measure from wherever you set them.
+- WA_BOUNDS and inWashington() in src/lib/util.ts.

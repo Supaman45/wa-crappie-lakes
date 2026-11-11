@@ -411,3 +411,4 @@ textarea.input { min-height: 72px; resize: vertical; }
 .leaflet-tooltip.bm-label { background: rgba(255,255,255,.92); border: 0; box-shadow: 0 1px 4px rgba(15,42,60,.25); color: #0f2a3c; font: 600 10.5px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .03em; padding: 3px 6px; border-radius: 6px; }
 .leaflet-tooltip.bm-label::before { display: none; }
 .bm-far .leaflet-tooltip.bm-label { display: none; }
+.mapfab .wabtn { gap: 5px; padding: 9px 12px; font-family: var(--font-mono); letter-spacing: .06em; }

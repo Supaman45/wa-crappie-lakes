@@ -95,3 +95,10 @@ export function normTrack(track: unknown): { t: number; lat: number; lng: number
   }
   return out;
 }
+
+/** Washington State's bounding box, used to reset the map and to spot an out-of-state start point. */
+export const WA_BOUNDS: [[number, number], [number, number]] = [[45.54, -124.85], [49.0, -116.92]];
+export function inWashington(p: { lat: number; lng: number } | null | undefined): boolean {
+  if (!p) return false;
+  return p.lat >= WA_BOUNDS[0][0] && p.lat <= WA_BOUNDS[1][0] && p.lng >= WA_BOUNDS[0][1] && p.lng <= WA_BOUNDS[1][1];
+}

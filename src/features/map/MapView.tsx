@@ -12,7 +12,7 @@ import { useCreeks, CREEK_MIN_ZOOM } from '@/features/creeks/store';
 import { useHikes, TRAIL_MIN_ZOOM } from '@/features/hikes/store';
 import { sacLabel } from '@/api/trails';
 import { tagKey } from '@/lib/db';
-import { acreFmt, cToF, debounce, dirUrl, normTrack, lsGet, lsSet } from '@/lib/util';
+import { acreFmt, cToF, debounce, dirUrl, normTrack, lsGet, lsSet, WA_BOUNDS, inWashington } from '@/lib/util';
 import type { Lake } from '@/lib/types';
 import type { StreamSeg } from '@/api/wdfw';
 import { Icon } from '@/components/ui';
@@ -88,6 +88,7 @@ export function MapView() {
   const trackLayer = useRef<L.LayerGroup>(L.layerGroup());
   const trailLayer = useRef<L.LayerGroup>(L.layerGroup());
   const [tileFail, setTileFail] = useState(false);
+  const [viewInWA, setViewInWA] = useState(true);
 
   const mapMode = useUI(s => s.mapMode);
   const flyTo = useUI(s => s.flyTo);
@@ -152,6 +153,7 @@ export function MapView() {
         const b = map.getBounds();
         if (![b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].every(Number.isFinite)) return;
         useCreeks.getState().setViewport([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], map.getZoom());
+        setViewInWA(inWashington(map.getCenter()));
       } catch (e) { console.warn('viewport skipped', e); }
     }, 350);
     map.on('moveend zoomend', onMove);
@@ -373,6 +375,20 @@ export function MapView() {
         <button className="btn" onClick={() => {
           navigator.geolocation?.getCurrentPosition(p => { useUI.getState().setOrigin({ lat: p.coords.latitude, lng: p.coords.longitude, label: 'My location' }); }, () => toast('Location unavailable', 'warn'), { enableHighAccuracy: true, timeout: 10000 });
         }} aria-label="Locate me"><Icon name="locate" size={16} /></button>
+        {(() => {
+          // Out of state, Locate me flies the map away with no way back. This toggles:
+          // anywhere else, it shows all of Washington; on Washington with a far-off start point, it returns to you.
+          const backToMe = viewInWA && !!origin && !inWashington(origin);
+          return (
+            <button type="button" className="btn wabtn" onClick={() => {
+              const map = mapRef.current; if (!map) return;
+              if (backToMe && origin) goTo(map, origin.lat, origin.lng, 10);
+              else { try { map.flyToBounds(WA_BOUNDS, { padding: [12, 12], duration: .8 }); } catch { map.fitBounds(WA_BOUNDS); } }
+            }} aria-label={backToMe ? 'Back to my location' : 'Show all of Washington'}>
+              {backToMe ? <><Icon name="locate" size={14} />Me</> : <><Icon name="map" size={14} />WA</>}
+            </button>
+          );
+        })()}
       </div>
       {tileFail && <div className="tilewarn">Map tiles are not loading. Check your signal; cached tiles still show where you have been.</div>}
     </>
