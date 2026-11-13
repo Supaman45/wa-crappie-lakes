@@ -1,0 +1,41 @@
+name: Oregon lakes data
+
+# Rebuilds src/data/lakes-or.json from ODFW Fish Habitat Distribution and commits it.
+# Runs when the fetch script changes, monthly, or by hand from the Actions tab.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/fetch-oregon-lakes.mjs
+      - .github/workflows/oregon-lakes.yml
+  schedule:
+    - cron: '17 11 3 * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: oregon-lakes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fetch Oregon lakes
+        run: node scripts/fetch-oregon-lakes.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- src/data/lakes-or.json && git ls-files --error-unmatch src/data/lakes-or.json >/dev/null 2>&1; then
+            echo "No change"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/data/lakes-or.json
+          git commit -m "data: refresh Oregon lakes from ODFW Fish Habitat Distribution"
+          git push origin HEAD:${{ github.ref_name }}
