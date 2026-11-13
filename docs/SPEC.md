@@ -428,3 +428,10 @@ The app is mostly for Seri and the guys' camping and fishing trips, and those tr
 - Lake data moved to its own lakes chunk (443 KB, 86 KB gzipped), so the app chunk dropped to 162 KB.
 
 Next: campsites near water (federal campgrounds with group sites, BLM land for dispersed camps), then Eastern Oregon drives, then the trip planner.
+
+## v3.13.1: the app checks for updates when you open it (Nov 13, 2026)
+
+Seri opened the app after v3.13.0 shipped and still saw WA Fish Finder v3.12.1 with no Oregon lakes. The server had the new version. His phone did not, because an installed app is resumed from the background instead of reloaded, and the browser only looks for a new service worker on a fresh page load.
+
+- src/main.tsx now asks for a new version each time the app comes back on screen, gains focus or comes back online (at most once a minute), and every hour while it stays open. The service worker already skips waiting and claims the page, so a found update reloads the app on its own within a few seconds.
+- One last manual step for phones still on v3.12.1, since that old version does not have this check: swipe the app closed and open it again. After that, updates arrive by themselves.
