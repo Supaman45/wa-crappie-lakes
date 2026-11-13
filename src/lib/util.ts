@@ -102,3 +102,17 @@ export function inWashington(p: { lat: number; lng: number } | null | undefined)
   if (!p) return false;
   return p.lat >= WA_BOUNDS[0][0] && p.lat <= WA_BOUNDS[1][0] && p.lng >= WA_BOUNDS[0][1] && p.lng <= WA_BOUNDS[1][1];
 }
+/** Oregon's bounding box. It overlaps Washington's along the Columbia, which is fine for map hops. */
+export const OR_BOUNDS: [[number, number], [number, number]] = [[41.99, -124.6], [46.29, -116.46]];
+export function inOregon(p: { lat: number; lng: number } | null | undefined): boolean {
+  if (!p) return false;
+  return p.lat >= OR_BOUNDS[0][0] && p.lat <= OR_BOUNDS[1][0] && p.lng >= OR_BOUNDS[0][1] && p.lng <= OR_BOUNDS[1][1];
+}
+/** Washington or Oregon: the two states the app has lakes for. */
+export function inPNW(p: { lat: number; lng: number } | null | undefined): boolean { return inWashington(p) || inOregon(p); }
+/** Which state a map center sits in. The Columbia strip counts as Washington north of 46.0 N. */
+export function regionOf(p: { lat: number; lng: number }): 'WA' | 'OR' | 'out' {
+  if (inWashington(p) && (p.lat >= 46.0 || !inOregon(p))) return 'WA';
+  if (inOregon(p)) return 'OR';
+  return 'out';
+}

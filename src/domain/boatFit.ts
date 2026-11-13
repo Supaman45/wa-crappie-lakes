@@ -15,7 +15,7 @@ export interface BoatFitResult {
 }
 
 export function boatFit(l: Lake, launch?: Launch | null): BoatFitResult {
-  if (l.kind === 'high') return { fit: 'hike', label: 'Hike-in', detail: `Alpine lake at ${l.elev.toLocaleString()} ft. Pack rod and float tube.` };
+  if (l.kind === 'high') return { fit: 'hike', label: 'Hike-in', detail: `${l.state === 'OR' ? 'Probably a hike-in: small, high, trout only' : 'Alpine lake'} at ${l.elev.toLocaleString()} ft. Pack rod and float tube.` };
   const ramp = l.ramp === true || !!launch;
   const motor = launch ? launch.motor : null;
   const acres = l.acres || 0;
@@ -24,6 +24,11 @@ export function boatFit(l: Lake, launch?: Launch | null): BoatFitResult {
   }
   if (ramp && motor === false) return { fit: 'small', label: 'Electric boat', detail: `Ramp but no gas motors at ${launch?.name || 'the launch'}. Take the small boat.` };
   if (ramp) return { fit: 'small', label: 'Electric boat', detail: `Ramp on ${Math.round(acres).toLocaleString()} acres. Small water, small boat.` };
+  if (l.state === 'OR') {
+    // No Oregon ramp data yet, so size is the only clue. Never claim "no ramp" here.
+    if (acres >= 300) return { fit: 'shore', label: 'Ramp likely', detail: `${Math.round(acres).toLocaleString()} acres usually means a ramp, but the app has no Oregon ramp data yet. Check the map for the ramp road before you tow the 17 ft.` };
+    return { fit: 'shore', label: 'Ramp unknown', detail: 'The app has no Oregon ramp data yet. Plan on the small boat or the bank until you confirm a ramp.' };
+  }
   if (l.shore === 'good') return { fit: 'shore', label: 'Shore or car-top', detail: 'No WDFW ramp listed. Shore access is good; a car-topper or float tube works.' };
   return { fit: 'shore', label: 'No ramp', detail: 'No WDFW ramp or shore access listed. Check the WDFW page before driving out.' };
 }

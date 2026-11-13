@@ -94,7 +94,7 @@ export function Invites() {
   };
 
   const share = async (code: string, who?: string | null) => {
-    const text = `${who ? who + ', here' : 'Here'} is your invite to WA Fish Finder.\n\nhttps://wafishfinder.app\nCode: ${code}\n\nCreate an account with that code, then add it to your home screen.`;
+    const text = `${who ? who + ', here' : 'Here'} is your invite to PNW Fish Camp.\n\nhttps://wafishfinder.app\nCode: ${code}\n\nCreate an account with that code, then add it to your home screen.`;
     try {
       if (navigator.share) { await navigator.share({ text }); return; }
       await navigator.clipboard.writeText(text);

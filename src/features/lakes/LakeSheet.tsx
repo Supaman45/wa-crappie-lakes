@@ -22,6 +22,9 @@ import { pairHikes, type Hike } from '@/domain/hikes';
 import { useHikes } from '@/features/hikes/store';
 import { QuickCatch, TripBar, type QuickWater } from '@/features/log/QuickCatch';
 
+const ODFW_STOCKING = 'https://myodfw.com/fishing/species/trout/stocking-schedule';
+const ODFW_REPORTS = 'https://myodfw.com/fishing/zones';
+
 type FcState = { status: 'loading' } | { status: 'ok'; fc: Forecast } | { status: 'err' };
 
 function isMobile(): boolean { return typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches; }
@@ -113,12 +116,15 @@ export function LakeSheet({ lake }: { lake: Lake }) {
     if (isMobile()) useUI.getState().setMobileView('map');
   }
 
+  const isOR = lake.state === 'OR';
   const footer = (
     <>
       <button type="button" className="btn" onClick={onLogVisit}><Icon name="check" />Log visit</button>
       <button type="button" className="btn" onClick={onLogCatch}><Icon name="plus" />Full form</button>
       <a className="btn" href={dirUrl(dest.lat, dest.lng)} target="_blank" rel="noopener noreferrer"><Icon name="nav" />Directions</a>
-      <a className="btn ghost" href={wdfwLakeUrl(lake.slug)} target="_blank" rel="noopener noreferrer"><Icon name="external" />WDFW page</a>
+      {isOR
+        ? <a className="btn ghost" href={ODFW_STOCKING} target="_blank" rel="noopener noreferrer"><Icon name="external" />ODFW stocking</a>
+        : <a className="btn ghost" href={wdfwLakeUrl(lake.slug)} target="_blank" rel="noopener noreferrer"><Icon name="external" />WDFW page</a>}
       <button type="button" className="btn ghost" onClick={onShowMap}><Icon name="pin" />Show on map</button>
     </>
   );
@@ -136,8 +142,9 @@ export function LakeSheet({ lake }: { lake: Lake }) {
         <h3>Your boats <small>{fit.label}</small></h3>
         <div className="kv" style={{ marginBottom: 6 }}>
           <span className="k">Best fit</span><span className="v">{fit.label}</span>
+          {isOR ? <><span className="k">Ramp</span><span className="v">Not in the app yet</span></> : <>
           <span className="k">WDFW ramp</span><span className="v">{lake.ramp === true ? 'Yes' : lake.ramp === false ? 'No' : 'Unknown'}</span>
-          <span className="k">Shore access</span><span className="v">{lake.shore === 'good' ? 'Good' : lake.shore === 'none' ? 'None' : 'Unknown'}</span>
+          <span className="k">Shore access</span><span className="v">{lake.shore === 'good' ? 'Good' : lake.shore === 'none' ? 'None' : 'Unknown'}</span></>}
           {lake.mgmt && <><span className="k">WDFW manages as</span><span className="v">{mgmtLabel(lake.mgmt)}</span></>}
         </div>
         <div className="note">{fit.detail}</div>
@@ -210,23 +217,36 @@ export function LakeSheet({ lake }: { lake: Lake }) {
               <a className="btn sm ghost" href={wdfwLakeUrl(lake.slug)} target="_blank" rel="noopener noreferrer"><Icon name="external" size={14} />WDFW page</a>
             </div>
           </>
+        ) : isOR ? (
+          <div className="note">Oregon ramps are not in the app yet. Directions take you to the middle of the lake, so check the map for the ramp road before you tow.</div>
         ) : (
           <div className="note">No boat launch on record. Likely shore access only. The WDFW page lists details.</div>
         )}
       </div>
 
-      {(myRules.length > 0 || rulesStatus === 'loading') && (
+      {isOR && (
+        <div className="section">
+          <h3>Oregon water <small>ODFW</small></h3>
+          <div className="note">You need an Oregon fishing license here. Your Washington license does not cover it, except on shared Columbia River waters. Species come from the ODFW Fish Habitat Distribution map.</div>
+          <div className="row" style={{ marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
+            <a className="btn sm" href={ODFW_STOCKING} target="_blank" rel="noopener noreferrer"><Icon name="external" size={14} />Trout stocking schedule</a>
+            <a className="btn sm ghost" href={ODFW_REPORTS} target="_blank" rel="noopener noreferrer"><Icon name="external" size={14} />Fishing reports by zone</a>
+          </div>
+        </div>
+      )}
+
+      {!isOR && (myRules.length > 0 || rulesStatus === 'loading') && (
         <div className="section">
           <h3>Emergency rules <small>{myRules.length ? `${myRules.length} match` : 'checking'}</small></h3>
           <RulesList rules={myRules} empty="Checking WDFW emergency rules" />
         </div>
       )}
 
-      <div className="section">
+      {!isOR && <div className="section">
         <h3>Trout plants <small>{plantsStatus === 'ok' ? (myPlants.length ? 'recent' : 'none recent') : plantsStatus === 'loading' ? 'loading' : ''}</small></h3>
         {myPlants.length > 0 && <div className="list">{myPlants.map((p, i) => <PlantRow key={i} p={p} />)}</div>}
         {myPlants.length === 0 && <div className="note">{plantsStatus === 'err' ? 'Could not load the WDFW stocking report.' : plantsStatus === 'loading' ? 'Loading the WDFW stocking report' : 'No trout plant listed for this lake in the recent WDFW report.'}</div>}
-      </div>
+      </div>}
 
       <div className="section">
         <h3>My tags</h3>

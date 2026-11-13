@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { LAKES } from '@/data/lakes';
 import { useData, currentUserId } from '@/store/data';
 import { useUI } from '@/store/ui';
-import { haversine, inWashington } from '@/lib/util';
+import { haversine, inPNW } from '@/lib/util';
 import { locateMe } from '@/api/geocode';
 import { toast } from '@/lib/toast';
 import { Icon } from '@/components/ui';
@@ -47,7 +47,7 @@ export function WaterPick() {
   }, [catches, visits, me, bySlug]);
 
   const nearby = useMemo(() => {
-    const o = origin && inWashington(origin) ? origin : HOME;
+    const o = origin && inPNW(origin) ? origin : HOME;
     const skip = new Set(recent.map(l => l.slug));
     return LAKES.filter(l => l.kind !== 'high' && !skip.has(l.slug))
       .map(l => ({ l, d: haversine(o.lat, o.lng, l.lat, l.lng) }))
@@ -95,7 +95,7 @@ export function WaterPick() {
       </div>
       {recent.length > 0 && <div className="ls-row">{recent.map(l => chip(l, 'your water'))}</div>}
       <div className="ls-row">
-        {nearby.map(({ l, d }) => chip(l, `${d < 10 ? d.toFixed(1) : Math.round(d)} mi${origin && inWashington(origin) ? '' : ' from Lakewood'}`))}
+        {nearby.map(({ l, d }) => chip(l, `${d < 10 ? d.toFixed(1) : Math.round(d)} mi${origin && inPNW(origin) ? '' : ' from Lakewood'}`))}
       </div>
       <input className="input" type="search" placeholder="Another lake..." value={q} onChange={e => setQ(e.target.value)} autoComplete="off" aria-label="Search for a lake to log at" />
       {matches.length > 0 && <div className="ls-row">{matches.map(l => chip(l, l.counties?.[0] || ''))}</div>}

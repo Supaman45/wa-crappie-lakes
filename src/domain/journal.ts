@@ -98,7 +98,7 @@ export function visitsCsv(visits: Visit[], profiles: Record<string, Profile>): s
   return [head.join(','), ...visits.map(v => [v.date, profiles[v.user_id]?.name || '', v.lake_name || v.lake_id, v.water_type].map(csvCell).join(','))].join('\n');
 }
 
-export function lakeSub(l: Lake): string { return `${l.counties.join(', ')} · ${acreFmt(l.acres)} ac · ${l.elev.toLocaleString()} ft`; }
+export function lakeSub(l: Lake): string { return [l.counties.join(", "), `${acreFmt(l.acres)} ac`, l.elev ? `${l.elev.toLocaleString()} ft` : ""].filter(Boolean).join(" · "); }
 
 /** Share or download text; Web Share first (works in iOS standalone), blob download as fallback. */
 export async function shareText(filename: string, text: string, mime = 'text/csv'): Promise<void> {

@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'push-sw.js'],
       manifest: {
-        name: 'WA Fish Finder',
-        short_name: 'Fish Finder',
-        description: 'Washington lakes, creeks, and surf: where fish are, when to go, and what your crew caught.',
+        name: 'PNW Fish Camp',
+        short_name: 'Fish Camp',
+        description: 'Washington and Oregon lakes, creeks, surf and camps: where fish are, where to camp, when to go.',
         start_url: '/#lakes',
         id: '/',
         scope: '/',
@@ -61,11 +61,14 @@ export default defineConfig({
       output: {
         // Libraries change rarely, so they get their own long-cached chunks
         // and a deploy only re-downloads the app code that changed.
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          supabase: ['@supabase/supabase-js'],
-          map: ['leaflet', 'leaflet.markercluster'],
-          storage: ['dexie', 'zustand'],
+        manualChunks(id: string) {
+          if (/node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
+          if (id.includes('@supabase')) return 'supabase';
+          if (/node_modules[\\/](leaflet|leaflet\.markercluster)[\\/]/.test(id)) return 'map';
+          if (/node_modules[\\/](dexie|zustand)[\\/]/.test(id)) return 'storage';
+          // Lake lists change on their own schedule (Oregon refreshes monthly); keep them out of the app chunk.
+          if (/src[\\/]data[\\/]lakes(-or)?\.json/.test(id)) return 'lakes';
+          return undefined;
         },
       },
     },

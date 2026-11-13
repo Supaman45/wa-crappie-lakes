@@ -1,6 +1,6 @@
-# WA Fish Finder
+# PNW Fish Camp
 
-Washington lakes, creeks, rivers and surf: where fish are, when to go, and what the crew caught. Live at https://wafishfinder.app (Vercel project `wa-crappie-lakes`, team `team_ygyo48hLvKuL7hQVgpmShwbP`). Owner: Seri.
+Formerly WA Fish Finder. Washington and Oregon lakes, creeks, rivers, surf and camps: where fish are, where to camp, when to go, and what the crew caught. Built mainly for Seri's own fishing and guys' camping trips. Live at https://wafishfinder.app (Vercel project `wa-crappie-lakes`, team `team_ygyo48hLvKuL7hQVgpmShwbP`). Owner: Seri.
 
 ## How changes ship
 
@@ -25,7 +25,7 @@ Vite + React 18 + TypeScript, Leaflet, Supabase (project `ptdsxxttsyfczoacyyqg`:
 
 - `src/features/<tab>/` one folder per tab (lakes, creeks, plan, log, more, trip, map, hikes, auth). Tabs other than Lakes and their sheets are lazy-loaded in `src/App.tsx`.
 - `src/domain/` pure logic, no React: scoring, boat fit, coast rules, river schedules, catch record card. Prefer adding logic here and testing it with plain node.
-- `src/api/` network clients. `src/store/` Zustand stores. `src/data/` baked datasets (`lakes.json` is 1,733 WDFW lakes; regenerate per `docs/SPEC.md` v3.2.0).
+- `src/api/` network clients. `src/store/` Zustand stores. `src/data/` baked datasets (`lakes.json` is 1,733 WDFW lakes, regenerate per `docs/SPEC.md` v3.2.0. `lakes-or.json` is about 900 Oregon lakes built by the `Oregon lakes data` GitHub Action from `scripts/fetch-oregon-lakes.mjs`, monthly or on demand. The sandbox cannot reach ODFW, so never hand-edit it.).
 - `api/` Vercel functions: rules, plants, escapement, coast, river, geocode, watch (daily cron), push.
 
 ## Database rules

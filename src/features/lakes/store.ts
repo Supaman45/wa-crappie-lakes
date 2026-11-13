@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Lake, Launch } from '@/lib/types';
-import { LAKES } from '@/data/lakes';
+import { LAKES, WA_LAKES } from '@/data/lakes';
 import { haversine } from '@/lib/util';
 import { loadLaunches } from '@/api/wdfw';
 import { matchLaunches } from '@/domain/launchMatch';
@@ -50,8 +50,9 @@ export const useLakes = create<LakesState>((set, get) => ({
   loadLaunches: async () => {
     try {
       const list = await loadLaunches();
-      const launches = matchLaunches(LAKES, list);
-      set({ launches, launchList: list, launchStatus: `${Object.keys(launches).length} of ${LAKES.length} lakes matched to a WDFW boat launch.` });
+      // WDFW launch sites are Washington only; Oregon lakes near the Columbia must not borrow them.
+      const launches = matchLaunches(WA_LAKES, list);
+      set({ launches, launchList: list, launchStatus: `${Object.keys(launches).length} of ${WA_LAKES.length} Washington lakes matched to a WDFW boat launch.` });
     } catch { set({ launchStatus: 'Live WDFW launch data could not load. Directions use lake centers.' }); }
   },
 }));
@@ -71,7 +72,8 @@ export function filterLakes(): Lake[] {
   const plants = s.flags.stocked ? useFeeds.getState().plants : null;
   let out = LAKES.filter(l => {
     if (q && !l.name.toLowerCase().includes(q) && !l.counties.some(c => c.toLowerCase().includes(q))) return false;
-    if (s.county && !l.counties.includes(s.county)) return false;
+    if (s.county === '@WA' || s.county === '@OR') { if (l.state !== s.county.slice(1)) return false; }
+    else if (s.county && !l.counties.includes(s.county)) return false;
     if (l.kind === 'high' && !s.flags.high) return false;
     if (s.size) { const a = l.acres || 0; if (s.size === 'small' ? a >= 25 : s.size === 'mid' ? (a < 25 || a >= 200) : a < 200) return false; }
     if (s.species && !l.sp.includes(s.species as Lake['sp'][number])) return false;

@@ -14,7 +14,8 @@ export interface Lake {
   ramp: boolean | null;         // WDFW BoatRampAvailable
   shore: 'good' | 'none' | null; // WDFW ShorelineAccess
   mgmt: string;                 // WDFW management emphasis, or high-lake program label
-  wdfw: number;                 // WDFW feature id (lowland OBJECTID or high lake FishWAid)
+  wdfw: number;                 // WDFW feature id (lowland OBJECTID or high lake FishWAid); 0 for Oregon
+  state: 'WA' | 'OR';
 }
 
 export interface Launch {

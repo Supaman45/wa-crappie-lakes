@@ -40,7 +40,7 @@ export function InstallGuide({ compact }: { compact?: boolean }) {
     return (
       <div>
         <button className="btn primary" onClick={install}><Icon name="plus" />Install on this phone</button>
-        {!compact && <div className="note" style={{ paddingTop: 8 }}>Puts the Fish Finder icon on your home screen, full screen, no browser bar.</div>}
+        {!compact && <div className="note" style={{ paddingTop: 8 }}>Puts the Fish Camp icon on your home screen, full screen, no browser bar.</div>}
       </div>
     );
   }

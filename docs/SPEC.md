@@ -411,3 +411,20 @@ Seri found it traveling: out of state, Locate me flies the map to wherever you a
 - New toggle button beside Locate me on the map. Anywhere outside Washington it reads WA and fits the whole state. On Washington, with a start point outside the state, it reads Me and flies back to you. Tested with GPS set to Phoenix: WA, Me, WA, in that order.
 - An out-of-state start point no longer drives the Top Five home or the Log picker's nearby lakes. Both rank from Lakewood and say so ("You are out of state, so these rank from Lakewood."). Distances in Browse still measure from wherever you set them.
 - WA_BOUNDS and inWashington() in src/lib/util.ts.
+
+## v3.13.0: PNW Fish Camp, with Oregon lakes (Nov 13, 2026)
+
+The app is mostly for Seri and the guys' camping and fishing trips, and those trips cross the Columbia. New name, same address: PNW Fish Camp, still at wafishfinder.app.
+
+- Rename. Header, splash, sign-in screen, tab title, home screen icon name (Fish Camp), push notification title, invite text and the install manifest all say PNW Fish Camp. The domain stays.
+- 902 Oregon lakes, added beside the 1,733 Washington lakes (2,635 total). Source: the ODFW Fish Habitat Distribution map, one polygon layer per species in lakes (black and white crappie, largemouth, smallmouth, rainbow and redband, cutthroat, brown, brook, lake trout, kokanee, bluegill, pumpkinseed, bullheads, yellow perch, walleye). Polygons are grouped into one lake by name and distance, then merged again when ODFW files one water under two names (Detroit Lake and Detroit Reservoir). Acres come from the polygon area corrected for Web Mercator. County from Census TIGERweb, elevation from Open-Meteo.
+- Data pipeline. The build sandbox cannot reach ODFW, Census or Open-Meteo, so scripts/fetch-oregon-lakes.mjs runs in a GitHub Action (.github/workflows/oregon-lakes.yml) and commits src/data/lakes-or.json. It runs when the script changes, on the 3rd of each month, or by hand from the Actions tab. It refuses to write fewer than 200 lakes.
+- What Oregon lakes lack: ramps, shore access, WDFW management labels, emergency rules and stocking. The lake sheet says so plainly. Boat fit reads "Ramp likely" on 300 acres and up, "Ramp unknown" below, never "No ramp". An Oregon section links the ODFW trout stocking schedule and the zone fishing reports, and reminds you a Washington license does not cover Oregon water.
+- Hike-in guess. FHD has no access field, so a lake is tagged hike-in when it is under 30 acres, above 5,000 ft and holds only trout. Expect misses both ways (Green Lakes near Bend shows as drive-to).
+- Both states everywhere. The county filter now offers Both states, All of Washington, All of Oregon, then counties grouped by state. Oregon counties carry an "OR" tag because Douglas, Grant, Jefferson, Lincoln and Columbia exist in both states. Top Five and the Log picker rank from your start point anywhere in Washington or Oregon, and fall back to Lakewood only outside both.
+- Map state hop. The map button now reads OR on Washington and WA on Oregon or anywhere else. With a start point outside both states it reads Me.
+- Slugs for Oregon lakes end in "-or", so catches never collide with a Washington lake. Fish kept on an Oregon lake stay off the Washington Catch Record Card.
+- WDFW launch matching runs on Washington lakes only, so an Oregon lake near the Columbia cannot borrow a Washington ramp.
+- Lake data moved to its own lakes chunk (443 KB, 86 KB gzipped), so the app chunk dropped to 162 KB.
+
+Next: campsites near water (federal campgrounds with group sites, BLM land for dispersed camps), then Eastern Oregon drives, then the trip planner.

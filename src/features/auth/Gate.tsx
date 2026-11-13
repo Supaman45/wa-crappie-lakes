@@ -37,7 +37,7 @@ export function Gate() {
   return (
     <div className="gate">
       <div className="card">
-        <h1>WA Fish Finder</h1>
+        <h1>PNW Fish Camp</h1>
         <div className="note" style={{ marginTop: 6 }}>
           {mode === 'in'
             ? 'Lakes, rivers, and surf across Washington. Sign in to see the crew log.'

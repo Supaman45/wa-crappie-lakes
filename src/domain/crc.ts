@@ -24,6 +24,8 @@ export function needsCard(species: string): boolean {
 
 /** A kept fish of a card species is the only thing that goes on the card. */
 export function onCard(c: Catch): boolean {
+  // Oregon lakes carry an "-or" slug. A fish kept there goes on Oregon's tag, not the WA card.
+  if (/-or(-\d+)?$/.test(c.lake_id || '')) return false;
   return needsCard(c.species) && c.kept === true;
 }
 

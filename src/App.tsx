@@ -71,7 +71,7 @@ function Splash() {
         <path className="tailp" d="M42 24l-8-7M42 24l-8 7" />
         <circle className="eye" cx="15" cy="22" r="1.6" fill="#fff" stroke="none" />
       </svg>
-      <b>WA Fish Finder</b>
+      <b>PNW Fish Camp</b>
       <small>FIND. FISH. LOG.</small>
     </div>
   );
@@ -144,7 +144,7 @@ export default function App() {
     <div className={`app${splash ? ' cascade' : ''}`} data-view={mobileView} data-tab={tab}>
       <aside className="panel">
         <header className="hdr">
-          <div className="brand"><h1>WA Fish Finder</h1><span className="ver">v{__APP_VERSION__}</span></div>
+          <div className="brand"><h1>PNW Fish Camp</h1><span className="ver">v{__APP_VERSION__}</span></div>
           <div className="stats">{!online ? 'offline' : outbox > 0 ? `${outbox} to sync` : ''}</div>
           <Wx />
           <button className="iconbtn mapbtn" onClick={() => useUI.getState().setMobileView('map')} aria-label="Show map"><Icon name="map" /></button>
