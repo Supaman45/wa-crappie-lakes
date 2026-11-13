@@ -124,6 +124,20 @@ async function elevations(pts) {
     } catch (e) { console.warn('elevation chunk failed:', e.message); }
     await sleep(1500);
   }
+  // Open-Meteo throttles bursts. Give the misses one slower second pass.
+  const miss = out.map((v, i) => (v == null ? i : -1)).filter(i => i >= 0);
+  if (miss.length) {
+    await sleep(15000);
+    for (let i = 0; i < miss.length; i += 50) {
+      const idx = miss.slice(i, i + 50);
+      const q = `latitude=${idx.map(k => pts[k].lat.toFixed(5)).join(',')}&longitude=${idx.map(k => pts[k].lng.toFixed(5)).join(',')}`;
+      try {
+        const j = await getJson(`https://api.open-meteo.com/v1/elevation?${q}`, 6);
+        (j.elevation || []).forEach((m, k) => { if (typeof m === 'number' && m > -100) out[idx[k]] = Math.round(m * 3.28084); });
+      } catch (e) { console.warn('elevation retry failed:', e.message); }
+      await sleep(4000);
+    }
+  }
   return out;
 }
 
@@ -164,7 +178,9 @@ async function main() {
       const b = groups[j]; if (b.gone) continue;
       const d = km(a, b);
       const sameArea = a.best && b.best && Math.abs(a.best - b.best) / Math.max(a.best, b.best) < 0.1;
-      if (d < 0.3 || (d < 2 && sameArea)) {
+      // Same name and within the bigger piece's reach: one long reservoir split by ODFW (Brownlee).
+      const sameName = a.name.toLowerCase() === b.name.toLowerCase() && d < 6 + 3 * Math.sqrt(Math.max(a.best, b.best) / 1e6);
+      if (d < 0.3 || (d < 2 && sameArea) || sameName) {
         for (const sp of b.sp) a.sp.add(sp);
         for (const f of b.fids) a.fids.add(f);
         if (b.best > a.best) { a.best = b.best; a.lat = b.lat; a.lng = b.lng; }
