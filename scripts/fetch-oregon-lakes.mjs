@@ -119,10 +119,10 @@ async function elevations(pts) {
     const chunk = pts.slice(i, i + 100);
     const q = `latitude=${chunk.map(p => p.lat.toFixed(5)).join(',')}&longitude=${chunk.map(p => p.lng.toFixed(5)).join(',')}`;
     try {
-      const j = await getJson(`https://api.open-meteo.com/v1/elevation?${q}`);
+      const j = await getJson(`https://api.open-meteo.com/v1/elevation?${q}`, 6);
       (j.elevation || []).forEach((m, k) => { if (typeof m === 'number' && m > -100) out[i + k] = Math.round(m * 3.28084); });
     } catch (e) { console.warn('elevation chunk failed:', e.message); }
-    await sleep(250);
+    await sleep(1500);
   }
   return out;
 }
@@ -144,15 +144,37 @@ async function main() {
     if (!r.name || /^unnamed/i.test(r.name)) continue;
     const key = r.name.toLowerCase();
     const list = byName.get(key) || [];
-    let g = list.find(g => km(g, r) < 6);
-    if (!g) { g = { name: r.name, lat: r.lat, lng: r.lng, best: 0, sp: new Set(), fids: new Set() }; list.push(g); groups.push(g); byName.set(key, list); }
+    // Long reservoirs (Brownlee runs 90 km) need a wider net than a pond.
+    const reach = g => 6 + 3 * Math.sqrt(g.best / 1e6);
+    let g = list.find(g => km(g, r) < reach(g));
+    if (!g) { g = { name: r.name, lat: r.lat, lng: r.lng, best: 0, n: 0, sp: new Set(), fids: new Set() }; list.push(g); groups.push(g); byName.set(key, list); }
+    g.n++;
     // Area: Web Mercator m², scaled by cos² of latitude to true m².
     const m2 = r.m2 * Math.cos(r.lat * Math.PI / 180) ** 2;
     if (m2 > g.best) { g.best = m2; g.lat = r.lat; g.lng = r.lng; }
     g.sp.add(r.app);
     if (r.fid != null) g.fids.add(r.fid);
   }
-  console.log(`${rows.length} polygons -> ${groups.length} lakes`);
+  // Second pass: one water body filed under two names (Detroit Lake and Detroit Reservoir). The
+  // polygons are identical, so same center and same area means same lake. Keep the name used most.
+  groups.sort((a, b) => b.n - a.n);
+  for (let i = 0; i < groups.length; i++) {
+    const a = groups[i]; if (a.gone) continue;
+    for (let j = i + 1; j < groups.length; j++) {
+      const b = groups[j]; if (b.gone) continue;
+      const d = km(a, b);
+      const sameArea = a.best && b.best && Math.abs(a.best - b.best) / Math.max(a.best, b.best) < 0.1;
+      if (d < 0.3 || (d < 2 && sameArea)) {
+        for (const sp of b.sp) a.sp.add(sp);
+        for (const f of b.fids) a.fids.add(f);
+        if (b.best > a.best) { a.best = b.best; a.lat = b.lat; a.lng = b.lng; }
+        b.gone = true;
+      }
+    }
+  }
+  const before = groups.length;
+  for (let i = groups.length - 1; i >= 0; i--) if (groups[i].gone) groups.splice(i, 1);
+  console.log(`${rows.length} polygons -> ${before} named pieces -> ${groups.length} lakes`);
 
   const cty = await counties();
   const elev = await elevations(groups);
@@ -168,10 +190,12 @@ async function main() {
     const acres = g.best ? Math.round((g.best / 4046.86) * 10) / 10 : null;
     const e = elev[i] ?? 0;
     let s = `${slugify(name)}-or`;
-    if (used.has(s)) s = `${slugify(name)}-${slugify(county || 'or')}-or`;
+    if (used.has(s) && county) s = `${slugify(name)}-${slugify(county)}-or`;
     for (let n = 2; used.has(s); n++) s = `${slugify(name)}-or-${n}`;
     used.add(s);
-    const high = e >= 5000 && acres != null && acres < 30;
+    // Hike-in guess: small, above 5,000 ft, and trout only. Warmwater fish mean a road and a valley.
+    const TROUT = new Set(['rainbow', 'cutthroat', 'brook', 'brown']);
+    const high = e >= 5000 && acres != null && acres < 30 && [...g.sp].every(sp => TROUT.has(sp));
     return {
       n: name, s, a: acres, e, c: county ? [county] : [],
       y: Math.round(g.lat * 1e5) / 1e5, x: Math.round(g.lng * 1e5) / 1e5,
