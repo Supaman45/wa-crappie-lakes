@@ -6,6 +6,16 @@ import { SPECIES } from '@/data/species';
 
 export const CREEK_MIN_ZOOM = 11;
 
+/** What the Creeks list is showing: a radius around a place, or whatever the map has in view. */
+export type CreekScope = { kind: 'area'; lat: number; lng: number; mi: number; label: string } | { kind: 'map' };
+
+/** A lat/lng box roughly `mi` miles out from a point. */
+export function boxAround(lat: number, lng: number, mi: number): BBox {
+  const dLat = mi / 69;
+  const dLng = mi / (69 * Math.cos(lat * Math.PI / 180));
+  return [lng - dLng, lat - dLat, lng + dLng, lat + dLat];
+}
+
 interface CreeksState {
   bbox: BBox | null;
   zoom: number;
@@ -19,8 +29,11 @@ interface CreeksState {
   showGauges: boolean;
   showAccess: boolean;
   onlyDocumented: boolean;
+  scope: CreekScope | null;
+  key: string | null;
   setViewport: (bbox: BBox, zoom: number) => void;
   load: (bbox: BBox, speciesIds: string[]) => Promise<void>;
+  loadArea: (lat: number, lng: number, mi: number, label: string, speciesIds: string[]) => Promise<void>;
   toggle: (k: 'showBarriers' | 'showGauges' | 'showAccess' | 'onlyDocumented') => void;
 }
 
@@ -33,9 +46,20 @@ export function swifdNamesFor(ids: string[]): string[] {
 export const useCreeks = create<CreeksState>((set, get) => ({
   bbox: null, zoom: 7, streams: [], barriers: [], gauges: [], access: [], loading: false, error: null,
   showBarriers: true, showGauges: true, showAccess: true, onlyDocumented: false,
-  setViewport: (bbox, zoom) => set({ bbox, zoom }),
+  scope: null, key: null,
+  // Only the visible map calls this, so a viewport report means the list now follows the map.
+  setViewport: (bbox, zoom) => set({ bbox, zoom, scope: { kind: 'map' } }),
+  loadArea: async (lat, lng, mi, label, speciesIds) => {
+    const bbox = boxAround(lat, lng, mi);
+    set({ bbox, zoom: CREEK_MIN_ZOOM + 1, scope: { kind: 'area', lat, lng, mi, label } });
+    await get().load(bbox, speciesIds);
+  },
   toggle: (k) => set({ [k]: !get()[k] } as Partial<CreeksState>),
   load: async (bbox, speciesIds) => {
+    // The list and the map can ask for the same box back to back. Fetch it once.
+    const key = `${bbox.map(n => n.toFixed(3)).join(',')}|${[...speciesIds].sort().join(',')}`;
+    if (key === get().key && !get().error) return;
+    set({ key });
     if (ctrl) ctrl.abort();
     ctrl = new AbortController();
     const signal = ctrl.signal;
@@ -55,7 +79,7 @@ export const useCreeks = create<CreeksState>((set, get) => ({
       set({ streams, barriers, gauges, access, loading: false });
     } catch (e) {
       if (signal.aborted) return;
-      set({ loading: false, error: (e as Error).message || 'Could not load stream data' });
+      set({ loading: false, key: null, error: (e as Error).message || 'Could not load stream data' });
     }
   },
 }));

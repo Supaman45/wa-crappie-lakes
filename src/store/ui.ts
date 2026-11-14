@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Lake, Spot, Catch } from '@/lib/types';
+import { CREEK_SPECIES } from '@/data/species';
 import { lsGet, lsSet } from '@/lib/util';
 
 export type Tab = 'lakes' | 'creeks' | 'plan' | 'log' | 'more';
@@ -54,7 +55,7 @@ export const useUI = create<UIState>((set) => ({
   activeLakeId: null,
   sheet: null,
   flyTo: null,
-  creekSpecies: savedSpecies || ['cutthroat', 'rainbow', 'coho', 'steelhead'],
+  creekSpecies: savedSpecies || [...CREEK_SPECIES],
   setTab: (tab) => { writeHash(tab); set(s => ({ tab, mapMode: tab === 'creeks' ? 'creeks' : (tab === 'lakes' || tab === 'plan') ? 'lakes' : s.mapMode })); },
   setMobileView: (mobileView) => set({ mobileView }),
   setMapMode: (mapMode) => set({ mapMode }),

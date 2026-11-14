@@ -40,7 +40,7 @@ export function Gate() {
         <h1>PNW Fish Camp</h1>
         <div className="note" style={{ marginTop: 6 }}>
           {mode === 'in'
-            ? 'Lakes, rivers, and surf across Washington. Sign in to see the crew log.'
+            ? 'Lakes, creeks, rivers and surf across Washington and Oregon. Sign in to see the crew log.'
             : 'Invite only. Enter the code you were given along with your email and a password.'}
         </div>
         <form className="form" onSubmit={submit}>

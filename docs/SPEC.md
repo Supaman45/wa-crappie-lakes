@@ -435,3 +435,19 @@ Seri opened the app after v3.13.0 shipped and still saw WA Fish Finder v3.12.1 w
 
 - src/main.tsx now asks for a new version each time the app comes back on screen, gains focus or comes back online (at most once a minute), and every hour while it stays open. The service worker already skips waiting and claims the page, so a found update reloads the app on its own within a few seconds.
 - One last manual step for phones still on v3.12.1, since that old version does not have this check: swipe the app closed and open it again. After that, updates arrive by themselves.
+
+## v3.14.0: Creeks tab redesign (Nov 14, 2026)
+
+Seri: the Creeks tab "is not very intuitive". On a phone it opened on a paragraph about SWIFD, eleven orange chips that all looked switched on, and three empty sections that said to zoom the map to 11. Nothing worked until you opened the map and zoomed in.
+
+- Place first. The tab now loads creeks around your start point (Lakewood until you set one) the moment you open it, no map needed. Pick 3, 6 or 12 miles. Change takes a ZIP, a place or Near me, and sets the same start point the Lakes tab uses.
+- Ranked like the Lakes home. The top creek gets the Best bet card with its Creek Score, species by name and the reasons. The rest follow as score rows with species names, distance and documented miles. Scores come from the same creekScore() the stream sheet uses, minus flow history (one network call per gauge), so the sheet can land a few points off. The footer says so.
+- Fish in one tap: All fish, Trout, or Salmon and steelhead. Single species and the map layers (barriers, gauges, access, documented only) moved under More filters, as clear on and off pills and checkboxes. The default is now all seven creek species.
+- River flow now: nearby USGS gauges as swipeable cards with cfs, water temp and distance. Tap one to fly the map there.
+- Your spots: status filter shows only once you have three or more spots. The empty state says how to save one.
+- Following the map: pan and zoom the map and the list follows it, with a button to go back to creeks near your start point. Zoomed too far out, it says so and offers the same button.
+- Oregon: start point in Oregon shows a plain note that creek data is Washington only (WDFW SWIFD) for now.
+- The creeks store gained loadArea(), a scope (area or map) and a request key, so the list and the map never fetch the same box twice.
+- Sign-in screen copy now says Washington and Oregon.
+
+Tested at 390 px with sample SWIFD and USGS responses: loading skeleton, ranked list, Trout preset, More filters, gauges and empty spots, no page errors.
