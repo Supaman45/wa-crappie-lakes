@@ -13,9 +13,17 @@ Claude commits and pushes straight to `main`. Vercel builds every push and promo
 5. Commit with a message that says what changed and why, then push.
 6. Confirm the Vercel deployment for the commit reached READY, and check runtime errors.
 
-For risky work, push a branch instead: Vercel builds a preview URL (behind Vercel login; share links needed), and merge to `main` once it looks right.
+Ship every change through git yourself. Never ask Seri to upload files to GitHub by hand.
 
-Never ask Seri to drag files into GitHub. That workflow is retired.
+## Review by risk
+
+Sort each change before you push it:
+
+- Small: copy, docs, styling, data labels. Ship once the build passes.
+- User-visible: features and fixes people will see. Before you push to `main`, hand the request and the diff to a separate reviewer agent, fix the real problems it finds, then ship.
+- Risky: database schema, RLS policies, the invite trigger and auth, push notifications, the `watch` cron, and anything that deletes user data. Push a branch instead: Vercel builds a preview URL (behind Vercel login; share links needed). Have the reviewer agent check it, then wait for Seri's yes before you merge to `main`.
+
+When you finish, tell Seri which group the change was in.
 
 ## Stack
 
