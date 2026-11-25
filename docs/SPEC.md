@@ -451,3 +451,10 @@ Seri: the Creeks tab "is not very intuitive". On a phone it opened on a paragrap
 - Sign-in screen copy now says Washington and Oregon.
 
 Tested at 390 px with sample SWIFD and USGS responses: loading skeleton, ranked list, Trout preset, More filters, gauges and empty spots, no page errors.
+
+## Claude setup: review by risk and approval rules (Nov 25, 2026)
+
+No app change, so no version bump.
+
+- CLAUDE.md gained a "Review by risk" section. Small changes ship once the build passes. User-visible changes get a separate reviewer agent before they reach main. Risky work (schema, RLS, the invite trigger and auth, push, the watch cron, deleting user data) goes on a preview branch and waits for Seri's yes.
+- .claude/settings.json makes Claude ask before actions that can't be undone: Supabase migrations and SQL on the live database, Vercel promote, rollback and domain changes, sending or trashing email, publishing posts and newsletters. Force pushes are blocked outright. It also sets Fable as the advisor model.

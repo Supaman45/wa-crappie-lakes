@@ -1,0 +1,45 @@
+{
+  "advisorModel": "fable",
+  "permissions": {
+    "ask": [
+      "mcp__Supabase__apply_migration",
+      "mcp__Supabase__execute_sql",
+      "mcp__Supabase__delete_branch",
+      "mcp__Supabase__reset_branch",
+      "mcp__Supabase__merge_branch",
+      "mcp__Supabase__pause_project",
+      "mcp__Supabase__deploy_edge_function",
+      "mcp__Vercel__request_promote",
+      "mcp__Vercel__request_rollback",
+      "mcp__Vercel__pause_project",
+      "mcp__Vercel__buy_domain",
+      "mcp__Vercel__create_or_transfer_domain",
+      "mcp__Vercel__replace_domain_dns_records",
+      "mcp__Vercel__update_firewall_config",
+      "mcp__Gmail__send_message",
+      "mcp__Gmail__reply",
+      "mcp__Gmail__forward",
+      "mcp__Gmail__trash_message",
+      "mcp__Gmail__trash_thread",
+      "mcp__Google_Drive__trash_file",
+      "mcp__Google_Drive__share_file",
+      "mcp__Google_Calendar__delete_event",
+      "mcp__Beehiiv__schedule_post",
+      "mcp__Beehiiv__publish_site",
+      "mcp__Beehiiv__send_community_dm",
+      "mcp__Blotato__blotato_create_post",
+      "mcp__Blotato__blotato_post_comment",
+      "mcp__Blotato__blotato_send_message",
+      "mcp__Bitly__bitly_delete_short_link",
+      "mcp__Bitly__bitly_delete_site",
+      "mcp__Shopify__graphql_mutation",
+      "mcp__Lovable__deploy_project",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)"
+    ]
+  }
+}
